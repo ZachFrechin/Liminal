@@ -24,6 +24,17 @@ final class Env
         return in_array(strtolower($value), ['1', 'true', 'yes', 'on'], true);
     }
 
+    public static function int(string $key, int $default): int
+    {
+        $value = getenv($key);
+
+        if (!is_string($value) || filter_var($value, FILTER_VALIDATE_INT) === false) {
+            return $default;
+        }
+
+        return (int) $value;
+    }
+
     public static function nullableString(string $key): ?string
     {
         $value = getenv($key);

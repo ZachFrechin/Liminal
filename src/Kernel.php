@@ -16,6 +16,7 @@ use Liminal\Http\Pipeline;
 use Liminal\Http\Router;
 use Liminal\Registry\CommandRegistry;
 use Liminal\Registry\Contract\Contributor;
+use Liminal\Registry\Contract\DefinitionProvider;
 use Liminal\Registry\EntityRegistry;
 use Liminal\Registry\MenuRegistry;
 use Liminal\Registry\MigrationRegistry;
@@ -25,27 +26,40 @@ use Liminal\Registry\RouteRegistry;
 use Liminal\Registry\SettingsRegistry;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Log\LoggerInterface;
+use ReflectionClass;
 use RuntimeException;
 
 /**
  * The kernel is neither a lib nor a module: it only assembles them.
  *
- * boot() is idempotent and performs, in order: load config, build the container,
- * let every contributor fill the registries, then freeze the whole registry
- * collection so the system's shape is fixed for the lifetime of the process.
+ * boot() is idempotent and performs, in order: load the configuration, create
+ * the registries, instantiate the contributors, collect their container
+ * definitions, build the container, let every contributor fill the registries,
+ * then freeze the whole collection so the system's shape is fixed for the
+ * lifetime of the process.
+ *
+ * Definitions are collected BEFORE the container is built because a built
+ * PHP-DI container is immutable — which is also why contributors are plain
+ * `new` instances rather than container-resolved services.
  */
 final class Kernel
 {
+    public const string VERSION = '0.1.0-dev';
+
     private ?ContainerInterface $container = null;
 
     private ?RegistryCollection $registries = null;
 
     private ?Configuration $config = null;
+
+    private ?Pipeline $pipeline = null;
 
     public function __construct(private readonly string $rootDir) {}
 
@@ -57,12 +71,17 @@ final class Kernel
 
         $config = (new ConfigurationLoader($this->rootDir . '/config'))->load('app', 'database');
         $registries = $this->createRegistries();
+        $contributors = $this->instantiateContributors($config);
 
         $this->config = $config;
         $this->registries = $registries;
-        $this->container = (new ContainerFactory($config))->create($this->definitions($config));
+        $this->container = (new ContainerFactory($config))->create(
+            $this->mergeDefinitions($this->definitions($config, $registries), $contributors, $config, $registries),
+        );
 
-        $this->contribute($registries, $config);
+        foreach ($contributors as $contributor) {
+            $contributor->contribute($registries);
+        }
 
         // Nothing may extend the system past this point.
         $registries->freeze();
@@ -72,36 +91,7 @@ final class Kernel
     {
         $this->boot();
 
-        $container = $this->container();
-
-        $pipeline = new Pipeline([
-            $this->service($container, ErrorHandlerMiddleware::class),
-            $this->service($container, RouterMiddleware::class),
-            $this->service($container, DispatchMiddleware::class),
-        ]);
-
-        return $pipeline->handle($request);
-    }
-
-    /**
-     * Resolves a service while proving its type to the caller: the container's
-     * get() is typed mixed, and the kernel refuses to hand out unchecked values.
-     *
-     * @template T of object
-     *
-     * @param class-string<T> $class
-     *
-     * @return T
-     */
-    private function service(ContainerInterface $container, string $class): object
-    {
-        $service = $container->get($class);
-
-        if (!$service instanceof $class) {
-            throw new RuntimeException(sprintf('Container returned an unexpected type for "%s".', $class));
-        }
-
-        return $service;
+        return $this->pipeline()->handle($request);
     }
 
     public function container(): ContainerInterface
@@ -125,6 +115,46 @@ final class Kernel
         return $this->config ?? throw new RuntimeException('Kernel configuration is unavailable after boot.');
     }
 
+    /**
+     * Built once per process: the Pipeline is immutable and every middleware
+     * is a container singleton, so per-request construction bought nothing.
+     */
+    private function pipeline(): Pipeline
+    {
+        if ($this->pipeline !== null) {
+            return $this->pipeline;
+        }
+
+        $container = $this->container();
+
+        return $this->pipeline = new Pipeline([
+            $this->service($container, ErrorHandlerMiddleware::class),
+            $this->service($container, RouterMiddleware::class),
+            $this->service($container, DispatchMiddleware::class),
+        ]);
+    }
+
+    /**
+     * Resolves a service while proving its type to the caller: the container's
+     * get() is typed mixed, and the kernel refuses to hand out unchecked values.
+     *
+     * @template T of object
+     *
+     * @param class-string<T> $class
+     *
+     * @return T
+     */
+    private function service(ContainerInterface $container, string $class): object
+    {
+        $service = $container->get($class);
+
+        if (!$service instanceof $class) {
+            throw new RuntimeException(sprintf('Container returned an unexpected type for "%s".', $class));
+        }
+
+        return $service;
+    }
+
     private function createRegistries(): RegistryCollection
     {
         return new RegistryCollection([
@@ -139,48 +169,98 @@ final class Kernel
     }
 
     /**
-     * Libs contribute first, in configured order; modules follow in phase 2.
+     * Libs are manifests: instantiated with plain `new`, before the container
+     * exists, so their definitions can still make it into the build.
+     *
+     * @return list<Contributor>
      */
-    private function contribute(RegistryCollection $registries, Configuration $config): void
+    private function instantiateContributors(Configuration $config): array
     {
-        $container = $this->container ?? throw new RuntimeException('Container must be built before contributing.');
+        $contributors = [];
 
         foreach ($config->stringList('app.libs') as $class) {
-            $contributor = $container->get($class);
+            if (!class_exists($class)) {
+                throw new RuntimeException(sprintf('Lib "%s" does not exist.', $class));
+            }
 
-            if (!$contributor instanceof Contributor) {
+            $constructor = new ReflectionClass($class)->getConstructor();
+
+            if ($constructor !== null && $constructor->getNumberOfRequiredParameters() > 0) {
                 throw new RuntimeException(sprintf(
-                    'Lib "%s" must implement %s.',
+                    'Lib "%s" must be constructible without arguments: contributors are instantiated before the container exists. Move dependencies into definitions() closures or contribute().',
                     $class,
-                    Contributor::class,
                 ));
             }
 
-            $contributor->contribute($registries);
+            $contributor = new $class();
+
+            if (!$contributor instanceof Contributor) {
+                throw new RuntimeException(sprintf('Lib "%s" must implement %s.', $class, Contributor::class));
+            }
+
+            $contributors[] = $contributor;
         }
+
+        return $contributors;
+    }
+
+    /**
+     * Kernel-structural ids are reserved; everything else layers last-wins in
+     * app.libs order, so a later lib (and, in phase 2, a module) may replace an
+     * earlier one's service — never the registries.
+     *
+     * @param array<string, mixed> $kernelDefinitions
+     * @param list<Contributor>    $contributors
+     *
+     * @return array<string, mixed>
+     */
+    private function mergeDefinitions(
+        array $kernelDefinitions,
+        array $contributors,
+        Configuration $config,
+        RegistryCollection $registries,
+    ): array {
+        $reserved = [Configuration::class, RegistryCollection::class];
+
+        foreach ($registries->all() as $registry) {
+            $reserved[] = $registry::class;
+        }
+
+        $definitions = $kernelDefinitions;
+
+        foreach ($contributors as $contributor) {
+            if (!$contributor instanceof DefinitionProvider) {
+                continue;
+            }
+
+            foreach ($contributor->definitions($config) as $id => $definition) {
+                if (in_array($id, $reserved, true)) {
+                    throw new RuntimeException(sprintf(
+                        'Lib "%s" may not redefine kernel service "%s".',
+                        $contributor::class,
+                        $id,
+                    ));
+                }
+
+                $definitions[$id] = $definition;
+            }
+        }
+
+        return $definitions;
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function definitions(Configuration $config): array
+    private function definitions(Configuration $config, RegistryCollection $registries): array
     {
-        $registries = $this->registries ?? throw new RuntimeException('Registries must exist before the container.');
+        $psr17 = new Psr17Factory();
 
-        $psr17 = new \Nyholm\Psr7\Factory\Psr17Factory();
-
-        return [
+        $definitions = [
             Configuration::class => $config,
             RegistryCollection::class => $registries,
-            RouteRegistry::class => $registries->get(RouteRegistry::class),
-            MenuRegistry::class => $registries->get(MenuRegistry::class),
-            PermissionRegistry::class => $registries->get(PermissionRegistry::class),
-            EntityRegistry::class => $registries->get(EntityRegistry::class),
-            MigrationRegistry::class => $registries->get(MigrationRegistry::class),
-            SettingsRegistry::class => $registries->get(SettingsRegistry::class),
-            CommandRegistry::class => $registries->get(CommandRegistry::class),
             ResponseFactoryInterface::class => $psr17,
-            \Psr\Http\Message\StreamFactoryInterface::class => $psr17,
+            StreamFactoryInterface::class => $psr17,
             Router::class => fn(): Router => new Router($registries->get(RouteRegistry::class)),
             LoggerInterface::class => static function () use ($config): LoggerInterface {
                 $logDir = $config->string('app.log_dir');
@@ -194,5 +274,11 @@ final class Kernel
             ErrorHandlerMiddleware::class => autowire(ErrorHandlerMiddleware::class)
                 ->constructorParameter('debug', $config->bool('app.debug')),
         ];
+
+        foreach ($registries->all() as $registry) {
+            $definitions[$registry::class] = $registry;
+        }
+
+        return $definitions;
     }
 }

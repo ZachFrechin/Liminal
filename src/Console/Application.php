@@ -22,7 +22,7 @@ final class Application
     {
         $this->kernel->boot();
 
-        $application = new ConsoleApplication('Liminal', '0.1.0-dev');
+        $application = new ConsoleApplication($this->kernel->config()->string('app.name'), Kernel::VERSION);
         $container = $this->kernel->container();
 
         foreach ($this->kernel->registries()->get(CommandRegistry::class)->all() as $class) {
