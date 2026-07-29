@@ -8,9 +8,14 @@ use Closure;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Liminal\Config\Configuration;
+use Liminal\Lib\Database\Console\MigrateCommand;
+use Liminal\Lib\Database\Console\MigrateStatusCommand;
 use Liminal\Lib\Database\Exception\DatabaseException;
 use Liminal\Lib\Database\Health\DatabaseHealth;
+use Liminal\Lib\Database\Migration\MigrationFactory;
+use Liminal\Lib\Database\Migration\MigrationRunner;
 use Liminal\Lib\Database\Scope\CompanyContext;
+use Liminal\Registry\CommandRegistry;
 use Liminal\Registry\Contract\Contributor;
 use Liminal\Registry\Contract\DefinitionProvider;
 use Liminal\Registry\EntityRegistry;
@@ -41,6 +46,10 @@ final class DatabaseContributor implements Contributor, DefinitionProvider
 
         $registries->get(MigrationRegistry::class)
             ->add(self::MIGRATION_NAMESPACE, __DIR__ . '/Migrations');
+
+        $commands = $registries->get(CommandRegistry::class);
+        $commands->add(MigrateCommand::class);
+        $commands->add(MigrateStatusCommand::class);
     }
 
     /**
@@ -70,6 +79,15 @@ final class DatabaseContributor implements Contributor, DefinitionProvider
 
             DatabaseHealth::class => static fn(ContainerInterface $container): DatabaseHealth
                 => new DatabaseHealth($config, self::deferredConnection($container)),
+
+            // Deferred for the same reason as DatabaseHealth: the console
+            // resolves every command eagerly, and commands inject this runner.
+            MigrationRunner::class => static fn(
+                MigrationFactory $factory,
+                MigrationRegistry $migrations,
+                ContainerInterface $container,
+            ): MigrationRunner
+                => new MigrationRunner($factory, $migrations, self::deferredConnection($container)),
         ];
     }
 
