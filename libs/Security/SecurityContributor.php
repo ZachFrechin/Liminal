@@ -6,7 +6,10 @@ namespace Liminal\Lib\Security;
 
 use Liminal\Config\Configuration;
 use Liminal\Lib\Database\DeferredConnection;
+use Liminal\Lib\Security\Authentication\CurrentUser;
+use Liminal\Lib\Security\Authentication\NullUserProvider;
 use Liminal\Lib\Security\Console\SessionGcCommand;
+use Liminal\Lib\Security\Contract\UserProvider;
 use Liminal\Lib\Security\Session\SessionManager;
 use Liminal\Lib\Security\Session\SessionMiddleware;
 use Liminal\Registry\CommandRegistry;
@@ -59,6 +62,15 @@ final class SecurityContributor implements Contributor, DefinitionProvider
                     $config->bool('security.session.secure'),
                     $config->int('security.session.gc_percent'),
                 ),
+
+            // Shared and mutable by design — the CompanyContext precedent:
+            // the authentication middleware assigns it once per request.
+            CurrentUser::class => static fn(): CurrentUser => new CurrentUser(),
+
+            // Safe default the phase-5 authentication module overrides
+            // (last-wins: modules contribute after every lib): no users exist,
+            // so deny-by-default holds instead of resolution errors.
+            UserProvider::class => static fn(): UserProvider => new NullUserProvider(),
         ];
     }
 }
