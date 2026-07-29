@@ -8,6 +8,7 @@ use Liminal\Http\Exception\InvalidHandlerException;
 use Liminal\Http\Middleware\DispatchMiddleware;
 use Liminal\Http\Middleware\RouterMiddleware;
 use Liminal\Http\RouteMatch;
+use Liminal\Registry\Route;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -35,7 +36,7 @@ final class DispatchMiddlewareTest extends TestCase
         $middleware = new DispatchMiddleware($this->containerWith(['the-handler' => $handler]));
 
         $request = new Psr17Factory()->createServerRequest('GET', '/')
-            ->withAttribute(RouterMiddleware::ATTRIBUTE, RouteMatch::found('the-handler', []));
+            ->withAttribute(RouterMiddleware::ATTRIBUTE, RouteMatch::found(new Route('GET', '/', 'the-handler'), []));
 
         self::assertSame(204, $middleware->process($request, $this->neverCalled())->getStatusCode());
     }
@@ -54,7 +55,7 @@ final class DispatchMiddlewareTest extends TestCase
         $middleware = new DispatchMiddleware($this->containerWith(['the-handler' => 'just a string']));
 
         $request = new Psr17Factory()->createServerRequest('GET', '/')
-            ->withAttribute(RouterMiddleware::ATTRIBUTE, RouteMatch::found('the-handler', []));
+            ->withAttribute(RouterMiddleware::ATTRIBUTE, RouteMatch::found(new Route('GET', '/', 'the-handler'), []));
 
         $this->expectException(InvalidHandlerException::class);
 

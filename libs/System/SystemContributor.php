@@ -25,8 +25,9 @@ final class SystemContributor implements Contributor
 {
     public function contribute(RegistryCollection $registries): void
     {
+        // Public on purpose: liveness must answer before anyone can log in.
         $registries->get(RouteRegistry::class)
-            ->get('/', HealthController::class, 'system.health');
+            ->get('/', HealthController::class, 'system.health', public: true);
 
         $commands = $registries->get(CommandRegistry::class);
         $commands->add(DoctorCommand::class);

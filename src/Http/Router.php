@@ -9,6 +9,7 @@ use FastRoute\RouteCollector;
 
 use function FastRoute\simpleDispatcher;
 
+use Liminal\Registry\Route;
 use Liminal\Registry\RouteRegistry;
 use LogicException;
 use Psr\Http\Message\ServerRequestInterface;
@@ -34,7 +35,7 @@ final class Router
 
         return match ($result[0]) {
             Dispatcher::FOUND => RouteMatch::found(
-                self::asString($result[1]),
+                self::asRoute($result[1]),
                 self::asStringMap($result[2] ?? []),
             ),
             Dispatcher::METHOD_NOT_ALLOWED => RouteMatch::methodNotAllowed(self::asStringList($result[1] ?? [])),
@@ -46,21 +47,24 @@ final class Router
     {
         return $this->dispatcher ??= simpleDispatcher(function (RouteCollector $collector): void {
             foreach ($this->routes->all() as $route) {
-                $collector->addRoute($route->method, $route->path, $route->handler);
+                // The Route object itself is FastRoute's opaque data payload,
+                // so the match carries every declared fact (handler, name,
+                // public flag) — including through the HEAD->GET fallback.
+                $collector->addRoute($route->method, $route->path, $route);
             }
         });
     }
 
     /**
-     * @throws LogicException when the dispatcher hands back a non-string handler
+     * @throws LogicException when the dispatcher hands back anything but a Route
      */
-    private static function asString(mixed $value): string
+    private static function asRoute(mixed $value): Route
     {
-        if (!is_string($value)) {
-            // Handlers enter the table as strings; anything else means the
-            // route table is corrupted, and a silent '' would surface as a
-            // baffling container error far from the cause.
-            throw new LogicException(sprintf('FastRoute returned a handler of type %s.', get_debug_type($value)));
+        if (!$value instanceof Route) {
+            // Routes enter the table as Route objects; anything else means the
+            // route table is corrupted, and a silent fallback would surface as
+            // a baffling error far from the cause.
+            throw new LogicException(sprintf('FastRoute returned route data of type "%s".', get_debug_type($value)));
         }
 
         return $value;

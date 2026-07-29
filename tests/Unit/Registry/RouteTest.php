@@ -24,6 +24,15 @@ final class RouteTest extends TestCase
         self::assertSame('thing.show', $route->name);
     }
 
+    /**
+     * Deny-by-default: opting OUT of authentication is the explicit act.
+     */
+    public function testARouteIsProtectedByDefault(): void
+    {
+        self::assertFalse(new Route('GET', '/thing', 'Handler')->public);
+        self::assertTrue(new Route('GET', '/health', 'Handler', public: true)->public);
+    }
+
     public function testAnUnknownMethodIsRefused(): void
     {
         $this->expectException(InvalidArgumentException::class);

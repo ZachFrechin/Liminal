@@ -66,49 +66,49 @@ final class RouteRegistry extends AbstractRegistry
      *
      * @param string $handler service id resolved through the container
      */
-    public function map(string $method, string $path, string $handler, ?string $name = null): void
+    public function map(string $method, string $path, string $handler, ?string $name = null, bool $public = false): void
     {
-        $this->add(new Route($method, $path, $handler, $name));
+        $this->add(new Route($method, $path, $handler, $name, $public));
     }
 
     /**
      * @param string $handler service id resolved through the container
      */
-    public function get(string $path, string $handler, ?string $name = null): void
+    public function get(string $path, string $handler, ?string $name = null, bool $public = false): void
     {
-        $this->map('GET', $path, $handler, $name);
+        $this->map('GET', $path, $handler, $name, $public);
     }
 
     /**
      * @param string $handler service id resolved through the container
      */
-    public function post(string $path, string $handler, ?string $name = null): void
+    public function post(string $path, string $handler, ?string $name = null, bool $public = false): void
     {
-        $this->map('POST', $path, $handler, $name);
+        $this->map('POST', $path, $handler, $name, $public);
     }
 
     /**
      * @param string $handler service id resolved through the container
      */
-    public function put(string $path, string $handler, ?string $name = null): void
+    public function put(string $path, string $handler, ?string $name = null, bool $public = false): void
     {
-        $this->map('PUT', $path, $handler, $name);
+        $this->map('PUT', $path, $handler, $name, $public);
     }
 
     /**
      * @param string $handler service id resolved through the container
      */
-    public function patch(string $path, string $handler, ?string $name = null): void
+    public function patch(string $path, string $handler, ?string $name = null, bool $public = false): void
     {
-        $this->map('PATCH', $path, $handler, $name);
+        $this->map('PATCH', $path, $handler, $name, $public);
     }
 
     /**
      * @param string $handler service id resolved through the container
      */
-    public function delete(string $path, string $handler, ?string $name = null): void
+    public function delete(string $path, string $handler, ?string $name = null, bool $public = false): void
     {
-        $this->map('DELETE', $path, $handler, $name);
+        $this->map('DELETE', $path, $handler, $name, $public);
     }
 
     /** @return list<Route> */

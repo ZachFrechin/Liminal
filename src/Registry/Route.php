@@ -17,6 +17,7 @@ final readonly class Route
 
     /**
      * @param string $handler service id resolved through the container
+     * @param bool   $public  deny-by-default: opting OUT of authentication is the explicit act
      *
      * @throws InvalidArgumentException when the method is unknown or the path does not start with "/"
      */
@@ -25,6 +26,7 @@ final readonly class Route
         public string $path,
         public string $handler,
         public ?string $name = null,
+        public bool $public = false,
     ) {
         if (!in_array($this->method, self::METHODS, true)) {
             throw new InvalidArgumentException(sprintf(

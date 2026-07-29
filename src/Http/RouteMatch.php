@@ -4,11 +4,17 @@ declare(strict_types=1);
 
 namespace Liminal\Http;
 
+use Liminal\Registry\Route;
+
 /**
  * Outcome of routing one request: a status plus whatever that status carries —
- * handler and arguments when found, the allowed methods on a 405, nothing on
- * a 404. Built through named constructors so impossible combinations cannot
- * exist.
+ * the matched Route and its arguments when found, the allowed methods on a
+ * 405, nothing on a 404. Built through named constructors so impossible
+ * combinations cannot exist.
+ *
+ * Carrying the whole Route (not just the handler string) is what lets the
+ * authentication middleware read the declared public flag without a second
+ * lookup: the route table stays the single source of truth.
  */
 final readonly class RouteMatch
 {
@@ -18,7 +24,7 @@ final readonly class RouteMatch
      */
     private function __construct(
         public RouteMatchStatus $status,
-        public string $handler = '',
+        public ?Route $route = null,
         public array $arguments = [],
         public array $allowedMethods = [],
     ) {}
@@ -26,9 +32,9 @@ final readonly class RouteMatch
     /**
      * @param array<string, string> $arguments
      */
-    public static function found(string $handler, array $arguments): self
+    public static function found(Route $route, array $arguments): self
     {
-        return new self(RouteMatchStatus::Found, $handler, $arguments);
+        return new self(RouteMatchStatus::Found, $route, $arguments);
     }
 
     public static function notFound(): self

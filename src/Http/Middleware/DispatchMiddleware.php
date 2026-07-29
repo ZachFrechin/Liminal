@@ -27,14 +27,14 @@ final readonly class DispatchMiddleware implements MiddlewareInterface
     {
         $match = $request->getAttribute(RouterMiddleware::ATTRIBUTE);
 
-        if (!$match instanceof RouteMatch) {
+        if (!$match instanceof RouteMatch || $match->route === null) {
             throw InvalidHandlerException::missingRouteMatch();
         }
 
-        $resolved = $this->container->get($match->handler);
+        $resolved = $this->container->get($match->route->handler);
 
         if (!$resolved instanceof RequestHandlerInterface) {
-            throw InvalidHandlerException::notARequestHandler($match->handler);
+            throw InvalidHandlerException::notARequestHandler($match->route->handler);
         }
 
         return $resolved->handle($request);

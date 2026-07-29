@@ -21,7 +21,24 @@ final class RouterTest extends TestCase
         $match = $this->route('GET', '/health', 'GET', '/health');
 
         self::assertSame(RouteMatchStatus::Found, $match->status);
-        self::assertSame('Handler', $match->handler);
+        self::assertNotNull($match->route);
+        self::assertSame('Handler', $match->route->handler);
+    }
+
+    /**
+     * FastRoute's HEAD->GET fallback hands back the GET route's own object,
+     * so every declared fact — including the public flag — rides along.
+     */
+    public function testAHeadRequestInheritsTheGetRoutesPublicFlag(): void
+    {
+        $registry = new RouteRegistry();
+        $registry->get('/health', 'Handler', 'system.health', public: true);
+
+        $match = new Router($registry)->match(new Psr17Factory()->createServerRequest('HEAD', '/health'));
+
+        self::assertSame(RouteMatchStatus::Found, $match->status);
+        self::assertNotNull($match->route);
+        self::assertTrue($match->route->public);
     }
 
     public function testExposesPathArgumentsAsStrings(): void
