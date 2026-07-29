@@ -22,6 +22,7 @@ return [
     // Contribution order is significant: libs first, in this order, then modules.
     // A module may override a lib's contribution; never the reverse.
     'libs' => [
+        Liminal\Lib\Database\DatabaseContributor::class,
         Liminal\Lib\System\SystemContributor::class,
     ],
 ];
