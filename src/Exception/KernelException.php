@@ -96,6 +96,16 @@ final class KernelException extends RuntimeException implements LiminalException
         ));
     }
 
+    public static function moduleRouteName(string $module, string $path): self
+    {
+        return new self(sprintf(
+            'Module "%s" contributed the route "%s" without a "%s." name prefix: the module gate reads that prefix, so an unprefixed route would never be gated.',
+            $module,
+            $path,
+            $module,
+        ));
+    }
+
     public static function moduleMigrationsUnregistered(string $module, string $namespace): self
     {
         return new self(sprintf(

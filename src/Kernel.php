@@ -28,6 +28,7 @@ use Liminal\Registry\MigrationRegistry;
 use Liminal\Registry\ModuleRegistry;
 use Liminal\Registry\PermissionRegistry;
 use Liminal\Registry\RegistryCollection;
+use Liminal\Registry\Route;
 use Liminal\Registry\RouteRegistry;
 use Liminal\Registry\SettingsRegistry;
 use Monolog\Handler\StreamHandler;
@@ -95,8 +96,15 @@ final class Kernel
             $this->mergeDefinitions($this->definitions($config, $registries), $contributors, $config, $registries),
         );
 
+        $routes = $registries->get(RouteRegistry::class);
+
         foreach ($contributors as $contributor) {
+            $before = count($routes->all());
             $contributor->contribute($registries);
+
+            if ($contributor instanceof Module) {
+                $this->assertModuleRouteNames($contributor, array_slice($routes->all(), $before));
+            }
         }
 
         // Nothing may extend the system past this point.
@@ -321,6 +329,28 @@ final class Kernel
 
         if ($module->version() === '' || strlen($module->version()) > 32) {
             throw KernelException::moduleVersion($module::class, $module->version());
+        }
+    }
+
+    /**
+     * A module's routes must be named with its own name as prefix — the
+     * convention the Module contract announces, and the key the module gate
+     * reads to decide whether a route belongs to a disabled module. An
+     * unnamed or foreign-prefixed route would be a permanent gate bypass, so
+     * the boot refuses it.
+     *
+     * @param list<Route> $contributed the routes this module added
+     *
+     * @throws KernelException naming the module and the offending path
+     */
+    private function assertModuleRouteNames(Module $module, array $contributed): void
+    {
+        $prefix = $module->name() . '.';
+
+        foreach ($contributed as $route) {
+            if ($route->name === null || !str_starts_with($route->name, $prefix)) {
+                throw KernelException::moduleRouteName($module->name(), $route->path);
+            }
         }
     }
 
