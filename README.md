@@ -52,6 +52,11 @@ A lib that needs services in the container also implements the optional
 container exists, must stay lazy, and may not redefine the kernel-structural
 ids — the registries are reserved; `LoggerInterface` is fair game.
 
+The HTTP pipeline itself is a registry: middleware is contributed to the
+`MiddlewareRegistry` with a priority (lower = outer) between the kernel's
+anchors — error handler, router, dispatcher. Anything sorted outside the error
+handler or behind the dispatcher fails the boot by name.
+
 ## Hooks and triggers
 
 A strict distinction, never to be allowed to drift (implementation in phase 2):
@@ -67,9 +72,13 @@ A strict distinction, never to be allowed to drift (implementation in phase 2):
 
 ```bash
 composer install
+docker compose up -d db                       # LIMINAL_DB_PORT overrides the host port
+export LIMINAL_DSN='mysql://liminal:liminal@127.0.0.1:3306/liminal_test'
+php bin/liminal install                       # migrations + first company (MAIN)
 php -S localhost:8080 -t public
-curl localhost:8080/            # {"status":"ok","routes":1}
+curl localhost:8080/                          # {"status":"ok","routes":1}
 php bin/liminal doctor
+php bin/liminal migrate:status
 ```
 
 ### Checks
@@ -113,7 +122,8 @@ tests/{Unit,Integration}
 |---|---|---|
 | 0 | Kernel, registries, PSR-15 pipeline, CLI, CI | ✅ |
 | 1 | `lib/database`: Doctrine, multi-company scoping, per-module migrations, DI wiring, doctor | ✅ |
-| 2 → 8 | `lib/module`, `lib/security`, `lib/rendering`, `lib/api`, builder, modules | upcoming |
+| 2a | Kernel plumbing: contributable middleware pipeline, named-route URLs, `migrate`/`install`, settings values | ✅ |
+| 2b → 8 | `lib/module`, `lib/security`, `lib/rendering`, `lib/api`, builder, modules | upcoming |
 
 ## Multi-company
 

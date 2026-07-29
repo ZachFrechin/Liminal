@@ -20,8 +20,18 @@ composer lint:fix               # authoritative formatting
 docker compose up -d db         # MariaDB 10.11 (LIMINAL_DB_PORT to remap)
 LIMINAL_TEST_DSN='mysql://liminal:liminal@127.0.0.1:3306/liminal_test' composer test:integration
 php bin/liminal doctor          # environment + registries + database checks
+php bin/liminal install         # migrations + first company (needs LIMINAL_DSN)
+php bin/liminal migrate         # pending migrations, --module=NS to scope
+php bin/liminal migrate:status  # read-only, never creates the metadata table
 ```
 
 Every commit: `type(scope): imperative subject`, body explains why,
 `composer check` green. Integration tests skip without a reachable DSN — run
 them with the database up before claiming database-touching work done.
+
+Two traps with teeth: the console resolves every registered command eagerly,
+so command constructors must never inject Connection, EntityManagerInterface
+or SettingsService — inject the deferred-connection services (MigrationRunner,
+DatabaseHealth, FirstCompanySeeder) instead. And middleware priorities are
+lower = outer between the anchors (-1000 error handler, 0 router, 1000
+dispatcher); boot refuses anything outside them.

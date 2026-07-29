@@ -87,6 +87,21 @@ docs. No exceptions.
 - Contributors are manifests: plain-`new`, no required constructor arguments.
   Services go through `DefinitionProvider::definitions()` — lazy, no I/O,
   kernel-structural ids reserved, later libs (then modules) win elsewhere.
+- Middleware priorities: lower = outer; kernel anchors at −1000 (error
+  handler), 0 (router), 1000 (dispatcher). Suggested bands: −999…−1
+  pre-routing (sessions, CORS), 1…999 post-routing (auth, CSRF, company
+  switch). Boot refuses anything sorted outside the anchors, by name.
+
+## Console commands
+
+- The console Application resolves every registered command eagerly, so a
+  command constructor must never inject `Connection`,
+  `EntityManagerInterface` or anything that resolves them (e.g.
+  `SettingsService`) — a DSN-less checkout must still run `doctor`. Inject
+  the deferred-connection services instead (`MigrationRunner`,
+  `DatabaseHealth`, `FirstCompanySeeder` are the precedents).
+- Diagnostics never mutate what they inspect (`doctor`, `migrate:status`);
+  `install` is the one command allowed to write.
 
 ## Configuration and environment
 
