@@ -22,7 +22,7 @@ final class RouteRegistry extends AbstractRegistry
     /** @var array<string, true> */
     private array $identities = [];
 
-    /** @var array<string, true> */
+    /** @var array<string, Route> */
     private array $names = [];
 
     /**
@@ -45,10 +45,19 @@ final class RouteRegistry extends AbstractRegistry
         $this->identities[$identity] = true;
 
         if ($route->name !== null) {
-            $this->names[$route->name] = true;
+            $this->names[$route->name] = $route;
         }
 
         $this->routes[] = $route;
+    }
+
+    /**
+     * Lookup for URL generation; null rather than throwing so the caller owns
+     * the error wording (UrlGenerator names both the route and its purpose).
+     */
+    public function named(string $name): ?Route
+    {
+        return $this->names[$name] ?? null;
     }
 
     /**

@@ -16,6 +16,7 @@ use Liminal\Http\Middleware\ErrorHandlerMiddleware;
 use Liminal\Http\Middleware\RouterMiddleware;
 use Liminal\Http\Pipeline;
 use Liminal\Http\Router;
+use Liminal\Http\UrlGenerator;
 use Liminal\Registry\CommandRegistry;
 use Liminal\Registry\Contract\Contributor;
 use Liminal\Registry\Contract\DefinitionProvider;
@@ -308,6 +309,7 @@ final class Kernel
             ResponseFactoryInterface::class => $psr17,
             StreamFactoryInterface::class => $psr17,
             Router::class => fn(): Router => new Router($registries->get(RouteRegistry::class)),
+            UrlGenerator::class => fn(): UrlGenerator => new UrlGenerator($registries->get(RouteRegistry::class)),
             LoggerInterface::class => static function () use ($config): LoggerInterface {
                 $logDir = $config->string('app.log_dir');
 
