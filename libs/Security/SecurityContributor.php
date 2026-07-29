@@ -6,6 +6,7 @@ namespace Liminal\Lib\Security;
 
 use Liminal\Config\Configuration;
 use Liminal\Lib\Database\DeferredConnection;
+use Liminal\Lib\Security\Authentication\AuthenticationMiddleware;
 use Liminal\Lib\Security\Authentication\CurrentUser;
 use Liminal\Lib\Security\Authentication\NullUserProvider;
 use Liminal\Lib\Security\Console\SessionGcCommand;
@@ -33,13 +34,17 @@ final class SecurityContributor implements Contributor, DefinitionProvider
     /** Sessions load before anything else in the request can want them. */
     public const int SESSION_PRIORITY = -900;
 
+    /** After the router (needs the matched route's public flag). */
+    public const int AUTHENTICATION_PRIORITY = 100;
+
     public function contribute(RegistryCollection $registries): void
     {
         $registries->get(MigrationRegistry::class)
             ->add(self::MIGRATION_NAMESPACE, __DIR__ . '/Migrations');
 
-        $registries->get(MiddlewareRegistry::class)
-            ->add(SessionMiddleware::class, self::SESSION_PRIORITY);
+        $middleware = $registries->get(MiddlewareRegistry::class);
+        $middleware->add(SessionMiddleware::class, self::SESSION_PRIORITY);
+        $middleware->add(AuthenticationMiddleware::class, self::AUTHENTICATION_PRIORITY);
 
         $registries->get(CommandRegistry::class)
             ->add(SessionGcCommand::class);

@@ -42,6 +42,16 @@ final class HttpException extends RuntimeException implements LiminalException
     }
 
     /**
+     * Deliberate RFC 7235 deviation: no WWW-Authenticate header — no
+     * registered scheme describes cookie sessions, and the rendering phase
+     * replaces this response with a redirect to the login page anyway.
+     */
+    public static function unauthorized(): self
+    {
+        return new self(401, 'Authentication required.');
+    }
+
+    /**
      * @param list<string> $allowed
      */
     public static function methodNotAllowed(array $allowed): self
