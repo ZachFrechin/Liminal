@@ -1,0 +1,7 @@
+/vendor/
+/var/
+/public/assets/build/
+.php-cs-fixer.cache
+.phpunit.result.cache
+.env
+.env.local
