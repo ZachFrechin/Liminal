@@ -23,14 +23,14 @@ final class Version20260729000000 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        $entity = $schema->createTable('core_entity');
+        $entity = $schema->createTable('core_company');
         $entity->addColumn('id', 'integer', ['autoincrement' => true]);
         $entity->addColumn('code', 'string', ['length' => 32]);
         $entity->addColumn('name', 'string', ['length' => 255]);
         $entity->addColumn('created_at', 'datetime_immutable');
         $entity->addColumn('updated_at', 'datetime_immutable');
         $entity->setPrimaryKey(['id']);
-        $entity->addUniqueIndex(['code'], 'uniq_core_entity_code');
+        $entity->addUniqueIndex(['code'], 'uniq_core_company_code');
 
         $module = $schema->createTable('core_module');
         $module->addColumn('id', 'integer', ['autoincrement' => true]);
@@ -42,33 +42,33 @@ final class Version20260729000000 extends AbstractMigration
         $module->addUniqueIndex(['name'], 'uniq_core_module_name');
 
         // Modules are installed globally but enabled per company.
-        $moduleEntity = $schema->createTable('core_module_entity');
+        $moduleEntity = $schema->createTable('core_module_company');
         $moduleEntity->addColumn('module_id', 'integer');
-        $moduleEntity->addColumn('entity_id', 'integer');
+        $moduleEntity->addColumn('company_id', 'integer');
         $moduleEntity->addColumn('enabled', 'boolean', ['default' => false]);
-        $moduleEntity->setPrimaryKey(['module_id', 'entity_id']);
+        $moduleEntity->setPrimaryKey(['module_id', 'company_id']);
         $moduleEntity->addForeignKeyConstraint('core_module', ['module_id'], ['id'], ['onDelete' => 'CASCADE']);
-        $moduleEntity->addForeignKeyConstraint('core_entity', ['entity_id'], ['id'], ['onDelete' => 'CASCADE']);
+        $moduleEntity->addForeignKeyConstraint('core_company', ['company_id'], ['id'], ['onDelete' => 'CASCADE']);
 
         $setting = $schema->createTable('core_setting');
         $setting->addColumn('id', 'integer', ['autoincrement' => true]);
         $setting->addColumn('setting_key', 'string', ['length' => 191]);
         $setting->addColumn('value', 'text', ['notnull' => false]);
         $setting->addColumn('scope', 'string', ['length' => 16]);
-        $setting->addColumn('entity_id', 'integer', ['notnull' => false]);
+        $setting->addColumn('company_id', 'integer', ['notnull' => false]);
         $setting->addColumn('user_id', 'integer', ['notnull' => false]);
         $setting->addColumn('created_at', 'datetime_immutable');
         $setting->addColumn('updated_at', 'datetime_immutable');
         $setting->setPrimaryKey(['id']);
-        $setting->addUniqueIndex(['setting_key', 'entity_id', 'user_id'], 'uniq_core_setting_scope');
-        $setting->addForeignKeyConstraint('core_entity', ['entity_id'], ['id'], ['onDelete' => 'CASCADE']);
+        $setting->addUniqueIndex(['setting_key', 'company_id', 'user_id'], 'uniq_core_setting_scope');
+        $setting->addForeignKeyConstraint('core_company', ['company_id'], ['id'], ['onDelete' => 'CASCADE']);
     }
 
     public function down(Schema $schema): void
     {
         $schema->dropTable('core_setting');
-        $schema->dropTable('core_module_entity');
+        $schema->dropTable('core_module_company');
         $schema->dropTable('core_module');
-        $schema->dropTable('core_entity');
+        $schema->dropTable('core_company');
     }
 }

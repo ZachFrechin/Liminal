@@ -12,9 +12,9 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Mapping\Driver\AttributeDriver;
 use Doctrine\Persistence\Mapping\Driver\MappingDriverChain;
-use Liminal\Lib\Database\Scope\EntityContext;
-use Liminal\Lib\Database\Scope\EntityScopeFilter;
-use Liminal\Lib\Database\Scope\EntityScopeListener;
+use Liminal\Lib\Database\Scope\CompanyContext;
+use Liminal\Lib\Database\Scope\CompanyScopeFilter;
+use Liminal\Lib\Database\Scope\CompanyScopeListener;
 use Liminal\Registry\EntityRegistry;
 use RuntimeException;
 
@@ -32,7 +32,7 @@ final readonly class EntityManagerFactory
 {
     public function __construct(
         private EntityRegistry $entities,
-        private EntityContext $context,
+        private CompanyContext $context,
     ) {}
 
     public function create(string $dsn): EntityManagerInterface
@@ -44,9 +44,9 @@ final readonly class EntityManagerFactory
         // ORM 4.0 drops the alternative, so this is the forward-compatible path.
         $config->enableNativeLazyObjects(true);
 
-        $config->addFilter(EntityScopeFilter::NAME, EntityScopeFilter::class);
+        $config->addFilter(CompanyScopeFilter::NAME, CompanyScopeFilter::class);
 
-        $listener = new EntityScopeListener($this->context);
+        $listener = new CompanyScopeListener($this->context);
         $events = new EventManager();
         $events->addEventListener([Events::prePersist, Events::postLoad], $listener);
 
@@ -72,12 +72,12 @@ final readonly class EntityManagerFactory
     {
         $filters = $entityManager->getFilters();
 
-        if (!$filters->isEnabled(EntityScopeFilter::NAME)) {
-            $filters->enable(EntityScopeFilter::NAME);
+        if (!$filters->isEnabled(CompanyScopeFilter::NAME)) {
+            $filters->enable(CompanyScopeFilter::NAME);
         }
 
-        EntityScopeFilter::apply(
-            $filters->getFilter(EntityScopeFilter::NAME),
+        CompanyScopeFilter::apply(
+            $filters->getFilter(CompanyScopeFilter::NAME),
             $this->context->accessibleIds(),
         );
     }

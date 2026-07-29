@@ -8,12 +8,12 @@ use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * A company. Deliberately NOT EntityScoped: it is the scoping axis itself, so
- * filtering it by entity_id would be circular.
+ * A company. Deliberately NOT CompanyScoped: it is the scoping axis itself, so
+ * filtering it by company_id would be circular.
  */
 #[ORM\Entity]
-#[ORM\Table(name: 'core_entity')]
-class CoreEntity
+#[ORM\Table(name: 'core_company')]
+class Company
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]

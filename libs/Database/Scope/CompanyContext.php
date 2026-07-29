@@ -16,7 +16,7 @@ use InvalidArgumentException;
  * clears the EntityManager and re-applies the filter parameters. Making that
  * impossible to forget is the whole point of routing it through here.
  */
-final class EntityContext
+final class CompanyContext
 {
     /** @var list<int> */
     private array $accessibleIds;
@@ -40,9 +40,9 @@ final class EntityContext
         return $this->accessibleIds;
     }
 
-    public function canAccess(?int $entityId): bool
+    public function canAccess(?int $companyId): bool
     {
-        return $entityId !== null && in_array($entityId, $this->accessibleIds, true);
+        return $companyId !== null && in_array($companyId, $this->accessibleIds, true);
     }
 
     /**
@@ -71,7 +71,7 @@ final class EntityContext
     private function normalise(int $currentId, array $accessibleIds): array
     {
         if ($currentId < 1) {
-            throw new InvalidArgumentException(sprintf('Entity id must be positive, got %d.', $currentId));
+            throw new InvalidArgumentException(sprintf('Company id must be positive, got %d.', $currentId));
         }
 
         // The current company is always reachable, even if the caller omitted it.

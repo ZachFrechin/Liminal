@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Liminal\Tests\Integration\Fixtures\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
-use Liminal\Lib\Database\Scope\EntityScoped;
-use Liminal\Lib\Database\Scope\EntityScopedTrait;
+use Liminal\Lib\Database\Scope\CompanyScoped;
+use Liminal\Lib\Database\Scope\CompanyScopedTrait;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'test_widget')]
-#[ORM\Index(name: 'idx_test_widget_scope', columns: ['entity_id', 'id'])]
-class Widget implements EntityScoped
+#[ORM\Index(name: 'idx_test_widget_scope', columns: ['company_id', 'id'])]
+class Widget implements CompanyScoped
 {
-    use EntityScopedTrait;
+    use CompanyScopedTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]

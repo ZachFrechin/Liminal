@@ -7,8 +7,8 @@ namespace Liminal\Tests\Integration;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
 use Liminal\Lib\Database\EntityManagerFactory;
-use Liminal\Lib\Database\Scope\EntityContext;
-use Liminal\Lib\Database\Scope\Exception\CrossEntityAccessException;
+use Liminal\Lib\Database\Exception\CrossCompanyAccessException;
+use Liminal\Lib\Database\Scope\CompanyContext;
 use Liminal\Registry\EntityRegistry;
 use Liminal\Support\Env;
 use Liminal\Tests\Integration\Fixtures\Entity\Gadget;
@@ -20,12 +20,12 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * data set every later phase replays.
  */
 #[CoversNothing]
-final class EntityScopeTest extends IntegrationTestCase
+final class CompanyScopeTest extends IntegrationTestCase
 {
     private const COMPANY_A = 1;
     private const COMPANY_B = 2;
 
-    private EntityContext $context;
+    private CompanyContext $context;
 
     private EntityManagerInterface $em;
 
@@ -43,7 +43,7 @@ final class EntityScopeTest extends IntegrationTestCase
         $registry = new EntityRegistry();
         $registry->add('Liminal\Tests\Integration\Fixtures\Entity', __DIR__ . '/Fixtures/Entity');
 
-        $this->context = new EntityContext(self::COMPANY_A, self::COMPANY_A);
+        $this->context = new CompanyContext(self::COMPANY_A, self::COMPANY_A);
         $this->em = (new EntityManagerFactory($registry, $this->context))->create($dsn);
 
         $this->resetSchema();
@@ -106,15 +106,15 @@ final class EntityScopeTest extends IntegrationTestCase
         $this->em->persist($widget);
         $this->em->flush();
 
-        self::assertSame(self::COMPANY_A, $widget->getEntityId());
+        self::assertSame(self::COMPANY_A, $widget->getCompanyId());
     }
 
     public function testPersistingIntoAnUnreachableCompanyIsRefused(): void
     {
         $widget = new Widget('smuggled');
-        $widget->setEntityId(self::COMPANY_B);
+        $widget->setCompanyId(self::COMPANY_B);
 
-        $this->expectException(CrossEntityAccessException::class);
+        $this->expectException(CrossCompanyAccessException::class);
 
         $this->em->persist($widget);
         $this->em->flush();
@@ -159,11 +159,11 @@ final class EntityScopeTest extends IntegrationTestCase
         $connection = $this->em->getConnection();
 
         foreach ([['a-one', self::COMPANY_A], ['a-two', self::COMPANY_A], ['b-one', self::COMPANY_B]] as [$l, $e]) {
-            $connection->insert('test_widget', ['label' => $l, 'entity_id' => $e]);
+            $connection->insert('test_widget', ['label' => $l, 'company_id' => $e]);
         }
 
         foreach ([['gadget-a', self::COMPANY_A], ['gadget-b', self::COMPANY_B]] as [$r, $e]) {
-            $connection->insert('test_gadget', ['reference' => $r, 'entity_id' => $e]);
+            $connection->insert('test_gadget', ['reference' => $r, 'company_id' => $e]);
         }
     }
 }

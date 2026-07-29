@@ -5,26 +5,26 @@ declare(strict_types=1);
 namespace Liminal\Tests\Unit\Database;
 
 use InvalidArgumentException;
-use Liminal\Lib\Database\Scope\EntityContext;
+use Liminal\Lib\Database\Scope\CompanyContext;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(EntityContext::class)]
-final class EntityContextTest extends TestCase
+#[CoversClass(CompanyContext::class)]
+final class CompanyContextTest extends TestCase
 {
     public function testTheCurrentCompanyIsAlwaysReachable(): void
     {
-        self::assertSame([7], (new EntityContext(7))->accessibleIds());
+        self::assertSame([7], (new CompanyContext(7))->accessibleIds());
     }
 
     public function testAccessibleIdsAreDeduplicatedAndSorted(): void
     {
-        self::assertSame([1, 3, 5], (new EntityContext(3, 5, 1, 3))->accessibleIds());
+        self::assertSame([1, 3, 5], (new CompanyContext(3, 5, 1, 3))->accessibleIds());
     }
 
     public function testCanAccessRejectsUnknownAndNullCompanies(): void
     {
-        $context = new EntityContext(1, 2);
+        $context = new CompanyContext(1, 2);
 
         self::assertTrue($context->canAccess(2));
         self::assertFalse($context->canAccess(9));
@@ -37,10 +37,10 @@ final class EntityContextTest extends TestCase
      */
     public function testSwitchingNotifiesListeners(): void
     {
-        $context = new EntityContext(1);
+        $context = new CompanyContext(1);
         $seen = [];
 
-        $context->onSwitch(static function (EntityContext $c) use (&$seen): void {
+        $context->onSwitch(static function (CompanyContext $c) use (&$seen): void {
             $seen[] = $c->currentId();
         });
 
@@ -55,6 +55,6 @@ final class EntityContextTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        new EntityContext(0);
+        new CompanyContext(0);
     }
 }

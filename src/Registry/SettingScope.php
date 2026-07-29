@@ -7,6 +7,6 @@ namespace Liminal\Registry;
 enum SettingScope: string
 {
     case Global = 'global';
-    case Entity = 'entity';
+    case Company = 'company';
     case User = 'user';
 }
