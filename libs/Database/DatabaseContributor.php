@@ -12,6 +12,7 @@ use Liminal\Lib\Database\Console\MigrateCommand;
 use Liminal\Lib\Database\Console\MigrateStatusCommand;
 use Liminal\Lib\Database\Exception\DatabaseException;
 use Liminal\Lib\Database\Health\DatabaseHealth;
+use Liminal\Lib\Database\Install\FirstCompanySeeder;
 use Liminal\Lib\Database\Migration\MigrationFactory;
 use Liminal\Lib\Database\Migration\MigrationRunner;
 use Liminal\Lib\Database\Scope\CompanyContext;
@@ -88,6 +89,9 @@ final class DatabaseContributor implements Contributor, DefinitionProvider
                 ContainerInterface $container,
             ): MigrationRunner
                 => new MigrationRunner($factory, $migrations, self::deferredConnection($container)),
+
+            FirstCompanySeeder::class => static fn(ContainerInterface $container): FirstCompanySeeder
+                => new FirstCompanySeeder(self::deferredConnection($container)),
         ];
     }
 
