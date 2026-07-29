@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Liminal\Tests\Integration\Fixtures\Entity;
 
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Liminal\Lib\Database\Scope\CompanyScoped;
 use Liminal\Lib\Database\Scope\CompanyScopedTrait;
@@ -17,10 +18,10 @@ class Widget implements CompanyScoped
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(type: 'integer')]
+    #[ORM\Column(type: Types::INTEGER)]
     private ?int $id = null;
 
-    #[ORM\Column(type: 'string', length: 128)]
+    #[ORM\Column(type: Types::STRING, length: 128)]
     private string $label;
 
     public function __construct(string $label)

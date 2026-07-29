@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Liminal\Lib\Database\Scope;
 
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use LogicException;
 
@@ -16,7 +17,7 @@ use LogicException;
  */
 trait CompanyScopedTrait
 {
-    #[ORM\Column(name: CompanyScoped::COLUMN, type: 'integer')]
+    #[ORM\Column(name: CompanyScoped::COLUMN, type: Types::INTEGER)]
     private ?int $companyId = null;
 
     public function getCompanyId(): ?int

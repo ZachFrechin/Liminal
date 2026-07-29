@@ -6,6 +6,7 @@ namespace Liminal\Lib\Database;
 
 use Doctrine\Common\EventManager;
 use Doctrine\DBAL\DriverManager;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
@@ -76,10 +77,8 @@ final readonly class EntityManagerFactory
             $filters->enable(CompanyScopeFilter::NAME);
         }
 
-        CompanyScopeFilter::apply(
-            $filters->getFilter(CompanyScopeFilter::NAME),
-            $this->context->accessibleIds(),
-        );
+        $filters->getFilter(CompanyScopeFilter::NAME)
+            ->setParameterList(CompanyScopeFilter::PARAMETER, $this->context->accessibleIds(), Types::INTEGER);
     }
 
     private function mappingChain(): MappingDriverChain

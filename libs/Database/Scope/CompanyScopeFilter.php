@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Liminal\Lib\Database\Scope;
 
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Query\Filter\SQLFilter;
 
@@ -28,13 +27,5 @@ final class CompanyScopeFilter extends SQLFilter
         }
 
         return sprintf('%s.%s IN (%s)', $targetTableAlias, CompanyScoped::COLUMN, $this->getParameterList(self::PARAMETER));
-    }
-
-    /**
-     * @param list<int> $companyIds
-     */
-    public static function apply(SQLFilter $filter, array $companyIds): void
-    {
-        $filter->setParameterList(self::PARAMETER, $companyIds, Types::INTEGER);
     }
 }
