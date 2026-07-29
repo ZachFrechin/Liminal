@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Liminal\Http\Middleware;
 
 use Liminal\Http\Exception\HttpException;
-use Psr\Http\Message\ResponseFactoryInterface;
+use Liminal\Http\JsonResponseFactory;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -22,7 +22,7 @@ use Throwable;
 final readonly class ErrorHandlerMiddleware implements MiddlewareInterface
 {
     public function __construct(
-        private ResponseFactoryInterface $responseFactory,
+        private JsonResponseFactory $json,
         private LoggerInterface $logger,
         private bool $debug = false,
     ) {}
@@ -49,18 +49,6 @@ final readonly class ErrorHandlerMiddleware implements MiddlewareInterface
      */
     private function render(int $status, string $message, array $headers = []): ResponseInterface
     {
-        $response = $this->responseFactory->createResponse($status)
-            ->withHeader('Content-Type', 'application/json; charset=utf-8');
-
-        foreach ($headers as $name => $value) {
-            $response = $response->withHeader($name, $value);
-        }
-
-        $response->getBody()->write(json_encode(
-            ['error' => ['status' => $status, 'message' => $message]],
-            JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
-        ));
-
-        return $response;
+        return $this->json->response($status, ['error' => ['status' => $status, 'message' => $message]], $headers);
     }
 }

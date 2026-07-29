@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Liminal\Http\Middleware;
 
-use Liminal\Http\Exception\EmptyPipelineException;
+use Liminal\Http\Exception\InvalidHandlerException;
 use Liminal\Http\RouteMatch;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -20,22 +20,21 @@ final readonly class DispatchMiddleware implements MiddlewareInterface
 {
     public function __construct(private ContainerInterface $container) {}
 
+    /**
+     * @throws InvalidHandlerException when no route match reached this point or the service is not a handler
+     */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $match = $request->getAttribute(RouterMiddleware::ATTRIBUTE);
 
         if (!$match instanceof RouteMatch) {
-            throw new EmptyPipelineException('DispatchMiddleware ran without a resolved route.');
+            throw InvalidHandlerException::missingRouteMatch();
         }
 
         $resolved = $this->container->get($match->handler);
 
         if (!$resolved instanceof RequestHandlerInterface) {
-            throw new EmptyPipelineException(sprintf(
-                'Handler "%s" must implement %s.',
-                $match->handler,
-                RequestHandlerInterface::class,
-            ));
+            throw InvalidHandlerException::notARequestHandler($match->handler);
         }
 
         return $resolved->handle($request);

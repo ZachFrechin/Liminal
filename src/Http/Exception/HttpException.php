@@ -6,7 +6,7 @@ namespace Liminal\Http\Exception;
 
 use RuntimeException;
 
-class HttpException extends RuntimeException
+final class HttpException extends RuntimeException
 {
     /**
      * @param array<string, string> $headers

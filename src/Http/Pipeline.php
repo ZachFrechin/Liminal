@@ -29,11 +29,12 @@ final readonly class Pipeline implements RequestHandlerInterface
         $this->middleware = is_array($middleware) ? array_values($middleware) : iterator_to_array($middleware, false);
     }
 
+    /**
+     * @throws EmptyPipelineException when no middleware produced a response
+     */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $middleware = $this->middleware[$this->index] ?? throw new EmptyPipelineException(
-            'The middleware pipeline was exhausted without producing a response.',
-        );
+        $middleware = $this->middleware[$this->index] ?? throw EmptyPipelineException::exhausted();
 
         return $middleware->process($request, new self($this->middleware, $this->index + 1));
     }
