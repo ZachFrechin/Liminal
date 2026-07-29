@@ -4,5 +4,11 @@ parameters:
         - src
         - libs
         - tests
+        - config
+        - public
+        - bin/liminal
     tmpDir: var/cache/phpstan
     treatPhpDocTypesAsCertain: false
+    doctrine:
+        # Scoped entities carry a nullable company id until prePersist stamps it.
+        allowNullablePropertyForRequiredField: true

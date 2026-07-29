@@ -27,7 +27,7 @@ final class ScopedPlanCalculatorTest extends TestCase
         $calculator = new ScopedPlanCalculator($this->inner(), self::ALPHA);
 
         $versions = array_map(
-            static fn (AvailableMigration $m): string => (string) $m->getVersion(),
+            static fn(AvailableMigration $m): string => (string) $m->getVersion(),
             $calculator->getMigrations()->getItems(),
         );
 
@@ -82,7 +82,7 @@ final class ScopedPlanCalculatorTest extends TestCase
         $calculator->method('getMigrations')->willReturn(new AvailableMigrationsList($migrations));
 
         $plans = array_map(
-            static fn (AvailableMigration $m): MigrationPlan
+            static fn(AvailableMigration $m): MigrationPlan
                 => new MigrationPlan($m->getVersion(), $m->getMigration(), Direction::UP),
             $migrations,
         );

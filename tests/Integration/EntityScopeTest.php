@@ -52,14 +52,20 @@ final class EntityScopeTest extends IntegrationTestCase
 
     public function testDqlOnlyReturnsTheCurrentCompanyRows(): void
     {
-        $labels = $this->em->createQuery(
+        $widgets = $this->em->createQuery(
             'SELECT w FROM ' . Widget::class . ' w ORDER BY w.label',
         )->getResult();
 
-        self::assertSame(['a-one', 'a-two'], array_map(
-            static fn (Widget $w): string => $w->getLabel(),
-            $labels,
-        ));
+        self::assertIsArray($widgets);
+
+        $labels = [];
+
+        foreach ($widgets as $widget) {
+            self::assertInstanceOf(Widget::class, $widget);
+            $labels[] = $widget->getLabel();
+        }
+
+        self::assertSame(['a-one', 'a-two'], $labels);
     }
 
     public function testTheFilterAppliesToEveryScopedEntityNotJustOne(): void
@@ -127,7 +133,7 @@ final class EntityScopeTest extends IntegrationTestCase
             ->executeQuery('SELECT id FROM test_widget WHERE label = ?', [$label])
             ->fetchOne();
 
-        self::assertNotFalse($id, sprintf('Fixture widget "%s" is missing.', $label));
+        self::assertIsNumeric($id, sprintf('Fixture widget "%s" is missing.', $label));
 
         return (int) $id;
     }

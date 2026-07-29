@@ -21,7 +21,7 @@ final class MenuRegistry extends AbstractRegistry
     {
         $items = $this->items;
 
-        usort($items, static fn (MenuItem $a, MenuItem $b): int => $a->priority <=> $b->priority);
+        usort($items, static fn(MenuItem $a, MenuItem $b): int => $a->priority <=> $b->priority);
 
         return $items;
     }

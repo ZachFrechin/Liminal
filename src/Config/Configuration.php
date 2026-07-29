@@ -15,9 +15,7 @@ use Liminal\Config\Exception\MissingConfigurationException;
 final readonly class Configuration
 {
     /** @param array<string, mixed> $values */
-    public function __construct(private array $values)
-    {
-    }
+    public function __construct(private array $values) {}
 
     public function has(string $key): bool
     {

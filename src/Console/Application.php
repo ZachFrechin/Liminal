@@ -16,9 +16,7 @@ use Symfony\Component\Console\Command\Command;
  */
 final class Application
 {
-    public function __construct(private readonly Kernel $kernel)
-    {
-    }
+    public function __construct(private readonly Kernel $kernel) {}
 
     public function run(): int
     {

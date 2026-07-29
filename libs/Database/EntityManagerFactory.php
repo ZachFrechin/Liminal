@@ -33,9 +33,7 @@ final readonly class EntityManagerFactory
     public function __construct(
         private EntityRegistry $entities,
         private EntityContext $context,
-        private bool $devMode = true,
-    ) {
-    }
+    ) {}
 
     public function create(string $dsn): EntityManagerInterface
     {

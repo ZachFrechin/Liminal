@@ -6,10 +6,11 @@ namespace Liminal\Http;
 
 use FastRoute\Dispatcher;
 use FastRoute\RouteCollector;
-use Liminal\Registry\RouteRegistry;
-use Psr\Http\Message\ServerRequestInterface;
 
 use function FastRoute\simpleDispatcher;
+
+use Liminal\Registry\RouteRegistry;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * Builds a FastRoute dispatcher from the RouteRegistry.
@@ -21,9 +22,7 @@ final class Router
 {
     private ?Dispatcher $dispatcher = null;
 
-    public function __construct(private readonly RouteRegistry $routes)
-    {
-    }
+    public function __construct(private readonly RouteRegistry $routes) {}
 
     public function match(ServerRequestInterface $request): RouteMatch
     {

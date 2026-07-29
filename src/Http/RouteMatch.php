@@ -15,8 +15,7 @@ final readonly class RouteMatch
         public string $handler = '',
         public array $arguments = [],
         public array $allowedMethods = [],
-    ) {
-    }
+    ) {}
 
     /**
      * @param array<string, string> $arguments

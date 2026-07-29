@@ -11,6 +11,5 @@ final readonly class SettingDefinition
         public SettingScope $scope,
         public string|int|float|bool|null $default = null,
         public string $label = '',
-    ) {
-    }
+    ) {}
 }

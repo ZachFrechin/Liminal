@@ -25,8 +25,7 @@ final readonly class ErrorHandlerMiddleware implements MiddlewareInterface
         private ResponseFactoryInterface $responseFactory,
         private LoggerInterface $logger,
         private bool $debug = false,
-    ) {
-    }
+    ) {}
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {

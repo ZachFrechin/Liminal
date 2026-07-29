@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Liminal;
 
+use function DI\autowire;
+
 use Liminal\Config\Configuration;
 use Liminal\Config\ConfigurationLoader;
 use Liminal\Container\ContainerFactory;
@@ -45,9 +47,7 @@ final class Kernel
 
     private ?Configuration $config = null;
 
-    public function __construct(private readonly string $rootDir)
-    {
-    }
+    public function __construct(private readonly string $rootDir) {}
 
     public function boot(): void
     {
@@ -55,14 +55,17 @@ final class Kernel
             return;
         }
 
-        $this->config = (new ConfigurationLoader($this->rootDir . '/config'))->load('app', 'database');
-        $this->registries = $this->createRegistries();
-        $this->container = (new ContainerFactory($this->config))->create($this->definitions($this->config));
+        $config = (new ConfigurationLoader($this->rootDir . '/config'))->load('app', 'database');
+        $registries = $this->createRegistries();
 
-        $this->contribute($this->registries, $this->config);
+        $this->config = $config;
+        $this->registries = $registries;
+        $this->container = (new ContainerFactory($config))->create($this->definitions($config));
+
+        $this->contribute($registries, $config);
 
         // Nothing may extend the system past this point.
-        $this->registries->freeze();
+        $registries->freeze();
     }
 
     public function handle(ServerRequestInterface $request): ResponseInterface
@@ -72,12 +75,33 @@ final class Kernel
         $container = $this->container();
 
         $pipeline = new Pipeline([
-            $container->get(ErrorHandlerMiddleware::class),
-            $container->get(RouterMiddleware::class),
-            $container->get(DispatchMiddleware::class),
+            $this->service($container, ErrorHandlerMiddleware::class),
+            $this->service($container, RouterMiddleware::class),
+            $this->service($container, DispatchMiddleware::class),
         ]);
 
         return $pipeline->handle($request);
+    }
+
+    /**
+     * Resolves a service while proving its type to the caller: the container's
+     * get() is typed mixed, and the kernel refuses to hand out unchecked values.
+     *
+     * @template T of object
+     *
+     * @param class-string<T> $class
+     *
+     * @return T
+     */
+    private function service(ContainerInterface $container, string $class): object
+    {
+        $service = $container->get($class);
+
+        if (!$service instanceof $class) {
+            throw new RuntimeException(sprintf('Container returned an unexpected type for "%s".', $class));
+        }
+
+        return $service;
     }
 
     public function container(): ContainerInterface
@@ -157,7 +181,7 @@ final class Kernel
             CommandRegistry::class => $registries->get(CommandRegistry::class),
             ResponseFactoryInterface::class => $psr17,
             \Psr\Http\Message\StreamFactoryInterface::class => $psr17,
-            Router::class => fn (): Router => new Router($registries->get(RouteRegistry::class)),
+            Router::class => fn(): Router => new Router($registries->get(RouteRegistry::class)),
             LoggerInterface::class => static function () use ($config): LoggerInterface {
                 $logDir = $config->string('app.log_dir');
 
@@ -167,12 +191,8 @@ final class Kernel
 
                 return new Logger('liminal', [new StreamHandler($logDir . '/liminal.log')]);
             },
-            ErrorHandlerMiddleware::class => static fn (ContainerInterface $c): ErrorHandlerMiddleware
-                => new ErrorHandlerMiddleware(
-                    $c->get(ResponseFactoryInterface::class),
-                    $c->get(LoggerInterface::class),
-                    $config->bool('app.debug'),
-                ),
+            ErrorHandlerMiddleware::class => autowire(ErrorHandlerMiddleware::class)
+                ->constructorParameter('debug', $config->bool('app.debug')),
         ];
     }
 }

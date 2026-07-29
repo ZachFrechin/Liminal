@@ -24,8 +24,7 @@ final readonly class ScopedPlanCalculator implements MigrationPlanCalculator
     public function __construct(
         private MigrationPlanCalculator $inner,
         private string $namespace,
-    ) {
-    }
+    ) {}
 
     /** @param Version[] $versions */
     public function getPlanForVersions(array $versions, string $direction): MigrationPlanList
@@ -42,7 +41,7 @@ final readonly class ScopedPlanCalculator implements MigrationPlanCalculator
     {
         $migrations = array_filter(
             $this->inner->getMigrations()->getItems(),
-            fn ($migration): bool => $this->owns((string) $migration->getVersion()),
+            fn($migration): bool => $this->owns((string) $migration->getVersion()),
         );
 
         return new AvailableMigrationsList(array_values($migrations));
@@ -52,7 +51,7 @@ final readonly class ScopedPlanCalculator implements MigrationPlanCalculator
     {
         $items = array_filter(
             $plans->getItems(),
-            fn ($plan): bool => $this->owns((string) $plan->getVersion()),
+            fn($plan): bool => $this->owns((string) $plan->getVersion()),
         );
 
         return new MigrationPlanList(array_values($items), $plans->getDirection());

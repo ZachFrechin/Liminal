@@ -6,9 +6,7 @@ namespace Liminal\Config;
 
 final readonly class ConfigurationLoader
 {
-    public function __construct(private string $configDir)
-    {
-    }
+    public function __construct(private string $configDir) {}
 
     public function load(string ...$files): Configuration
     {

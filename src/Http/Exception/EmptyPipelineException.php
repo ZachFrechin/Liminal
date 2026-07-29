@@ -6,6 +6,4 @@ namespace Liminal\Http\Exception;
 
 use RuntimeException;
 
-final class EmptyPipelineException extends RuntimeException
-{
-}
+final class EmptyPipelineException extends RuntimeException {}

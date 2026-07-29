@@ -21,9 +21,7 @@ final readonly class RouterMiddleware implements MiddlewareInterface
 {
     public const ATTRIBUTE = 'liminal.route';
 
-    public function __construct(private Router $router)
-    {
-    }
+    public function __construct(private Router $router) {}
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {

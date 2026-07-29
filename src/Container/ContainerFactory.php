@@ -17,9 +17,7 @@ use Psr\Container\ContainerInterface;
  */
 final readonly class ContainerFactory
 {
-    public function __construct(private Configuration $config)
-    {
-    }
+    public function __construct(private Configuration $config) {}
 
     /**
      * @param array<string, mixed> $definitions

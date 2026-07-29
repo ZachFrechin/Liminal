@@ -64,7 +64,7 @@ final class EntityContext
     }
 
     /**
-     * @param list<int> $accessibleIds
+     * @param array<int> $accessibleIds
      *
      * @return list<int>
      */

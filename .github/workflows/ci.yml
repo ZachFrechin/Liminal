@@ -20,9 +20,11 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
-          extensions: json, pdo, pdo_mysql, mbstring, intl, zip
+          extensions: json, pdo, pdo_mysql, mbstring
           coverage: none
       - uses: ramsey/composer-install@v3
+      - run: composer validate --strict
+      - run: composer audit
       - run: composer lint
 
   static:
@@ -33,7 +35,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
-          extensions: json, pdo, pdo_mysql, mbstring, intl, zip
+          extensions: json, pdo, pdo_mysql, mbstring
           coverage: none
       - uses: ramsey/composer-install@v3
       - run: composer stan
@@ -46,7 +48,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
-          extensions: json, pdo, pdo_mysql, mbstring, intl, zip
+          extensions: json, pdo, pdo_mysql, mbstring
           coverage: none
       - uses: ramsey/composer-install@v3
       - run: composer test:unit
@@ -77,7 +79,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
-          extensions: json, pdo, pdo_mysql, mbstring, intl, zip
+          extensions: json, pdo, pdo_mysql, mbstring
           coverage: none
       - uses: ramsey/composer-install@v3
       - run: composer test:integration

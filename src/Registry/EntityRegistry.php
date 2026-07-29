@@ -49,7 +49,7 @@ final class EntityRegistry extends AbstractRegistry
     {
         $namespaces = $this->namespaces;
 
-        uksort($namespaces, static fn (string $a, string $b): int => strlen($b) <=> strlen($a) ?: strcmp($a, $b));
+        uksort($namespaces, static fn(string $a, string $b): int => strlen($b) <=> strlen($a) ?: strcmp($a, $b));
 
         return $namespaces;
     }

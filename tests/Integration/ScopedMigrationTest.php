@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Liminal\Tests\Integration;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\Migrations\Metadata\AvailableMigration;
 use Doctrine\Migrations\MigratorConfiguration;
 use Doctrine\Migrations\Version\Version;
 use Liminal\Lib\Database\Migration\MigrationFactory;
@@ -84,9 +85,9 @@ final class ScopedMigrationTest extends IntegrationTestCase
             ->getMigrationPlanCalculator()
             ->getMigrations();
 
-        return array_map(
-            static fn ($migration): string => (string) $migration->getVersion(),
+        return array_values(array_map(
+            static fn(AvailableMigration $migration): string => (string) $migration->getVersion(),
             $migrations->getItems(),
-        );
+        ));
     }
 }

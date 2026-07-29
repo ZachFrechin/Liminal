@@ -15,8 +15,7 @@ final readonly class HealthController implements RequestHandlerInterface
     public function __construct(
         private ResponseFactoryInterface $responseFactory,
         private RouteRegistry $routes,
-    ) {
-    }
+    ) {}
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {

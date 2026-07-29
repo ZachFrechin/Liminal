@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Liminal\Lib\Database;
 
+use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Tools\DsnParser;
 
+/**
+ * @phpstan-import-type Params from DriverManager
+ */
 final class Dsn
 {
     /**
@@ -21,7 +25,7 @@ final class Dsn
     ];
 
     /**
-     * @return array<string, mixed>
+     * @return Params
      */
     public static function parse(string $dsn): array
     {

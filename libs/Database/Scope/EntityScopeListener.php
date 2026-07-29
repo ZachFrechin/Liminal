@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Liminal\Lib\Database\Scope;
 
-use Doctrine\ORM\Event\PrePersistEventArgs;
 use Doctrine\ORM\Event\PostLoadEventArgs;
+use Doctrine\ORM\Event\PrePersistEventArgs;
 use Liminal\Lib\Database\Scope\Exception\CrossEntityAccessException;
 
 /**
@@ -26,9 +26,7 @@ use Liminal\Lib\Database\Scope\Exception\CrossEntityAccessException;
  */
 final readonly class EntityScopeListener
 {
-    public function __construct(private EntityContext $context)
-    {
-    }
+    public function __construct(private EntityContext $context) {}
 
     public function prePersist(PrePersistEventArgs $args): void
     {

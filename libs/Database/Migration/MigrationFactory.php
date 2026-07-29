@@ -23,9 +23,7 @@ use Liminal\Registry\MigrationRegistry;
  */
 final readonly class MigrationFactory
 {
-    public function __construct(private MigrationRegistry $migrations)
-    {
-    }
+    public function __construct(private MigrationRegistry $migrations) {}
 
     public function create(Connection $connection, ?string $namespace = null): DependencyFactory
     {

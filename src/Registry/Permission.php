@@ -10,6 +10,5 @@ final readonly class Permission
         public string $code,
         public string $label,
         public string $group = 'general',
-    ) {
-    }
+    ) {}
 }

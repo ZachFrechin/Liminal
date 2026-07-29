@@ -14,8 +14,8 @@ final class DatabaseConnectionTest extends IntegrationTestCase
 {
     public function testTheConfiguredDatabaseAnswers(): void
     {
-        $result = $this->connection()->executeQuery('SELECT 1 AS one')->fetchAssociative();
+        $result = $this->connection()->executeQuery('SELECT 1 AS one')->fetchOne();
 
-        self::assertSame('1', (string) ($result['one'] ?? null));
+        self::assertEquals(1, $result);
     }
 }

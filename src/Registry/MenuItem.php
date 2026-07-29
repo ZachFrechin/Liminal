@@ -12,6 +12,5 @@ final readonly class MenuItem
         public ?string $permission = null,
         public ?string $parent = null,
         public int $priority = 100,
-    ) {
-    }
+    ) {}
 }
