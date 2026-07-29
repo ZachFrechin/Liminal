@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  PHP_VERSION: '8.4'
+
+jobs:
+  lint:
+    name: Coding standards
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: json, pdo, pdo_mysql, mbstring, intl, zip
+          coverage: none
+      - uses: ramsey/composer-install@v3
+      - run: composer lint
+
+  static:
+    name: Static analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: json, pdo, pdo_mysql, mbstring, intl, zip
+          coverage: none
+      - uses: ramsey/composer-install@v3
+      - run: composer stan
+
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: json, pdo, pdo_mysql, mbstring, intl, zip
+          coverage: none
+      - uses: ramsey/composer-install@v3
+      - run: composer test:unit
+
+  integration:
+    name: Integration tests (MariaDB)
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: liminal_test
+          MARIADB_USER: liminal
+          MARIADB_PASSWORD: liminal
+        ports:
+          - 3306:3306
+        # Without this the first run races the server start-up and fails.
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      LIMINAL_TEST_DSN: 'mysql://liminal:liminal@127.0.0.1:3306/liminal_test'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: json, pdo, pdo_mysql, mbstring, intl, zip
+          coverage: none
+      - uses: ramsey/composer-install@v3
+      - run: composer test:integration
