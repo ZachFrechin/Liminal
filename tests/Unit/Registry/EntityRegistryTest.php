@@ -67,4 +67,27 @@ final class EntityRegistryTest extends TestCase
 
         $registry->add('Liminal\Module\Stock', '/stock');
     }
+
+    public function testTheOrderingSurvivesFreezing(): void
+    {
+        $registry = new EntityRegistry();
+        $registry->add('Liminal\Module\Stock', '/stock');
+        $registry->add('Liminal\Module\StockAdvanced', '/stock-advanced');
+        $registry->freeze();
+
+        self::assertSame(
+            ['Liminal\Module\StockAdvanced', 'Liminal\Module\Stock'],
+            array_keys($registry->all()),
+        );
+    }
+
+    public function testFreezingTwiceIsHarmless(): void
+    {
+        $registry = new EntityRegistry();
+        $registry->add('Liminal\Module\Stock', '/stock');
+        $registry->freeze();
+        $registry->freeze();
+
+        self::assertTrue($registry->isFrozen());
+    }
 }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Liminal\Registry;
 
+use Liminal\Registry\Exception\DuplicateContributionException;
+
 /**
  * Maps a migration namespace to the directory holding its migration classes.
  *
@@ -18,12 +20,20 @@ final class MigrationRegistry extends AbstractRegistry
 
     /**
      * @param non-empty-string $namespace
+     *
+     * @throws DuplicateContributionException when the namespace is already mapped
      */
     public function add(string $namespace, string $directory): void
     {
         $this->assertMutable();
 
-        $this->namespaces[trim($namespace, '\\')] = $directory;
+        $namespace = trim($namespace, '\\');
+
+        if (isset($this->namespaces[$namespace])) {
+            throw DuplicateContributionException::for(static::class, $namespace);
+        }
+
+        $this->namespaces[$namespace] = $directory;
     }
 
     /** @return array<string, string> */

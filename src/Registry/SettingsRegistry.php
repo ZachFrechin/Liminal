@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Liminal\Registry;
 
+use Liminal\Registry\Exception\DuplicateContributionException;
 use Liminal\Registry\Exception\UndeclaredSettingException;
 
 /**
@@ -18,9 +19,16 @@ final class SettingsRegistry extends AbstractRegistry
     /** @var array<string, SettingDefinition> */
     private array $settings = [];
 
+    /**
+     * @throws DuplicateContributionException when the setting key is already declared
+     */
     public function add(SettingDefinition $definition): void
     {
         $this->assertMutable();
+
+        if (isset($this->settings[$definition->key])) {
+            throw DuplicateContributionException::for(static::class, $definition->key);
+        }
 
         $this->settings[$definition->key] = $definition;
     }

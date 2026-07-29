@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace Liminal\Registry;
 
 use Liminal\Registry\Contract\Registry;
+use Liminal\Registry\Exception\DuplicateContributionException;
+use Liminal\Registry\Exception\FrozenRegistryException;
 use Liminal\Registry\Exception\UnknownRegistryException;
 
 /**
  * Type-safe container of every registry in the system.
  *
- * Freezing cascades to every registered registry, so a single call at the end of
- * boot closes the whole extension surface at once.
+ * Freezing cascades to every registered registry, so a single call at the end
+ * of boot closes the whole extension surface at once — including this
+ * collection itself: no new registry may appear after freeze, or the "shape is
+ * fixed" guarantee would be a fiction.
  */
 final class RegistryCollection
 {
@@ -30,8 +34,20 @@ final class RegistryCollection
         }
     }
 
+    /**
+     * @throws FrozenRegistryException       when called after boot has completed
+     * @throws DuplicateContributionException when a registry of that class already exists
+     */
     public function register(Registry $registry): void
     {
+        if ($this->frozen) {
+            throw FrozenRegistryException::for(self::class);
+        }
+
+        if (isset($this->registries[$registry::class])) {
+            throw DuplicateContributionException::for(self::class, $registry::class);
+        }
+
         $this->registries[$registry::class] = $registry;
     }
 
@@ -61,6 +77,12 @@ final class RegistryCollection
     public function has(string $class): bool
     {
         return isset($this->registries[$class]);
+    }
+
+    /** @return list<Registry> */
+    public function all(): array
+    {
+        return array_values($this->registries);
     }
 
     /**
