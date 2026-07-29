@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace Liminal\Lib\Database;
 
-use Closure;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Liminal\Config\Configuration;
 use Liminal\Lib\Database\Console\MigrateCommand;
 use Liminal\Lib\Database\Console\MigrateStatusCommand;
-use Liminal\Lib\Database\Exception\DatabaseException;
 use Liminal\Lib\Database\Health\DatabaseHealth;
 use Liminal\Lib\Database\Install\FirstCompanySeeder;
 use Liminal\Lib\Database\Migration\MigrationFactory;
@@ -79,7 +77,7 @@ final class DatabaseContributor implements Contributor, DefinitionProvider
                 => $entityManager->getConnection(),
 
             DatabaseHealth::class => static fn(ContainerInterface $container): DatabaseHealth
-                => new DatabaseHealth($config, self::deferredConnection($container)),
+                => new DatabaseHealth($config, DeferredConnection::resolver($container)),
 
             // Deferred for the same reason as DatabaseHealth: the console
             // resolves every command eagerly, and commands inject this runner.
@@ -88,26 +86,11 @@ final class DatabaseContributor implements Contributor, DefinitionProvider
                 MigrationRegistry $migrations,
                 ContainerInterface $container,
             ): MigrationRunner
-                => new MigrationRunner($factory, $migrations, self::deferredConnection($container)),
+                => new MigrationRunner($factory, $migrations, DeferredConnection::resolver($container)),
 
             FirstCompanySeeder::class => static fn(ContainerInterface $container): FirstCompanySeeder
-                => new FirstCompanySeeder(self::deferredConnection($container)),
+                => new FirstCompanySeeder(DeferredConnection::resolver($container)),
         ];
     }
 
-    /**
-     * @return Closure(): Connection
-     */
-    private static function deferredConnection(ContainerInterface $container): Closure
-    {
-        return static function () use ($container): Connection {
-            $connection = $container->get(Connection::class);
-
-            if (!$connection instanceof Connection) {
-                throw DatabaseException::unexpectedConnectionType();
-            }
-
-            return $connection;
-        };
-    }
 }
