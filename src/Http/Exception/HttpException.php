@@ -4,9 +4,15 @@ declare(strict_types=1);
 
 namespace Liminal\Http\Exception;
 
+use Liminal\Exception\LiminalException;
 use RuntimeException;
 
-final class HttpException extends RuntimeException
+/**
+ * A request-level error carrying its HTTP identity: the ErrorHandlerMiddleware
+ * renders statusCode(), message and headers() verbatim, so messages here must
+ * be safe to show a client. Named constructors cover the routing outcomes.
+ */
+final class HttpException extends RuntimeException implements LiminalException
 {
     /**
      * @param array<string, string> $headers

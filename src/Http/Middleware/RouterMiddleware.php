@@ -23,6 +23,9 @@ final readonly class RouterMiddleware implements MiddlewareInterface
 
     public function __construct(private Router $router) {}
 
+    /**
+     * @throws HttpException as notFound or methodNotAllowed, rendered by the error handler
+     */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $match = $this->router->match($request);

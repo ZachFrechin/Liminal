@@ -4,8 +4,18 @@ declare(strict_types=1);
 
 namespace Liminal\Support;
 
+/**
+ * Typed reads over environment variables — the only place getenv() is called.
+ *
+ * Absent or malformed values fall back to the given default rather than
+ * throwing: environment variables are optional overrides by definition, and
+ * the required/optional decision belongs to the config files that consume
+ * them.
+ */
 final class Env
 {
+    private function __construct() {}
+
     public static function string(string $key, string $default): string
     {
         $value = getenv($key);

@@ -13,11 +13,11 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Mapping\Driver\AttributeDriver;
 use Doctrine\Persistence\Mapping\Driver\MappingDriverChain;
+use Liminal\Lib\Database\Exception\DatabaseException;
 use Liminal\Lib\Database\Scope\CompanyContext;
 use Liminal\Lib\Database\Scope\CompanyScopeFilter;
 use Liminal\Lib\Database\Scope\CompanyScopeListener;
 use Liminal\Registry\EntityRegistry;
-use RuntimeException;
 
 /**
  * Assembles the EntityManager from what the modules contributed.
@@ -36,6 +36,9 @@ final readonly class EntityManagerFactory
         private CompanyContext $context,
     ) {}
 
+    /**
+     * @throws DatabaseException when no entity namespace was contributed
+     */
     public function create(string $dsn): EntityManagerInterface
     {
         $config = new Configuration();
@@ -87,7 +90,7 @@ final readonly class EntityManagerFactory
         $namespaces = $this->entities->all();
 
         if ($namespaces === []) {
-            throw new RuntimeException('No entity namespace was contributed; the EntityManager would have no mapping.');
+            throw DatabaseException::noEntityNamespaces();
         }
 
         foreach ($namespaces as $namespace => $paths) {

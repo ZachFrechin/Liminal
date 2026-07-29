@@ -8,6 +8,7 @@ use Closure;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Liminal\Config\Configuration;
+use Liminal\Lib\Database\Exception\DatabaseException;
 use Liminal\Lib\Database\Health\DatabaseHealth;
 use Liminal\Lib\Database\Scope\CompanyContext;
 use Liminal\Registry\Contract\Contributor;
@@ -16,7 +17,6 @@ use Liminal\Registry\EntityRegistry;
 use Liminal\Registry\MigrationRegistry;
 use Liminal\Registry\RegistryCollection;
 use Psr\Container\ContainerInterface;
-use RuntimeException;
 
 /**
  * lib/database contributes exactly like any module would: it registers its own
@@ -82,7 +82,7 @@ final class DatabaseContributor implements Contributor, DefinitionProvider
             $connection = $container->get(Connection::class);
 
             if (!$connection instanceof Connection) {
-                throw new RuntimeException('Container returned an unexpected type for the database connection.');
+                throw DatabaseException::unexpectedConnectionType();
             }
 
             return $connection;

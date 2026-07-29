@@ -10,6 +10,7 @@ use Liminal\Registry\RouteRegistry;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\ResponseInterface;
 
 /**
  * End-to-end proof of the phase 0 contract: a request is served by a route that a
@@ -52,7 +53,7 @@ final class KernelTest extends TestCase
         $kernel->registries()->get(RouteRegistry::class)->get('/late', 'Handler');
     }
 
-    private function handle(string $method, string $path): \Psr\Http\Message\ResponseInterface
+    private function handle(string $method, string $path): ResponseInterface
     {
         return (new Kernel(self::ROOT))->handle(
             (new Psr17Factory())->createServerRequest($method, $path),

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Liminal\Lib\Database\Exception;
 
+use Liminal\Exception\LiminalException;
 use RuntimeException;
 
 /**
@@ -15,12 +16,12 @@ use RuntimeException;
  * exfiltration. Moving rows between companies belongs to a future audited
  * administrative service working at the DBAL level, not to the ORM.
  */
-final class CompanyReassignmentException extends RuntimeException
+final class CompanyReassignmentException extends RuntimeException implements LiminalException
 {
     public static function for(string $class, mixed $from, mixed $to): self
     {
         return new self(sprintf(
-            'Refusing to flush %s: company_id is write-once and may not change from %s to %s.',
+            'Refusing to flush "%s": company_id is write-once and may not change from %s to %s.',
             $class,
             self::describe($from),
             self::describe($to),

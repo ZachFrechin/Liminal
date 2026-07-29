@@ -22,6 +22,9 @@ final readonly class Configuration
         return $this->find($key) !== null;
     }
 
+    /**
+     * @throws MissingConfigurationException when the key is absent or mistyped and no default was given
+     */
     public function string(string $key, ?string $default = null): string
     {
         $value = $this->find($key);
@@ -37,6 +40,9 @@ final readonly class Configuration
         return $default ?? throw MissingConfigurationException::for($key, 'string');
     }
 
+    /**
+     * @throws MissingConfigurationException when the key is absent or mistyped and no default was given
+     */
     public function bool(string $key, ?bool $default = null): bool
     {
         $value = $this->find($key);
@@ -48,6 +54,9 @@ final readonly class Configuration
         return $default ?? throw MissingConfigurationException::for($key, 'bool');
     }
 
+    /**
+     * @throws MissingConfigurationException when the key is absent or mistyped and no default was given
+     */
     public function int(string $key, ?int $default = null): int
     {
         $value = $this->find($key);

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Liminal\Tests\Unit;
 
+use Liminal\Exception\KernelException;
 use Liminal\Kernel;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use RuntimeException;
 
 /**
  * The definition-collection half of the boot contract: libs are plain-new
@@ -30,7 +30,7 @@ final class KernelBootTest extends TestCase
     {
         $kernel = new Kernel(self::FIXTURES . '/needs-arguments');
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(KernelException::class);
         $this->expectExceptionMessageMatches('/constructible without arguments/');
 
         $kernel->boot();
@@ -40,7 +40,7 @@ final class KernelBootTest extends TestCase
     {
         $kernel = new Kernel(self::FIXTURES . '/reserved');
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(KernelException::class);
         $this->expectExceptionMessageMatches('/may not redefine kernel service/');
 
         $kernel->boot();
@@ -50,7 +50,7 @@ final class KernelBootTest extends TestCase
     {
         $kernel = new Kernel(self::FIXTURES . '/missing');
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(KernelException::class);
         $this->expectExceptionMessageMatches('/does not exist/');
 
         $kernel->boot();

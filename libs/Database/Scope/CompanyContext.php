@@ -24,6 +24,9 @@ final class CompanyContext
     /** @var list<callable(self): void> */
     private array $listeners = [];
 
+    /**
+     * @throws InvalidArgumentException when the company id is not positive
+     */
     public function __construct(private int $currentId, int ...$accessibleIds)
     {
         $this->accessibleIds = $this->normalise($currentId, $accessibleIds);
@@ -53,6 +56,9 @@ final class CompanyContext
         $this->listeners[] = $listener;
     }
 
+    /**
+     * @throws InvalidArgumentException when the company id is not positive
+     */
     public function switchTo(int $currentId, int ...$accessibleIds): void
     {
         $this->currentId = $currentId;

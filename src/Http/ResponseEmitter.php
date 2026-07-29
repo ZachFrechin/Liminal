@@ -6,6 +6,11 @@ namespace Liminal\Http;
 
 use Psr\Http\Message\ResponseInterface;
 
+/**
+ * Streams a PSR-7 response to the SAPI: status line, headers — preserving
+ * multiple values per name — then the body in fixed-size chunks so large
+ * payloads never materialise in memory.
+ */
 final class ResponseEmitter
 {
     public function emit(ResponseInterface $response): void

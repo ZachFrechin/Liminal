@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace Liminal\Http;
 
+/**
+ * Outcome of routing one request: a status plus whatever that status carries —
+ * handler and arguments when found, the allowed methods on a 405, nothing on
+ * a 404. Built through named constructors so impossible combinations cannot
+ * exist.
+ */
 final readonly class RouteMatch
 {
     /**

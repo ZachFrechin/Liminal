@@ -8,6 +8,9 @@ use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Tools\DsnParser;
 
 /**
+ * Turns the single LIMINAL_DSN url into DBAL connection parameters — the one
+ * place URL schemes are mapped onto driver names.
+ *
  * @phpstan-import-type Params from DriverManager
  */
 final class Dsn
@@ -23,6 +26,8 @@ final class Dsn
         'postgresql' => 'pdo_pgsql',
         'sqlite' => 'pdo_sqlite',
     ];
+
+    private function __construct() {}
 
     /**
      * @return Params

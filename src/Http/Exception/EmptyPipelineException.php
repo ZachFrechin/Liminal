@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Liminal\Http\Exception;
 
+use Liminal\Exception\LiminalException;
 use LogicException;
 
 /**
@@ -11,7 +12,7 @@ use LogicException;
  * pipeline was assembled without a terminal middleware, which is a
  * construction mistake, not a request condition.
  */
-final class EmptyPipelineException extends LogicException
+final class EmptyPipelineException extends LogicException implements LiminalException
 {
     public static function exhausted(): self
     {

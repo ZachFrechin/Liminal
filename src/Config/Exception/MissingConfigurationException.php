@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Liminal\Config\Exception;
 
+use Liminal\Exception\LiminalException;
 use RuntimeException;
 
 /**
@@ -11,7 +12,7 @@ use RuntimeException;
  * shape. Raised eagerly — at load or first typed read — so a deployment
  * mistake surfaces as one clear boot failure instead of a distant null.
  */
-final class MissingConfigurationException extends RuntimeException
+final class MissingConfigurationException extends RuntimeException implements LiminalException
 {
     public static function for(string $key, string $type): self
     {

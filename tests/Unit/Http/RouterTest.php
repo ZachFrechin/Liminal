@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Liminal\Tests\Unit\Http;
 
+use Liminal\Http\RouteMatch;
 use Liminal\Http\RouteMatchStatus;
 use Liminal\Http\Router;
+use Liminal\Registry\Route;
 use Liminal\Registry\RouteRegistry;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -48,9 +50,9 @@ final class RouterTest extends TestCase
         string $registeredPath,
         string $requestMethod,
         string $requestPath,
-    ): \Liminal\Http\RouteMatch {
+    ): RouteMatch {
         $registry = new RouteRegistry();
-        $registry->add(new \Liminal\Registry\Route($registeredMethod, $registeredPath, 'Handler'));
+        $registry->add(new Route($registeredMethod, $registeredPath, 'Handler'));
 
         return (new Router($registry))->match(
             (new Psr17Factory())->createServerRequest($requestMethod, $requestPath),

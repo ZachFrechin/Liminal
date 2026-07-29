@@ -8,7 +8,9 @@ use function DI\autowire;
 
 use Liminal\Config\Configuration;
 use Liminal\Config\ConfigurationLoader;
+use Liminal\Config\Exception\MissingConfigurationException;
 use Liminal\Container\ContainerFactory;
+use Liminal\Exception\KernelException;
 use Liminal\Http\Middleware\DispatchMiddleware;
 use Liminal\Http\Middleware\ErrorHandlerMiddleware;
 use Liminal\Http\Middleware\RouterMiddleware;
@@ -34,7 +36,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Log\LoggerInterface;
 use ReflectionClass;
-use RuntimeException;
 
 /**
  * The kernel is neither a lib nor a module: it only assembles them.
@@ -63,6 +64,10 @@ final class Kernel
 
     public function __construct(private readonly string $rootDir) {}
 
+    /**
+     * @throws MissingConfigurationException when a config file or required key is absent
+     * @throws KernelException when a lib in app.libs cannot be assembled
+     */
     public function boot(): void
     {
         if ($this->container !== null) {
@@ -98,21 +103,21 @@ final class Kernel
     {
         $this->boot();
 
-        return $this->container ?? throw new RuntimeException('Kernel container is unavailable after boot.');
+        return $this->container ?? throw KernelException::unavailable('container');
     }
 
     public function registries(): RegistryCollection
     {
         $this->boot();
 
-        return $this->registries ?? throw new RuntimeException('Kernel registries are unavailable after boot.');
+        return $this->registries ?? throw KernelException::unavailable('registries');
     }
 
     public function config(): Configuration
     {
         $this->boot();
 
-        return $this->config ?? throw new RuntimeException('Kernel configuration is unavailable after boot.');
+        return $this->config ?? throw KernelException::unavailable('configuration');
     }
 
     /**
@@ -149,7 +154,7 @@ final class Kernel
         $service = $container->get($class);
 
         if (!$service instanceof $class) {
-            throw new RuntimeException(sprintf('Container returned an unexpected type for "%s".', $class));
+            throw KernelException::unexpectedServiceType($class);
         }
 
         return $service;
@@ -180,22 +185,19 @@ final class Kernel
 
         foreach ($config->stringList('app.libs') as $class) {
             if (!class_exists($class)) {
-                throw new RuntimeException(sprintf('Lib "%s" does not exist.', $class));
+                throw KernelException::libMissing($class);
             }
 
             $constructor = new ReflectionClass($class)->getConstructor();
 
             if ($constructor !== null && $constructor->getNumberOfRequiredParameters() > 0) {
-                throw new RuntimeException(sprintf(
-                    'Lib "%s" must be constructible without arguments: contributors are instantiated before the container exists. Move dependencies into definitions() closures or contribute().',
-                    $class,
-                ));
+                throw KernelException::libNeedsArguments($class);
             }
 
             $contributor = new $class();
 
             if (!$contributor instanceof Contributor) {
-                throw new RuntimeException(sprintf('Lib "%s" must implement %s.', $class, Contributor::class));
+                throw KernelException::libNotAContributor($class);
             }
 
             $contributors[] = $contributor;
@@ -235,11 +237,7 @@ final class Kernel
 
             foreach ($contributor->definitions($config) as $id => $definition) {
                 if (in_array($id, $reserved, true)) {
-                    throw new RuntimeException(sprintf(
-                        'Lib "%s" may not redefine kernel service "%s".',
-                        $contributor::class,
-                        $id,
-                    ));
+                    throw KernelException::reservedService($contributor::class, $id);
                 }
 
                 $definitions[$id] = $definition;
@@ -266,7 +264,7 @@ final class Kernel
                 $logDir = $config->string('app.log_dir');
 
                 if (!is_dir($logDir) && !mkdir($logDir, 0o775, true) && !is_dir($logDir)) {
-                    throw new RuntimeException(sprintf('Unable to create log directory "%s".', $logDir));
+                    throw KernelException::logDirectory($logDir);
                 }
 
                 return new Logger('liminal', [new StreamHandler($logDir . '/liminal.log')]);

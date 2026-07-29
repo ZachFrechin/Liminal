@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Liminal\Registry\Exception;
 
+use Liminal\Exception\LiminalException;
 use LogicException;
 
 /**
@@ -14,7 +15,7 @@ use LogicException;
  * are refused while the registries are still filling. Deliberate overriding
  * becomes an explicit API when modules arrive in phase 2.
  */
-final class DuplicateContributionException extends LogicException
+final class DuplicateContributionException extends LogicException implements LiminalException
 {
     public static function for(string $registry, string $key): self
     {
