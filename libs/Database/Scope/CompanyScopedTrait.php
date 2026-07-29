@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Liminal\Lib\Database\Scope;
 
 use Doctrine\ORM\Mapping as ORM;
+use LogicException;
 
 /**
  * Supplies the company_id column and accessors required by CompanyScoped.
@@ -15,7 +16,7 @@ use Doctrine\ORM\Mapping as ORM;
  */
 trait CompanyScopedTrait
 {
-    #[ORM\Column(name: 'company_id', type: 'integer')]
+    #[ORM\Column(name: CompanyScoped::COLUMN, type: 'integer')]
     private ?int $companyId = null;
 
     public function getCompanyId(): ?int
@@ -23,8 +24,23 @@ trait CompanyScopedTrait
         return $this->companyId;
     }
 
-    public function setCompanyId(int $companyId): void
+    /**
+     * Creation-time targeting of another accessible company; the persist-time
+     * listener still validates the target. Deliberately absent from the
+     * CompanyScoped interface so the contract stays read-only.
+     *
+     * @throws LogicException when a different company id was already assigned
+     */
+    public function assignCompanyId(int $companyId): void
     {
+        if ($this->companyId !== null && $this->companyId !== $companyId) {
+            throw new LogicException(sprintf(
+                'company_id is write-once (is %d, refusing %d): moving rows between companies is not an ORM operation.',
+                $this->companyId,
+                $companyId,
+            ));
+        }
+
         $this->companyId = $companyId;
     }
 }

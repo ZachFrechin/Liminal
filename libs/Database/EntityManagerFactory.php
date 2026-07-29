@@ -48,7 +48,7 @@ final readonly class EntityManagerFactory
 
         $listener = new CompanyScopeListener($this->context);
         $events = new EventManager();
-        $events->addEventListener([Events::prePersist, Events::postLoad], $listener);
+        $events->addEventListener([Events::prePersist, Events::postLoad, Events::onFlush], $listener);
 
         $entityManager = new EntityManager(
             DriverManager::getConnection(Dsn::parse($dsn)),

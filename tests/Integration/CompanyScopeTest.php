@@ -7,13 +7,17 @@ namespace Liminal\Tests\Integration;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
 use Liminal\Lib\Database\EntityManagerFactory;
+use Liminal\Lib\Database\Exception\CompanyReassignmentException;
 use Liminal\Lib\Database\Exception\CrossCompanyAccessException;
 use Liminal\Lib\Database\Scope\CompanyContext;
 use Liminal\Registry\EntityRegistry;
 use Liminal\Support\Env;
 use Liminal\Tests\Integration\Fixtures\Entity\Gadget;
 use Liminal\Tests\Integration\Fixtures\Entity\Widget;
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversNothing;
+use ReflectionProperty;
+use Throwable;
 
 /**
  * The multi-company non-regression set. Two entities, two companies — this is the
@@ -112,7 +116,7 @@ final class CompanyScopeTest extends IntegrationTestCase
     public function testPersistingIntoAnUnreachableCompanyIsRefused(): void
     {
         $widget = new Widget('smuggled');
-        $widget->setCompanyId(self::COMPANY_B);
+        $widget->assignCompanyId(self::COMPANY_B);
 
         $this->expectException(CrossCompanyAccessException::class);
 
@@ -120,11 +124,109 @@ final class CompanyScopeTest extends IntegrationTestCase
         $this->em->flush();
     }
 
+    public function testCreatingIntoAnotherAccessibleCompanySucceeds(): void
+    {
+        $this->context->switchTo(self::COMPANY_A, self::COMPANY_A, self::COMPANY_B);
+
+        $widget = new Widget('cross-created');
+        $widget->assignCompanyId(self::COMPANY_B);
+
+        $this->em->persist($widget);
+        $this->em->flush();
+
+        self::assertEquals(
+            self::COMPANY_B,
+            $this->em->getConnection()->fetchOne(
+                'SELECT company_id FROM test_widget WHERE label = ?',
+                ['cross-created'],
+            ),
+        );
+    }
+
     public function testAnActorWithTwoCompaniesSeesBoth(): void
     {
         $this->context->switchTo(self::COMPANY_A, self::COMPANY_A, self::COMPANY_B);
 
         self::assertCount(3, $this->em->getRepository(Widget::class)->findAll());
+    }
+
+    public function testAssignCompanyIdIsWriteOnce(): void
+    {
+        $widget = new Widget('write-once');
+        $widget->assignCompanyId(self::COMPANY_A);
+        $widget->assignCompanyId(self::COMPANY_A); // Same id is idempotent.
+
+        $this->expectException(LogicException::class);
+
+        $widget->assignCompanyId(self::COMPANY_B);
+    }
+
+    /**
+     * The exploit this suite exists to keep closed: load a row, force its
+     * company id to another company, flush. The interface has no setter any
+     * more, so reflection stands in for whatever bypass an attacker finds.
+     */
+    public function testFlushingAReassignedEntityIsRefusedBeforeAnySqlRuns(): void
+    {
+        $ownId = $this->idOfWidgetLabelled('a-one');
+        $widget = $this->em->find(Widget::class, $ownId);
+
+        self::assertInstanceOf(Widget::class, $widget);
+
+        new ReflectionProperty(Widget::class, 'companyId')->setValue($widget, self::COMPANY_B);
+
+        $thrown = null;
+
+        try {
+            $this->em->flush();
+        } catch (Throwable $exception) {
+            $thrown = $exception;
+        }
+
+        self::assertInstanceOf(
+            CompanyReassignmentException::class,
+            $thrown,
+            'Cross-company reassignment must not reach the database.',
+        );
+
+        // onFlush fires before the transaction opens: nothing was written and
+        // the EntityManager survived.
+        self::assertTrue($this->em->isOpen());
+        self::assertEquals(
+            self::COMPANY_A,
+            $this->em->getConnection()->fetchOne('SELECT company_id FROM test_widget WHERE id = ?', [$ownId]),
+        );
+    }
+
+    public function testReassignmentIsRefusedEvenTowardsAnAccessibleCompany(): void
+    {
+        $this->context->switchTo(self::COMPANY_A, self::COMPANY_A, self::COMPANY_B);
+
+        $widget = $this->em->find(Widget::class, $this->idOfWidgetLabelled('a-one'));
+
+        self::assertInstanceOf(Widget::class, $widget);
+
+        new ReflectionProperty(Widget::class, 'companyId')->setValue($widget, self::COMPANY_B);
+
+        $this->expectException(CompanyReassignmentException::class);
+
+        $this->em->flush();
+    }
+
+    public function testAnOrdinaryUpdateStillFlushes(): void
+    {
+        $ownId = $this->idOfWidgetLabelled('a-one');
+        $widget = $this->em->find(Widget::class, $ownId);
+
+        self::assertInstanceOf(Widget::class, $widget);
+
+        $widget->relabel('a-one-renamed');
+        $this->em->flush();
+
+        self::assertEquals(
+            'a-one-renamed',
+            $this->em->getConnection()->fetchOne('SELECT label FROM test_widget WHERE id = ?', [$ownId]),
+        );
     }
 
     private function idOfWidgetLabelled(string $label): int

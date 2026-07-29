@@ -37,4 +37,9 @@ class Widget implements CompanyScoped
     {
         return $this->label;
     }
+
+    public function relabel(string $label): void
+    {
+        $this->label = $label;
+    }
 }

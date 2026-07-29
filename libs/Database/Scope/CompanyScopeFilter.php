@@ -27,7 +27,7 @@ final class CompanyScopeFilter extends SQLFilter
             return '';
         }
 
-        return sprintf('%s.company_id IN (%s)', $targetTableAlias, $this->getParameterList(self::PARAMETER));
+        return sprintf('%s.%s IN (%s)', $targetTableAlias, CompanyScoped::COLUMN, $this->getParameterList(self::PARAMETER));
     }
 
     /**
