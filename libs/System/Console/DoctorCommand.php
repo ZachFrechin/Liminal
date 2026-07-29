@@ -8,6 +8,7 @@ use Liminal\Lib\Database\Health\DatabaseHealth;
 use Liminal\Lib\Database\Health\DatabaseStatusKind;
 use Liminal\Registry\EntityRegistry;
 use Liminal\Registry\MigrationRegistry;
+use Liminal\Registry\ModuleRegistry;
 use Liminal\Registry\RegistryCollection;
 use Liminal\Registry\RouteRegistry;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -21,10 +22,10 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  * PHP extensions the core needs, the state of the registries after boot, and
  * the database (phase 1).
  *
- * The DatabaseHealth import is the one sanctioned lib-to-lib edge (System →
- * Database): app.libs loads Database first, and System is the diagnostics
- * surface. A kernel-level health-check registry can replace it the day a
- * third lib wants its own doctor line.
+ * The DatabaseHealth import is a sanctioned lib-to-lib edge (System →
+ * Database, like Module → Database): app.libs loads Database first, and
+ * System is the diagnostics surface. A kernel-level health-check registry can
+ * replace it the day a third lib wants its own doctor line.
  */
 #[AsCommand(name: 'doctor', description: 'Check the environment and registry coherence')]
 final class DoctorCommand extends Command
@@ -60,6 +61,7 @@ final class DoctorCommand extends Command
         $io->text(sprintf('  routes:               %d', count($this->registries->get(RouteRegistry::class)->all())));
         $io->text(sprintf('  entity namespaces:    %d', count($this->registries->get(EntityRegistry::class)->all())));
         $io->text(sprintf('  migration namespaces: %d', count($this->registries->get(MigrationRegistry::class)->all())));
+        $io->text(sprintf('  modules declared:     %d', count($this->registries->get(ModuleRegistry::class)->all())));
         $io->text(sprintf('  frozen:               %s', $this->registries->isFrozen() ? 'yes' : 'no'));
 
         if (!$this->registries->isFrozen()) {

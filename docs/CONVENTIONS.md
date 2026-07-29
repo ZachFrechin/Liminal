@@ -91,6 +91,14 @@ docs. No exceptions.
   handler), 0 (router), 1000 (dispatcher). Suggested bands: −999…−1
   pre-routing (sessions, CORS), 1…999 post-routing (auth, CSRF, company
   switch). Boot refuses anything sorted outside the anchors, by name.
+- ModuleRegistry is kernel-owned and constructor-filled — the one registry
+  with no add(): a manifest arriving during contribute() would be one whose
+  definitions() never reached the already-built container. Modules never
+  write it; the kernel does, from app.modules.
+- Modules declare their shape (routes, entities, migrations) at every boot
+  regardless of installed/enabled state: shape is global, state is per
+  company, and boot never consults the database. Route names carry the
+  module-name prefix ("<module>.…") — phase 3's gating key.
 
 ## Console commands
 
@@ -99,7 +107,8 @@ docs. No exceptions.
   `EntityManagerInterface` or anything that resolves them (e.g.
   `SettingsService`) — a DSN-less checkout must still run `doctor`. Inject
   the deferred-connection services instead (`MigrationRunner`,
-  `DatabaseHealth`, `FirstCompanySeeder` are the precedents).
+  `DatabaseHealth`, `FirstCompanySeeder`, `ModuleManager` are the
+  precedents, all built on `DeferredConnection::resolver()`).
 - Diagnostics never mutate what they inspect (`doctor`, `migrate:status`);
   `install` is the one command allowed to write.
 

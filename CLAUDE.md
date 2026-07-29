@@ -23,7 +23,13 @@ php bin/liminal doctor          # environment + registries + database checks
 php bin/liminal install         # migrations + first company (needs LIMINAL_DSN)
 php bin/liminal migrate         # pending migrations, --module=NS to scope
 php bin/liminal migrate:status  # read-only, never creates the metadata table
+php bin/liminal module:install <name>            # module migrations + record
+php bin/liminal module:enable <name> <company>   # per-company state (module:disable, module:list)
 ```
+
+Modules: implement `Module` (name/version/migrationNamespace), declare in
+app.modules. Shape always boots; installed/enabled is database state that
+boot never consults — gating arrives with phase 3.
 
 Every commit: `type(scope): imperative subject`, body explains why,
 `composer check` green. Integration tests skip without a reachable DSN — run

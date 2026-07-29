@@ -57,6 +57,15 @@ The HTTP pipeline itself is a registry: middleware is contributed to the
 anchors — error handler, router, dispatcher. Anything sorted outside the error
 handler or behind the dispatcher fails the boot by name.
 
+A business module implements `Module` (a `Contributor` plus its identity:
+name, version, migration namespace) and is declared in `app.modules`. Its
+*shape* — routes, entities, migrations — always boots: declared means "part
+of this installation". Its *state* lives in the database: `module:install`
+runs the module's own migrations and records it, `module:enable` /
+`module:disable` toggle it per company, `module:list` shows everything.
+Whether a company may actually reach a module's pages is enforced per request
+from phase 3 on — boot never consults installed/enabled state, by design.
+
 ## Hooks and triggers
 
 A strict distinction, never to be allowed to drift (implementation in phase 2):
@@ -123,7 +132,8 @@ tests/{Unit,Integration}
 | 0 | Kernel, registries, PSR-15 pipeline, CLI, CI | ✅ |
 | 1 | `lib/database`: Doctrine, multi-company scoping, per-module migrations, DI wiring, doctor | ✅ |
 | 2a | Kernel plumbing: contributable middleware pipeline, named-route URLs, `migrate`/`install`, settings values | ✅ |
-| 2b → 8 | `lib/module`, `lib/security`, `lib/rendering`, `lib/api`, builder, modules | upcoming |
+| 2b | `lib/module`: Module contract, `app.modules`, install/enable lifecycle per company | ✅ |
+| 3 → 8 | `lib/security`, `lib/rendering`, `lib/api`, builder, business modules | upcoming |
 
 ## Multi-company
 
