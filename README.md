@@ -96,5 +96,21 @@ tests/{Unit,Integration}
 | Phase | Contenu | État |
 |---|---|---|
 | 0 | Kernel, registres, pipeline PSR-15, CLI, CI | ✅ |
-| 1 | `lib/database` : Doctrine, scoping multi-sociétés, migrations par module | en cours |
+| 1 | `lib/database` : Doctrine, scoping multi-sociétés, migrations par module | ✅ |
 | 2 → 8 | `lib/module`, `lib/security`, `lib/rendering`, `lib/api`, builder, modules | à venir |
+
+## Multi-sociétés
+
+Une entité qui implémente `EntityScoped` est automatiquement cloisonnée par société :
+`EntityScopeFilter` ajoute `entity_id IN (...)` à chaque requête, et `prePersist` estampille
+les nouvelles lignes.
+
+**Le filtre SQL n'est pas une frontière de sécurité.** Doctrine ne l'applique qu'à la
+génération du SQL : `find()` court-circuite sur l'identity map avant d'atteindre le
+persister, donc avant le filtre. Deux mécanismes complémentaires ferment ce trou —
+`EntityContext::switchTo()` vide l'EntityManager (rien d'hydraté sous l'ancienne portée ne
+survit), et un garde `postLoad` refuse toute ligne étrangère même filtre désactivé. La
+phase 3 ajoutera les voters par-dessus. Aucun des trois n'est suffisant seul.
+
+Changer de société passe obligatoirement par `switchTo()` : il n'y a pas de setter simple,
+précisément pour que l'éviction ne puisse pas être oubliée.
