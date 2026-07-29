@@ -21,6 +21,7 @@ use Liminal\Registry\Contract\Contributor;
 use Liminal\Registry\Contract\DefinitionProvider;
 use Liminal\Registry\EntityRegistry;
 use Liminal\Registry\MenuRegistry;
+use Liminal\Registry\MiddlewareRegistry;
 use Liminal\Registry\MigrationRegistry;
 use Liminal\Registry\PermissionRegistry;
 use Liminal\Registry\RegistryCollection;
@@ -34,6 +35,7 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
+use Psr\Http\Server\MiddlewareInterface;
 use Psr\Log\LoggerInterface;
 use ReflectionClass;
 
@@ -76,6 +78,7 @@ final class Kernel
 
         $config = (new ConfigurationLoader($this->rootDir . '/config'))->load('app', 'database');
         $registries = $this->createRegistries();
+        $this->registerKernelMiddleware($registries);
         $contributors = $this->instantiateContributors($config);
 
         $this->config = $config;
@@ -90,6 +93,8 @@ final class Kernel
 
         // Nothing may extend the system past this point.
         $registries->freeze();
+
+        $this->assertPipelineAnchors($registries->get(MiddlewareRegistry::class));
     }
 
     public function handle(ServerRequestInterface $request): ResponseInterface
@@ -121,8 +126,9 @@ final class Kernel
     }
 
     /**
-     * Built once per process: the Pipeline is immutable and every middleware
-     * is a container singleton, so per-request construction bought nothing.
+     * Built once per process from the MiddlewareRegistry: the Pipeline is
+     * immutable and every middleware is a container singleton, so per-request
+     * construction bought nothing.
      */
     private function pipeline(): Pipeline
     {
@@ -131,12 +137,19 @@ final class Kernel
         }
 
         $container = $this->container();
+        $middleware = [];
 
-        return $this->pipeline = new Pipeline([
-            $this->service($container, ErrorHandlerMiddleware::class),
-            $this->service($container, RouterMiddleware::class),
-            $this->service($container, DispatchMiddleware::class),
-        ]);
+        foreach ($this->registries()->get(MiddlewareRegistry::class)->all() as $class) {
+            $service = $this->service($container, $class);
+
+            if (!$service instanceof MiddlewareInterface) {
+                throw KernelException::notAMiddleware($class);
+            }
+
+            $middleware[] = $service;
+        }
+
+        return $this->pipeline = new Pipeline($middleware);
     }
 
     /**
@@ -164,6 +177,7 @@ final class Kernel
     {
         return new RegistryCollection([
             new RouteRegistry(),
+            new MiddlewareRegistry(),
             new MenuRegistry(),
             new PermissionRegistry(),
             new EntityRegistry(),
@@ -171,6 +185,40 @@ final class Kernel
             new SettingsRegistry(),
             new CommandRegistry(),
         ]);
+    }
+
+    /**
+     * The kernel's own middleware goes through the same registry as everyone
+     * else's — before the contributors run, so anchors win every priority tie.
+     */
+    private function registerKernelMiddleware(RegistryCollection $registries): void
+    {
+        $middleware = $registries->get(MiddlewareRegistry::class);
+        $middleware->add(ErrorHandlerMiddleware::class, MiddlewareRegistry::ERROR_HANDLER);
+        $middleware->add(RouterMiddleware::class, MiddlewareRegistry::ROUTER);
+        $middleware->add(DispatchMiddleware::class, MiddlewareRegistry::DISPATCH);
+    }
+
+    /**
+     * The two placements no contribution may reach: outside the error handler
+     * (exceptions would escape unrendered) and behind the dispatcher (the
+     * middleware would silently never run).
+     *
+     * @throws KernelException naming the offending middleware
+     */
+    private function assertPipelineAnchors(MiddlewareRegistry $middleware): void
+    {
+        $ordered = $middleware->all();
+        $first = $ordered[0] ?? '';
+        $last = $ordered[array_key_last($ordered) ?? 0] ?? '';
+
+        if ($first !== ErrorHandlerMiddleware::class) {
+            throw KernelException::middlewareOutsideErrorHandler($first);
+        }
+
+        if ($last !== DispatchMiddleware::class) {
+            throw KernelException::middlewareBehindDispatcher($last);
+        }
     }
 
     /**

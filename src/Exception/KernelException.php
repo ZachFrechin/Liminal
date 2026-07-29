@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Liminal\Exception;
 
 use Liminal\Registry\Contract\Contributor;
+use Psr\Http\Server\MiddlewareInterface;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 
@@ -51,6 +52,27 @@ final class KernelException extends RuntimeException implements LiminalException
     public static function notACommand(string $class): self
     {
         return new self(sprintf('Command "%s" must extend %s.', $class, Command::class));
+    }
+
+    public static function notAMiddleware(string $class): self
+    {
+        return new self(sprintf('Middleware "%s" must implement %s.', $class, MiddlewareInterface::class));
+    }
+
+    public static function middlewareOutsideErrorHandler(string $class): self
+    {
+        return new self(sprintf(
+            'Middleware "%s" is ordered outside the error handler: its exceptions would escape unrendered. Use a priority above MiddlewareRegistry::ERROR_HANDLER.',
+            $class,
+        ));
+    }
+
+    public static function middlewareBehindDispatcher(string $class): self
+    {
+        return new self(sprintf(
+            'Middleware "%s" is ordered behind the dispatcher and would never run. Use a priority below MiddlewareRegistry::DISPATCH.',
+            $class,
+        ));
     }
 
     public static function logDirectory(string $directory): self
