@@ -60,21 +60,33 @@ final readonly class Configuration
     }
 
     /**
+     * An absent key is an empty list; a present key with anything but a list
+     * of strings throws. Filtering bad entries silently would make a mistyped
+     * lib class in app.libs simply vanish from the boot.
+     *
      * @return list<string>
+     *
+     * @throws MissingConfigurationException when the value is not a list of strings
      */
     public function stringList(string $key): array
     {
         $value = $this->find($key);
 
-        if (!is_array($value)) {
+        if ($value === null) {
             return [];
+        }
+
+        if (!is_array($value)) {
+            throw MissingConfigurationException::for($key, 'list of strings');
         }
 
         $list = [];
         foreach ($value as $item) {
-            if (is_string($item)) {
-                $list[] = $item;
+            if (!is_string($item)) {
+                throw MissingConfigurationException::for($key, 'list of strings');
             }
+
+            $list[] = $item;
         }
 
         return $list;

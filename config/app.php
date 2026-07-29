@@ -8,14 +8,12 @@ $root = dirname(__DIR__);
 
 return [
     'name' => 'Liminal',
-    'env' => Env::string('LIMINAL_ENV', 'dev'),
     'debug' => Env::bool('LIMINAL_DEBUG', true),
 
     // Compiling the container is what makes module activation a cache-rebuild step
     // rather than a restart. Off in dev so contributions are picked up immediately.
     'compile' => Env::bool('LIMINAL_COMPILE', false),
 
-    'root_dir' => $root,
     'cache_dir' => $root . '/var/cache',
     'log_dir' => $root . '/var/log',
 

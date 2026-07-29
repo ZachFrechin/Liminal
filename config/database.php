@@ -6,9 +6,8 @@ use Liminal\Support\Env;
 
 return [
     // A single DSN keeps local, CI and container setups interchangeable.
-    'url' => Env::nullableString('LIMINAL_DSN') ?? Env::nullableString('LIMINAL_TEST_DSN'),
-
-    // No global table prefix: the per-module prefix (core_, invoicing_, ...) is
-    // already the boundary the registries can verify.
-    'prefix' => '',
+    // LIMINAL_TEST_DSN deliberately plays no part here: the integration test
+    // suite reads it itself, and the application must never silently fall
+    // back onto a test database.
+    'url' => Env::nullableString('LIMINAL_DSN'),
 ];

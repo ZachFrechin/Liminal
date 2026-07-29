@@ -10,6 +10,7 @@ use FastRoute\RouteCollector;
 use function FastRoute\simpleDispatcher;
 
 use Liminal\Registry\RouteRegistry;
+use LogicException;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
@@ -50,9 +51,19 @@ final class Router
         });
     }
 
+    /**
+     * @throws LogicException when the dispatcher hands back a non-string handler
+     */
     private static function asString(mixed $value): string
     {
-        return is_string($value) ? $value : '';
+        if (!is_string($value)) {
+            // Handlers enter the table as strings; anything else means the
+            // route table is corrupted, and a silent '' would surface as a
+            // baffling container error far from the cause.
+            throw new LogicException(sprintf('FastRoute returned a handler of type %s.', get_debug_type($value)));
+        }
+
+        return $value;
     }
 
     /**
