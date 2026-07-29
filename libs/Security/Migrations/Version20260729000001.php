@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Liminal\Lib\Security\Migrations;
 
 use Doctrine\DBAL\Schema\Schema;
-use Doctrine\Migrations\AbstractMigration;
+use Liminal\Lib\Database\Migration\Migration;
 
 /**
  * Database-backed sessions.
@@ -13,7 +13,7 @@ use Doctrine\Migrations\AbstractMigration;
  * PHP and MariaDB clocks are assumed co-located, as everywhere else in the
  * core: every timestamp is written by PHP.
  */
-final class Version20260729000001 extends AbstractMigration
+final class Version20260729000001 extends Migration
 {
     public function getDescription(): string
     {

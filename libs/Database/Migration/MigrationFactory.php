@@ -33,8 +33,13 @@ final readonly class MigrationFactory
                 'table_storage' => [
                     'table_name' => 'core_migration_version',
                 ],
-                'all_or_nothing' => true,
-                'transactional' => true,
+                // MariaDB commits DDL implicitly: wrapping migrations in a
+                // transaction is a lie there, and worse — the phantom commit
+                // desyncs DBAL's savepoint bookkeeping, breaking every later
+                // transactional() call on the same connection. Migrations that
+                // need atomic DML manage their own transaction explicitly.
+                'all_or_nothing' => false,
+                'transactional' => false,
             ]),
             new ExistingConnection($connection),
         );

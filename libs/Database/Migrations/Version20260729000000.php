@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Liminal\Lib\Database\Migrations;
 
 use Doctrine\DBAL\Schema\Schema;
-use Doctrine\Migrations\AbstractMigration;
+use Liminal\Lib\Database\Migration\Migration;
 
 /**
  * Core tables.
@@ -14,7 +14,7 @@ use Doctrine\Migrations\AbstractMigration;
  * already the boundary the registries can verify, and a second prefix would only
  * add noise.
  */
-final class Version20260729000000 extends AbstractMigration
+final class Version20260729000000 extends Migration
 {
     public function getDescription(): string
     {
