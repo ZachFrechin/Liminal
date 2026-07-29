@@ -17,5 +17,7 @@ return [
         // NullUserProvider — the same layering a phase-5 module rides.
         Liminal\Tests\Integration\Fixtures\SecurityRoot\FixtureSecurityContributor::class,
     ],
-    'modules' => [],
+    'modules' => [
+        Liminal\Tests\Integration\Fixtures\SecurityRoot\GatedModule::class,
+    ],
 ];

@@ -11,9 +11,11 @@ use Liminal\Lib\Module\Console\DisableCommand;
 use Liminal\Lib\Module\Console\EnableCommand;
 use Liminal\Lib\Module\Console\InstallCommand;
 use Liminal\Lib\Module\Console\ListCommand;
+use Liminal\Lib\Module\Http\ModuleGateMiddleware;
 use Liminal\Registry\CommandRegistry;
 use Liminal\Registry\Contract\Contributor;
 use Liminal\Registry\Contract\DefinitionProvider;
+use Liminal\Registry\MiddlewareRegistry;
 use Liminal\Registry\ModuleRegistry;
 use Liminal\Registry\RegistryCollection;
 use Psr\Container\ContainerInterface;
@@ -25,6 +27,9 @@ use Psr\Container\ContainerInterface;
  */
 final class ModuleContributor implements Contributor, DefinitionProvider
 {
+    /** After the company switch: gating needs the company to gate against. */
+    public const int GATE_PRIORITY = 400;
+
     public function contribute(RegistryCollection $registries): void
     {
         $commands = $registries->get(CommandRegistry::class);
@@ -32,6 +37,9 @@ final class ModuleContributor implements Contributor, DefinitionProvider
         $commands->add(EnableCommand::class);
         $commands->add(DisableCommand::class);
         $commands->add(ListCommand::class);
+
+        $registries->get(MiddlewareRegistry::class)
+            ->add(ModuleGateMiddleware::class, self::GATE_PRIORITY);
     }
 
     /**

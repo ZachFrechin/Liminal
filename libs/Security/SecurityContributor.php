@@ -10,7 +10,9 @@ use Liminal\Lib\Database\Scope\CompanyContext;
 use Liminal\Lib\Security\Authentication\AuthenticationMiddleware;
 use Liminal\Lib\Security\Authentication\CurrentUser;
 use Liminal\Lib\Security\Authentication\NullUserProvider;
+use Liminal\Lib\Security\Authorization\DenyAllResolver;
 use Liminal\Lib\Security\Console\SessionGcCommand;
+use Liminal\Lib\Security\Contract\PermissionResolver;
 use Liminal\Lib\Security\Contract\UserProvider;
 use Liminal\Lib\Security\Csrf\CsrfMiddleware;
 use Liminal\Lib\Security\Scope\CompanySwitchMiddleware;
@@ -95,6 +97,9 @@ final class SecurityContributor implements Contributor, DefinitionProvider
             // Safe default the phase-5 authentication module overrides
             // (last-wins: modules contribute after every lib): no users exist,
             // so deny-by-default holds instead of resolution errors.
+            // Fail closed until the phase-5 module brings real grants.
+            PermissionResolver::class => static fn(): PermissionResolver => new DenyAllResolver(),
+
             UserProvider::class => static fn(): UserProvider => new NullUserProvider(),
         ];
     }
