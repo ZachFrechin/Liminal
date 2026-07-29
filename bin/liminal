@@ -1,0 +1,13 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Liminal\Console\Application;
+use Liminal\Kernel;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+$kernel = new Kernel(dirname(__DIR__));
+
+exit((new Application($kernel))->run());
