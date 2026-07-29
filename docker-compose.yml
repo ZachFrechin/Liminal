@@ -7,9 +7,15 @@ services:
       MARIADB_USER: liminal
       MARIADB_PASSWORD: liminal
     ports:
-      - "3306:3306"
+      # Remap with LIMINAL_DB_PORT when another MariaDB already holds 3306.
+      - "${LIMINAL_DB_PORT:-3306}:3306"
+    volumes:
+      - db-data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 5s
       timeout: 5s
       retries: 20
+
+volumes:
+  db-data:

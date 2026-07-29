@@ -1,36 +1,44 @@
 # Liminal
 
-ERP open source modulaire en PHP 8.4. Micro-noyau maison, briques PSR, sans framework.
+An open-source modular ERP in PHP 8.4. Hand-built micro-kernel, PSR bricks, no framework.
 
-## Le modèle à trois primitives
+## The three-primitive model
 
-Tout dans Liminal est l'une de ces trois choses, et rien d'autre :
+Everything in Liminal is one of these three things, and nothing else:
 
-| Primitive | Rôle | Exemples |
+| Primitive | Role | Examples |
 |---|---|---|
-| **Lib** | Une capacité technique. Sans route, sans page, sans donnée métier. Livrée avec le cœur. | `database`, `security`, `rendering`, `api` |
-| **Module** | Une verticale métier : pages, logique, données. Consomme les libs. Installable, activable par société. | `authentication`, `thirdparty` |
-| **Registre** | La seule surface de couplage entre les deux et le noyau. | `RouteRegistry`, `EntityRegistry`, … |
+| **Lib** | A technical capability. No routes of its own beyond diagnostics, no business data. Ships with the core. | `system`, `database`, `security`, `rendering`, `api` |
+| **Module** | A business vertical: pages, logic, data. Consumes the libs. Installable, activatable per company. | `authentication`, `thirdparty` |
+| **Registry** | The only coupling surface between the two and the kernel. | `RouteRegistry`, `EntityRegistry`, … |
 
-La règle qui tient l'ensemble : **un module ne touche jamais le cœur ; il ne fait que
-remplir des registres.** C'est ce qui rend le système énumérable — et donc ce qui rendra le
-module builder possible.
+The rule that holds it all together: **a module never touches the core; it only
+fills registries.** That is what keeps the system enumerable — and what will
+make the module builder possible.
 
-### Le cycle de boot
+### The boot cycle
 
 ```
 Kernel::boot()
-  ├─ charge la configuration
-  ├─ construit le container PSR-11
-  ├─ chaque Contributor remplit les registres   ← libs d'abord, puis modules
-  └─ RegistryCollection::freeze()               ← la forme du système est figée
+  ├─ loads the configuration
+  ├─ instantiates the contributors            ← plain `new`: they are manifests
+  ├─ collects their container definitions     ← DefinitionProvider (optional)
+  ├─ builds the PSR-11 container
+  ├─ each Contributor fills the registries    ← libs first, in app.libs order
+  └─ RegistryCollection::freeze()             ← the system's shape is now fixed
 ```
 
-Après `freeze()`, toute contribution lève une `FrozenRegistryException`. Aucun code de
-requête ne peut modifier la forme du système : ce qui est énumérable au boot le reste.
+After `freeze()`, every contribution raises a `FrozenRegistryException` —
+including registering a whole new registry. No request-scoped code can change
+the system's shape: what is enumerable at boot stays enumerable.
 
-`Contributor` est l'unique interface d'extension, et libs et modules l'implémentent à
-l'identique :
+Duplicate contributions are refused *during* boot (`DuplicateContributionException`):
+a colliding route, permission code, setting key or migration namespace fails
+loudly while the offending contributor is still on the stack. Overriding will be
+an explicit API when modules arrive — never a silent last-wins.
+
+`Contributor` is the single extension interface, implemented identically by
+libs and modules:
 
 ```php
 interface Contributor
@@ -39,18 +47,23 @@ interface Contributor
 }
 ```
 
-## Hooks et triggers
+A lib that needs services in the container also implements the optional
+`DefinitionProvider`: its `definitions()` run before the (immutable once built)
+container exists, must stay lazy, and may not redefine the kernel-structural
+ids — the registries are reserved; `LoggerInterface` is fair game.
 
-Distinction stricte, à ne jamais laisser dériver (implémentation en phase 2) :
+## Hooks and triggers
+
+A strict distinction, never to be allowed to drift (implementation in phase 2):
 
 | | **Hook** | **Trigger** |
 |---|---|---|
-| Moment | synchrone, dans le flux | après coup, après commit |
-| Peut modifier ? | oui — la valeur circule de listener en listener | non |
-| Exception | remonte (c'est de la logique métier) | capturée et loguée |
-| Nommage | `invoice.total.compute` | `INVOICE_VALIDATED` |
+| Moment | synchronous, in the flow | afterwards, post commit |
+| May modify? | yes — the value travels listener to listener | no |
+| Exceptions | propagate (it is business logic) | caught and logged |
+| Naming | `invoice.total.compute` | `INVOICE_VALIDATED` |
 
-## Démarrer
+## Getting started
 
 ```bash
 composer install
@@ -59,58 +72,71 @@ curl localhost:8080/            # {"status":"ok","routes":1}
 php bin/liminal doctor
 ```
 
-### Vérifications
+### Checks
 
 ```bash
 composer lint     # PHP-CS-Fixer, PER-CS 2.0
-composer stan     # PHPStan level max, sans baseline
+composer stan     # PHPStan level max, no baseline
 composer test     # PHPUnit
+composer check    # all three
 ```
 
-Les tests d'intégration ont besoin d'un vrai serveur MariaDB — pas de SQLite, parce que le
-comportement testé (filtres SQL, migrations, DDL réel) est exactement ce que SQLite
-simulerait mal.
+Integration tests need a real MariaDB server — not SQLite, because the
+behaviour under test (SQL filters, migrations, real DDL, NULL semantics in
+unique indexes) is exactly what SQLite would fake.
 
 ```bash
-docker compose up -d db
+docker compose up -d db         # LIMINAL_DB_PORT overrides the host port
 export LIMINAL_TEST_DSN='mysql://liminal:liminal@127.0.0.1:3306/liminal_test'
 composer test:integration
 ```
 
-Sans `LIMINAL_TEST_DSN` joignable, la suite d'intégration se *skippe* au lieu d'échouer.
+Without a reachable `LIMINAL_TEST_DSN`, the integration suite *skips* instead
+of failing. Environment variables are documented in `.env.example`.
 
-## Arborescence
+## Layout
 
 ```
 bin/liminal          CLI
 config/              app.php, database.php
-libs/                capacités techniques (System, Database, …)
-public/index.php     unique point d'entrée web
-src/                 LE KERNEL — ni lib, ni module
-  Config/ Console/ Container/ Http/ Registry/ Support/
+docs/CONVENTIONS.md  THE coding standard — read it before contributing
+libs/                technical capabilities (System, Database, …)
+public/index.php     single web entry point
+src/                 THE KERNEL — neither lib nor module
+  Config/ Console/ Container/ Exception/ Http/ Registry/ Support/
 tests/{Unit,Integration}
 ```
 
-## État
+## Status
 
-| Phase | Contenu | État |
+| Phase | Content | State |
 |---|---|---|
-| 0 | Kernel, registres, pipeline PSR-15, CLI, CI | ✅ |
-| 1 | `lib/database` : Doctrine, scoping multi-sociétés, migrations par module | ✅ |
-| 2 → 8 | `lib/module`, `lib/security`, `lib/rendering`, `lib/api`, builder, modules | à venir |
+| 0 | Kernel, registries, PSR-15 pipeline, CLI, CI | ✅ |
+| 1 | `lib/database`: Doctrine, multi-company scoping, per-module migrations, DI wiring, doctor | ✅ |
+| 2 → 8 | `lib/module`, `lib/security`, `lib/rendering`, `lib/api`, builder, modules | upcoming |
 
-## Multi-sociétés
+## Multi-company
 
-Une entité qui implémente `EntityScoped` est automatiquement cloisonnée par société :
-`EntityScopeFilter` ajoute `entity_id IN (...)` à chaque requête, et `prePersist` estampille
-les nouvelles lignes.
+An entity implementing `CompanyScoped` is automatically fenced per company:
+`CompanyScopeFilter` appends `company_id IN (...)` to every query, and
+`prePersist` stamps new rows with the current company.
 
-**Le filtre SQL n'est pas une frontière de sécurité.** Doctrine ne l'applique qu'à la
-génération du SQL : `find()` court-circuite sur l'identity map avant d'atteindre le
-persister, donc avant le filtre. Deux mécanismes complémentaires ferment ce trou —
-`EntityContext::switchTo()` vide l'EntityManager (rien d'hydraté sous l'ancienne portée ne
-survit), et un garde `postLoad` refuse toute ligne étrangère même filtre désactivé. La
-phase 3 ajoutera les voters par-dessus. Aucun des trois n'est suffisant seul.
+**The SQL filter is not a security boundary.** Doctrine only applies it when
+generating SQL: `find()` short-circuits on the identity map before the
+persister — and therefore before the filter — runs. Complementary mechanisms
+close the gaps, and none of them is sufficient alone:
 
-Changer de société passe obligatoirement par `switchTo()` : il n'y a pas de setter simple,
-précisément pour que l'éviction ne puisse pas être oubliée.
+- `CompanyContext::switchTo()` clears the EntityManager, so nothing hydrated
+  under the previous scope survives into the next one;
+- a `postLoad` guard refuses any foreign row even with the filter disabled;
+- an `onFlush` gate makes `company_id` **write-once**: reassigning a managed
+  entity to another company — even an accessible one — is refused before a
+  single statement executes (`CompanyReassignmentException`), because a silent
+  flip is indistinguishable from an exfiltration. Moving rows between
+  companies will be an audited administrative service, not an ORM operation;
+- phase 3 adds voters on top.
+
+Switching company goes through `switchTo()` and nothing else: there is no
+plain setter, precisely so the eviction cannot be forgotten. The process boots
+scoped to `database.bootstrap_company_id` (default 1) until authentication
+exists to switch per request.
