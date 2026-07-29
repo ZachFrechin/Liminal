@@ -11,6 +11,7 @@ use Liminal\Lib\Security\Authentication\CurrentUser;
 use Liminal\Lib\Security\Authentication\NullUserProvider;
 use Liminal\Lib\Security\Console\SessionGcCommand;
 use Liminal\Lib\Security\Contract\UserProvider;
+use Liminal\Lib\Security\Csrf\CsrfMiddleware;
 use Liminal\Lib\Security\Session\SessionManager;
 use Liminal\Lib\Security\Session\SessionMiddleware;
 use Liminal\Registry\CommandRegistry;
@@ -37,6 +38,9 @@ final class SecurityContributor implements Contributor, DefinitionProvider
     /** After the router (needs the matched route's public flag). */
     public const int AUTHENTICATION_PRIORITY = 100;
 
+    /** After auth, so a protected-route POST 401s before its token is checked. */
+    public const int CSRF_PRIORITY = 200;
+
     public function contribute(RegistryCollection $registries): void
     {
         $registries->get(MigrationRegistry::class)
@@ -45,6 +49,7 @@ final class SecurityContributor implements Contributor, DefinitionProvider
         $middleware = $registries->get(MiddlewareRegistry::class);
         $middleware->add(SessionMiddleware::class, self::SESSION_PRIORITY);
         $middleware->add(AuthenticationMiddleware::class, self::AUTHENTICATION_PRIORITY);
+        $middleware->add(CsrfMiddleware::class, self::CSRF_PRIORITY);
 
         $registries->get(CommandRegistry::class)
             ->add(SessionGcCommand::class);

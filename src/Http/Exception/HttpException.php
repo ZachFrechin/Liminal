@@ -52,6 +52,16 @@ final class HttpException extends RuntimeException implements LiminalException
     }
 
     /**
+     * 403, not the non-standard 419: the error handler renders the code
+     * verbatim and standard codes are the norm. The message is distinct from a
+     * permission 403 so the two are told apart client-side.
+     */
+    public static function csrfTokenMismatch(): self
+    {
+        return new self(403, 'Invalid or missing CSRF token.');
+    }
+
+    /**
      * @param list<string> $allowed
      */
     public static function methodNotAllowed(array $allowed): self

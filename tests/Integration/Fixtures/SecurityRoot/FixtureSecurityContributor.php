@@ -23,6 +23,7 @@ final class FixtureSecurityContributor implements Contributor, DefinitionProvide
     public function contribute(RegistryCollection $registries): void
     {
         $routes = $registries->get(RouteRegistry::class);
+        $routes->get('/token', TokenHandler::class, 'security_fixture.token', public: true);
         $routes->post('/login', LoginHandler::class, 'security_fixture.login', public: true);
         $routes->get('/me', MeHandler::class, 'security_fixture.me');
         $routes->post('/logout', LogoutHandler::class, 'security_fixture.logout');

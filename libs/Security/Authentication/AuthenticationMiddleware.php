@@ -43,13 +43,13 @@ final readonly class AuthenticationMiddleware implements MiddlewareInterface
         $session = $request->getAttribute(SessionMiddleware::ATTRIBUTE);
 
         if (!$session instanceof Session) {
-            throw AuthenticationException::sessionMissing();
+            throw AuthenticationException::sessionMissing(self::class);
         }
 
         $match = $request->getAttribute(RouterMiddleware::ATTRIBUTE);
 
         if (!$match instanceof RouteMatch || $match->route === null) {
-            throw AuthenticationException::routeMissing();
+            throw AuthenticationException::routeMissing(self::class);
         }
 
         $user = null;

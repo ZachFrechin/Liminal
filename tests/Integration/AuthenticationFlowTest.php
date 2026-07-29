@@ -89,45 +89,44 @@ final class AuthenticationFlowTest extends IntegrationTestCase
     public function testLoginGrantsAccessAndTheCookieRoundTrips(): void
     {
         $kernel = $this->kernel();
+        $cookie = $this->login($kernel, 'alice', 'alice-secret');
 
-        $login = $kernel->handle($this->post('/login', ['identifier' => 'alice', 'password' => 'alice-secret']));
-
-        self::assertSame(200, $login->getStatusCode());
-
-        $cookie = $this->cookieValue($login);
         $me = $kernel->handle($this->get('/me', $cookie));
 
         self::assertSame(200, $me->getStatusCode());
         self::assertStringContainsString('"user":7', (string) $me->getBody());
     }
 
-    public function testTheWrongPasswordRespondsWithoutASession(): void
+    public function testTheWrongPasswordRespondsAndLeavesTheSessionAnonymous(): void
     {
-        $response = $this->kernel()->handle($this->post('/login', ['identifier' => 'alice', 'password' => 'nope']));
+        $kernel = $this->kernel();
+        [$cookie, $token] = $this->obtainToken($kernel);
 
+        $response = $kernel->handle(
+            $this->post('/login', ['identifier' => 'alice', 'password' => 'nope', '_token' => $token], $cookie),
+        );
+
+        // Failure responds (never throws); the session stays anonymous.
         self::assertSame(400, $response->getStatusCode());
-        // Failure responds (never throws) AND leaves nothing behind: no row,
-        // no cookie.
-        self::assertSame('', $response->getHeaderLine('Set-Cookie'));
-        self::assertEquals(0, $this->dbal->fetchOne('SELECT COUNT(*) FROM core_session'));
+        self::assertNull($this->dbal->fetchOne('SELECT user_id FROM core_session'));
     }
 
     public function testLoginRegeneratesTheSessionIdAndTheOldIdDies(): void
     {
         $kernel = $this->kernel();
+        [$anonymousCookie, $token] = $this->obtainToken($kernel);
 
-        $first = $kernel->handle($this->post('/login', ['identifier' => 'alice', 'password' => 'alice-secret']));
-        $firstCookie = $this->cookieValue($first);
+        $login = $kernel->handle($this->post(
+            '/login',
+            ['identifier' => 'alice', 'password' => 'alice-secret', '_token' => $token],
+            $anonymousCookie,
+        ));
+        $authenticatedCookie = $this->cookieValue($login);
 
-        // Logging in AGAIN with the first session's cookie regenerates it.
-        $second = $kernel->handle(
-            $this->post('/login', ['identifier' => 'alice', 'password' => 'alice-secret'], $firstCookie),
-        );
-        $secondCookie = $this->cookieValue($second);
-
-        self::assertNotSame($firstCookie, $secondCookie);
-        self::assertSame(401, $kernel->handle($this->get('/me', $firstCookie))->getStatusCode());
-        self::assertSame(200, $kernel->handle($this->get('/me', $secondCookie))->getStatusCode());
+        self::assertNotSame($anonymousCookie, $authenticatedCookie);
+        // The pre-login id is dead server-side: presenting it is anonymous again.
+        self::assertSame(401, $kernel->handle($this->get('/me', $anonymousCookie))->getStatusCode());
+        self::assertSame(200, $kernel->handle($this->get('/me', $authenticatedCookie))->getStatusCode());
     }
 
     /**
@@ -157,11 +156,12 @@ final class AuthenticationFlowTest extends IntegrationTestCase
     public function testLogoutInvalidatesTheServerSideSession(): void
     {
         $kernel = $this->kernel();
+        $cookie = $this->login($kernel, 'alice', 'alice-secret');
 
-        $login = $kernel->handle($this->post('/login', ['identifier' => 'alice', 'password' => 'alice-secret']));
-        $cookie = $this->cookieValue($login);
+        // A fresh token: login rotated the pre-login one.
+        [$cookie, $token] = $this->obtainToken($kernel, $cookie);
 
-        $logout = $kernel->handle($this->post('/logout', [], $cookie));
+        $logout = $kernel->handle($this->post('/logout', ['_token' => $token], $cookie));
 
         self::assertSame(200, $logout->getStatusCode());
         self::assertSame(401, $kernel->handle($this->get('/me', $cookie))->getStatusCode());
@@ -170,6 +170,52 @@ final class AuthenticationFlowTest extends IntegrationTestCase
     private function kernel(): Kernel
     {
         return new Kernel(self::ROOT);
+    }
+
+    /**
+     * The full form flow: obtain an anonymous session + CSRF token, then log
+     * in with them; returns the authenticated cookie.
+     */
+    private function login(Kernel $kernel, string $identifier, string $password): string
+    {
+        [$cookie, $token] = $this->obtainToken($kernel);
+
+        $login = $kernel->handle($this->post(
+            '/login',
+            ['identifier' => $identifier, 'password' => $password, '_token' => $token],
+            $cookie,
+        ));
+
+        self::assertSame(200, $login->getStatusCode(), (string) $login->getBody());
+
+        return $this->cookieValue($login);
+    }
+
+    /**
+     * @return array{string, string} the session cookie and its CSRF token
+     */
+    private function obtainToken(Kernel $kernel, ?string $cookie = null): array
+    {
+        $response = $kernel->handle($this->get('/token', $cookie));
+
+        self::assertSame(200, $response->getStatusCode());
+
+        $body = json_decode((string) $response->getBody(), true);
+        $token = is_array($body) && is_string($body['token'] ?? null) ? $body['token'] : '';
+
+        self::assertNotSame('', $token);
+
+        // A cookie is only (re)issued when the session row is new.
+        $header = $response->getHeaderLine('Set-Cookie');
+        $issued = $cookie;
+
+        if (preg_match('/^' . self::COOKIE . '=([^;]*)/', $header, $matches) === 1) {
+            $issued = $matches[1];
+        }
+
+        self::assertIsString($issued);
+
+        return [$issued, $token];
     }
 
     private function get(string $path, ?string $cookie = null): ServerRequestInterface

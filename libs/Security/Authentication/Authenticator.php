@@ -6,6 +6,7 @@ namespace Liminal\Lib\Security\Authentication;
 
 use Liminal\Lib\Security\Contract\AuthenticatedUser;
 use Liminal\Lib\Security\Contract\UserProvider;
+use Liminal\Lib\Security\Csrf\CsrfTokenManager;
 use Liminal\Lib\Security\Password\PasswordHasher;
 use Liminal\Lib\Security\Session\Session;
 use Liminal\Lib\Security\Session\SessionManager;
@@ -65,6 +66,10 @@ final readonly class Authenticator
 
         $this->sessions->regenerate($session);
         $session->setUserId($candidate->user->id());
+        // Rotate the CSRF token on privilege elevation (OWASP): the payload
+        // survives regeneration by design, so the retirement must be explicit;
+        // the next token() call generates a fresh one.
+        $session->remove(CsrfTokenManager::KEY);
 
         return $candidate->user;
     }
