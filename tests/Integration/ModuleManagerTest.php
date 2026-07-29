@@ -34,7 +34,7 @@ final class ModuleManagerTest extends IntegrationTestCase
     {
         $this->dbal = $this->connection();
 
-        $tables = ['test_module_fixture', 'core_setting', 'core_module_company', 'core_module', 'core_company', 'core_migration_version'];
+        $tables = ['test_module_fixture', 'core_session', 'core_setting', 'core_module_company', 'core_module', 'core_company', 'core_migration_version'];
 
         foreach ($tables as $table) {
             $this->dbal->executeStatement(sprintf('DROP TABLE IF EXISTS %s', $table));

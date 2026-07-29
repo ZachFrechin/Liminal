@@ -36,7 +36,7 @@ final class ModuleCommandsTest extends IntegrationTestCase
 
         $connection = $this->connection();
 
-        $tables = ['test_module_fixture', 'core_setting', 'core_module_company', 'core_module', 'core_company', 'core_migration_version'];
+        $tables = ['test_module_fixture', 'core_session', 'core_setting', 'core_module_company', 'core_module', 'core_company', 'core_migration_version'];
 
         foreach ($tables as $table) {
             $connection->executeStatement(sprintf('DROP TABLE IF EXISTS %s', $table));

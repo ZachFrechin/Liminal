@@ -79,7 +79,7 @@ final class Kernel
             return;
         }
 
-        $config = (new ConfigurationLoader($this->rootDir . '/config'))->load('app', 'database');
+        $config = (new ConfigurationLoader($this->rootDir . '/config'))->load('app', 'database', 'security');
         $libs = $this->instantiateContributors($config);
         $modules = $this->instantiateModules($config);
         // Libs first, modules after: definition layering is last-wins, and a
