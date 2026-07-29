@@ -25,11 +25,21 @@ php bin/liminal migrate         # pending migrations, --module=NS to scope
 php bin/liminal migrate:status  # read-only, never creates the metadata table
 php bin/liminal module:install <name>            # module migrations + record
 php bin/liminal module:enable <name> <company>   # per-company state (module:disable, module:list)
+php bin/liminal session:gc                       # sweep expired sessions (cron when gc_percent=0)
 ```
 
 Modules: implement `Module` (name/version/migrationNamespace), declare in
-app.modules. Shape always boots; installed/enabled is database state that
-boot never consults — gating arrives with phase 3.
+app.modules, name every route `<module>.…` (the boot enforces it — that prefix
+is the gate's key). Shape always boots; installed/enabled is database state
+that boot never consults, and the module gate enforces it per request.
+
+Security: routes are protected unless `public: true`. Middleware order is
+session (−900) → auth (100) → CSRF (200) → company switch (300) → module gate
+(400). Two rules with teeth: **a failed login must return a response, never
+throw** (the error handler is outermost, so an exception unwinds past the
+session middleware and persists nothing), and **hydrated sessions persist by
+UPDATE, never upsert** — a blind upsert resurrects sessions killed by logout,
+regeneration or GC.
 
 Every commit: `type(scope): imperative subject`, body explains why,
 `composer check` green. Integration tests skip without a reachable DSN — run

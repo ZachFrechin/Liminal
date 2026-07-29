@@ -98,7 +98,28 @@ docs. No exceptions.
 - Modules declare their shape (routes, entities, migrations) at every boot
   regardless of installed/enabled state: shape is global, state is per
   company, and boot never consults the database. Route names carry the
-  module-name prefix ("<module>.…") — phase 3's gating key.
+  module-name prefix (`<module>.…`) — the module gate's key, enforced at boot.
+
+## Request security
+
+- Routes are protected unless declared `public: true`. Middleware bands:
+  session (−900), authentication (100), CSRF (200), company switch (300),
+  module gate (400).
+- **A failed login returns a response; it never throws.** The error handler is
+  the outermost middleware, so an exception unwinds past the session
+  middleware and nothing is persisted — deliberate for error traffic, fatal
+  for state a failed attempt needs to keep (flash messages, future throttling
+  counters).
+- **Hydrated sessions persist by UPDATE, never by upsert**, and a zero-row
+  result is accepted silently: deletion must beat concurrent writers, or a
+  parallel request resurrects a session killed by logout, regeneration or GC.
+- Refusals hide what they can: a disabled module's route answers the same 404
+  a nonexistent path does. Never a status that confirms existence.
+- Session values (company preference included) are untrusted input even though
+  only our code writes them: validate against the user's entitlements.
+- A module migration may touch a lib's table in exactly one sanctioned case:
+  the authentication module adding the `core_session.user_id` foreign key,
+  which cannot exist before `core_user` does.
 
 ## Console commands
 

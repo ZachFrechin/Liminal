@@ -133,7 +133,39 @@ tests/{Unit,Integration}
 | 1 | `lib/database`: Doctrine, multi-company scoping, per-module migrations, DI wiring, doctor | ✅ |
 | 2a | Kernel plumbing: contributable middleware pipeline, named-route URLs, `migrate`/`install`, settings values | ✅ |
 | 2b | `lib/module`: Module contract, `app.modules`, install/enable lifecycle per company | ✅ |
-| 3 → 8 | `lib/security`, `lib/rendering`, `lib/api`, builder, business modules | upcoming |
+| 3 | `lib/security`: database sessions, deny-by-default routes, CSRF, per-request company scope, module gating | ✅ |
+| 4 → 8 | `lib/rendering`, `lib/api`, builder, business modules | upcoming |
+
+## Security
+
+Sessions live in the database (`core_session`), keyed by the SHA-256 of the
+cookie value — a leaked dump contains nothing a browser could replay. Both
+OWASP timeouts ride one indexed column: idle, and an absolute cap counted from
+authentication. Session ids are only ever server-generated, so fixation by
+cookie injection is structurally impossible, and every privilege change
+regenerates the id.
+
+The whole design fails closed. The error handler is the outermost middleware,
+so an exception unwinds *through* the session middleware — a 404 from a
+crawler, a 401 spray, a CSRF refusal all persist nothing. Sessions only touch
+the database when the client actually engaged. The corollary matters for
+anything built on top: **a failed login must return a response, never throw**,
+or the attempt's state is lost.
+
+Routes are protected unless declared `public: true`. Requests then pass, in
+order: session (−900), authentication (100), CSRF (200), company switch (300),
+module gate (400).
+
+| Layer | Refusal |
+|---|---|
+| Unauthenticated on a protected route | 401 JSON (a login redirect replaces it in phase 4) |
+| Unsafe method without a valid synchronizer token | 403 |
+| Route of a module disabled for this company | 404, identical to a nonexistent path |
+| Permission the resolver denies | `Gate::allows()` returns false (deny-all until phase 5) |
+
+The `UserProvider` and `PermissionResolver` defaults are deliberately inert
+(no users, no grants): the phase-5 authentication module replaces them through
+the same definition layering any module gets.
 
 ## Multi-company
 
@@ -157,6 +189,12 @@ close the gaps, and none of them is sufficient alone:
 - phase 3 adds voters on top.
 
 Switching company goes through `switchTo()` and nothing else: there is no
-plain setter, precisely so the eviction cannot be forgotten. The process boots
-scoped to `database.bootstrap_company_id` (default 1) until authentication
-exists to switch per request.
+plain setter, precisely so the eviction cannot be forgotten. The security lib's
+`CompanySwitchMiddleware` does exactly that once per request, from the
+authenticated user's stored preference — validated against their accessible
+set, so a forged session value falls back instead of widening the scope.
+Anonymous requests run under `database.bootstrap_company_id` (default 1).
+
+One rule worth stating plainly: the filter scopes reads to the **accessible
+set**, not to the current company alone. An actor entitled to two companies
+reads across both; the current company is what new rows are stamped with.
