@@ -17,10 +17,17 @@ return [
     'cache_dir' => $root . '/var/cache',
     'log_dir' => $root . '/var/log',
 
-    // Contribution order is significant: libs first, in this order, then modules.
-    // A module may override a lib's contribution; never the reverse.
+    // Contribution order is significant: libs first, in this order, then
+    // modules. A module's container DEFINITIONS override a lib's (last wins);
+    // registry keys still refuse duplicates everywhere — overriding a lib's
+    // route or permission will be an explicit API, not a silent collision.
     'libs' => [
         Liminal\Lib\Database\DatabaseContributor::class,
         Liminal\Lib\System\SystemContributor::class,
     ],
+
+    // Business modules, contributed after every lib. Declared here means
+    // "part of this installation": their shape (routes, entities, migrations)
+    // always boots; whether they are ENABLED is per company, in the database.
+    'modules' => [],
 ];

@@ -19,8 +19,8 @@ use Liminal\Config\Configuration;
  *
  * Kernel-structural ids (Configuration, RegistryCollection, the registries)
  * are reserved and may not be redefined. Everything else layers last-wins:
- * kernel defaults, then libs in app.libs order, then modules — a lib may
- * replace LoggerInterface; the registries, never.
+ * kernel defaults, then libs in app.libs order, then modules in app.modules
+ * order — a module may replace a lib's service; the registries, never.
  */
 interface DefinitionProvider
 {

@@ -20,10 +20,12 @@ use Liminal\Http\UrlGenerator;
 use Liminal\Registry\CommandRegistry;
 use Liminal\Registry\Contract\Contributor;
 use Liminal\Registry\Contract\DefinitionProvider;
+use Liminal\Registry\Contract\Module;
 use Liminal\Registry\EntityRegistry;
 use Liminal\Registry\MenuRegistry;
 use Liminal\Registry\MiddlewareRegistry;
 use Liminal\Registry\MigrationRegistry;
+use Liminal\Registry\ModuleRegistry;
 use Liminal\Registry\PermissionRegistry;
 use Liminal\Registry\RegistryCollection;
 use Liminal\Registry\RouteRegistry;
@@ -78,9 +80,14 @@ final class Kernel
         }
 
         $config = (new ConfigurationLoader($this->rootDir . '/config'))->load('app', 'database');
-        $registries = $this->createRegistries();
+        $libs = $this->instantiateContributors($config);
+        $modules = $this->instantiateModules($config);
+        // Libs first, modules after: definition layering is last-wins, and a
+        // module's definitions are documented to beat a lib's.
+        $contributors = [...$libs, ...$modules];
+
+        $registries = $this->createRegistries($modules);
         $this->registerKernelMiddleware($registries);
-        $contributors = $this->instantiateContributors($config);
 
         $this->config = $config;
         $this->registries = $registries;
@@ -96,6 +103,7 @@ final class Kernel
         $registries->freeze();
 
         $this->assertPipelineAnchors($registries->get(MiddlewareRegistry::class));
+        $this->assertModuleMigrations($modules, $registries->get(MigrationRegistry::class));
     }
 
     public function handle(ServerRequestInterface $request): ResponseInterface
@@ -174,7 +182,10 @@ final class Kernel
         return $service;
     }
 
-    private function createRegistries(): RegistryCollection
+    /**
+     * @param list<Module> $modules
+     */
+    private function createRegistries(array $modules): RegistryCollection
     {
         return new RegistryCollection([
             new RouteRegistry(),
@@ -185,6 +196,7 @@ final class Kernel
             new MigrationRegistry(),
             new SettingsRegistry(),
             new CommandRegistry(),
+            new ModuleRegistry($modules),
         ]);
     }
 
@@ -256,8 +268,87 @@ final class Kernel
     }
 
     /**
+     * Modules are manifests exactly like libs — plain `new`, no required
+     * constructor arguments — with one more contract: they must implement
+     * Module, and their identity must fit the core_module columns before
+     * anything boots.
+     *
+     * @return list<Module>
+     *
+     * @throws KernelException when a module in app.modules cannot be assembled
+     */
+    private function instantiateModules(Configuration $config): array
+    {
+        $modules = [];
+
+        foreach ($config->stringList('app.modules') as $class) {
+            if (!class_exists($class)) {
+                throw KernelException::moduleMissing($class);
+            }
+
+            $constructor = new ReflectionClass($class)->getConstructor();
+
+            if ($constructor !== null && $constructor->getNumberOfRequiredParameters() > 0) {
+                throw KernelException::moduleNeedsArguments($class);
+            }
+
+            $module = new $class();
+
+            if (!$module instanceof Module) {
+                throw KernelException::notAModule($class);
+            }
+
+            $this->assertManifest($module);
+            $modules[] = $module;
+        }
+
+        return $modules;
+    }
+
+    /**
+     * Bounds mirror core_module (name VARCHAR(64), version VARCHAR(32)): a
+     * manifest that cannot be stored must fail the boot, not the install.
+     *
+     * @throws KernelException when the name is not a slug or the version does not fit
+     */
+    private function assertManifest(Module $module): void
+    {
+        $name = $module->name();
+
+        if (preg_match('/^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/', $name) !== 1 || strlen($name) > 64) {
+            throw KernelException::moduleName($module::class, $name);
+        }
+
+        if ($module->version() === '' || strlen($module->version()) > 32) {
+            throw KernelException::moduleVersion($module::class, $module->version());
+        }
+    }
+
+    /**
+     * A manifest naming a namespace its contribute() never registered would
+     * make module:install silently plan nothing — the same "wrong shape"
+     * class the pipeline anchors assertion exists for.
+     *
+     * @param list<Module> $modules
+     *
+     * @throws KernelException naming the module and the unregistered namespace
+     */
+    private function assertModuleMigrations(array $modules, MigrationRegistry $migrations): void
+    {
+        $registered = $migrations->all();
+
+        foreach ($modules as $module) {
+            $namespace = $module->migrationNamespace();
+
+            if ($namespace !== null && !array_key_exists(trim($namespace, '\\'), $registered)) {
+                throw KernelException::moduleMigrationsUnregistered($module->name(), $namespace);
+            }
+        }
+    }
+
+    /**
      * Kernel-structural ids are reserved; everything else layers last-wins in
-     * app.libs order, so a later lib (and, in phase 2, a module) may replace an
+     * app.libs order, so a later lib — and a module, which contributes after every lib — may replace an
      * earlier one's service — never the registries.
      *
      * @param array<string, mixed> $kernelDefinitions

@@ -6,6 +6,8 @@ namespace Liminal\Tests\Unit;
 
 use Liminal\Exception\KernelException;
 use Liminal\Kernel;
+use Liminal\Registry\ModuleRegistry;
+use Liminal\Registry\RouteRegistry;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -78,6 +80,69 @@ final class KernelBootTest extends TestCase
 
         $this->expectException(KernelException::class);
         $this->expectExceptionMessageMatches('/would never run/');
+
+        $kernel->boot();
+    }
+
+    public function testADeclaredModuleContributesAndLandsInTheModuleRegistry(): void
+    {
+        $kernel = new Kernel(self::FIXTURES . '/modules');
+
+        $modules = $kernel->registries()->get(ModuleRegistry::class);
+
+        self::assertTrue($modules->has('fixture_module'));
+        self::assertSame('1.0.0', $modules->get('fixture_module')->version());
+        // Its contribution ran too: the named route is resolvable.
+        self::assertNotNull($kernel->registries()->get(RouteRegistry::class)->named('fixture_module.ping'));
+    }
+
+    /**
+     * The declaration layering contract: modules contribute after every lib,
+     * so a module's definition wins the last-wins merge.
+     */
+    public function testAModuleDefinitionOverridesALibDefinition(): void
+    {
+        $kernel = new Kernel(self::FIXTURES . '/modules');
+
+        self::assertSame('hello from module', $kernel->container()->get('fixture.greeting'));
+    }
+
+    public function testAClassThatIsNotAModuleIsRefused(): void
+    {
+        $kernel = new Kernel(self::FIXTURES . '/not-a-module');
+
+        $this->expectException(KernelException::class);
+        $this->expectExceptionMessageMatches('/must implement/');
+
+        $kernel->boot();
+    }
+
+    public function testAMissingModuleClassIsRefused(): void
+    {
+        $kernel = new Kernel(self::FIXTURES . '/module-missing');
+
+        $this->expectException(KernelException::class);
+        $this->expectExceptionMessageMatches('/does not exist/');
+
+        $kernel->boot();
+    }
+
+    public function testAModuleWithAnInvalidNameIsRefused(): void
+    {
+        $kernel = new Kernel(self::FIXTURES . '/bad-module-name');
+
+        $this->expectException(KernelException::class);
+        $this->expectExceptionMessageMatches('/invalid name/');
+
+        $kernel->boot();
+    }
+
+    public function testAModuleDeclaringAnUnregisteredMigrationNamespaceFailsTheBoot(): void
+    {
+        $kernel = new Kernel(self::FIXTURES . '/module-unregistered-migrations');
+
+        $this->expectException(KernelException::class);
+        $this->expectExceptionMessageMatches('/never registered it in the MigrationRegistry/');
 
         $kernel->boot();
     }
