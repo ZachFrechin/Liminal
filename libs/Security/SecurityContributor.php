@@ -7,6 +7,9 @@ namespace Liminal\Lib\Security;
 use Liminal\Config\Configuration;
 use Liminal\Lib\Database\DeferredConnection;
 use Liminal\Lib\Database\Scope\CompanyContext;
+use Liminal\Lib\Hook\Contract\TriggerScope;
+use Liminal\Lib\Security\Audit\AuditTrailListener;
+use Liminal\Lib\Security\Audit\AuthenticatedTriggerScope;
 use Liminal\Lib\Security\Authentication\AuthenticationMiddleware;
 use Liminal\Lib\Security\Authentication\CurrentUser;
 use Liminal\Lib\Security\Authentication\NullAuthEventLog;
@@ -28,6 +31,7 @@ use Liminal\Registry\Contract\DefinitionProvider;
 use Liminal\Registry\MiddlewareRegistry;
 use Liminal\Registry\MigrationRegistry;
 use Liminal\Registry\RegistryCollection;
+use Liminal\Registry\TriggerRegistry;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -52,6 +56,13 @@ final class SecurityContributor implements Contributor, DefinitionProvider
     /** After auth: the scope follows the authenticated user. */
     public const int COMPANY_SWITCH_PRIORITY = 300;
 
+    /**
+     * The audit hears every trigger FIRST — an anchor, not a tie-break: the
+     * forensic row must exist before any other listener gets a chance to
+     * kill the process, and the per-listener catch cannot catch a fatal.
+     */
+    public const int AUDIT_PRIORITY = -1000;
+
     public function contribute(RegistryCollection $registries): void
     {
         $registries->get(MigrationRegistry::class)
@@ -65,6 +76,11 @@ final class SecurityContributor implements Contributor, DefinitionProvider
 
         $registries->get(CommandRegistry::class)
             ->add(SessionGcCommand::class);
+
+        // Audit-by-default: a module added next year fires triggers that are
+        // recorded with zero wiring on its part.
+        $registries->get(TriggerRegistry::class)
+            ->listenToAll(AuditTrailListener::class, self::AUDIT_PRIORITY);
     }
 
     /**
@@ -113,6 +129,18 @@ final class SecurityContributor implements Contributor, DefinitionProvider
             LoginThrottle::class => static fn(): LoginThrottle => new NullLoginThrottle(),
 
             AuthEventLog::class => static fn(): AuthEventLog => new NullAuthEventLog(),
+
+            // The triggers' first production consumer, on a deferred
+            // connection like everything the console can reach.
+            AuditTrailListener::class => static fn(ContainerInterface $container): AuditTrailListener
+                => new AuditTrailListener(DeferredConnection::resolver($container)),
+
+            // Overrides the hook lib's inert default: the real actor and the
+            // real working company — the sanctioned Security -> Hook edge.
+            TriggerScope::class => static fn(
+                CurrentUser $currentUser,
+                CompanyContext $context,
+            ): TriggerScope => new AuthenticatedTriggerScope($currentUser, $context),
         ];
     }
 }

@@ -7,10 +7,12 @@ namespace Liminal\Lib\System\Console;
 use Liminal\Lib\Database\Health\DatabaseHealth;
 use Liminal\Lib\Database\Health\DatabaseStatusKind;
 use Liminal\Registry\EntityRegistry;
+use Liminal\Registry\HookRegistry;
 use Liminal\Registry\MigrationRegistry;
 use Liminal\Registry\ModuleRegistry;
 use Liminal\Registry\RegistryCollection;
 use Liminal\Registry\RouteRegistry;
+use Liminal\Registry\TriggerRegistry;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -62,6 +64,8 @@ final class DoctorCommand extends Command
         $io->text(sprintf('  entity namespaces:    %d', count($this->registries->get(EntityRegistry::class)->all())));
         $io->text(sprintf('  migration namespaces: %d', count($this->registries->get(MigrationRegistry::class)->all())));
         $io->text(sprintf('  modules declared:     %d', count($this->registries->get(ModuleRegistry::class)->all())));
+        $io->text(sprintf('  hooks declared:       %d', count($this->registries->get(HookRegistry::class)->names())));
+        $io->text(sprintf('  triggers declared:    %d', count($this->registries->get(TriggerRegistry::class)->names())));
         $io->text(sprintf('  frozen:               %s', $this->registries->isFrozen() ? 'yes' : 'no'));
 
         if (!$this->registries->isFrozen()) {
