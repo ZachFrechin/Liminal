@@ -238,7 +238,11 @@ final readonly class SessionManager
             $parts[] = 'Secure';
         }
 
-        return $response->withAddedHeader('Set-Cookie', implode('; ', $parts));
+        // withHeader, never merge: a cookie-carrying response has no legitimate
+        // cache policy to preserve (and no Pragma — HTTP/1.0 archaeology).
+        return $response
+            ->withAddedHeader('Set-Cookie', implode('; ', $parts))
+            ->withHeader('Cache-Control', 'no-store');
     }
 
     /**

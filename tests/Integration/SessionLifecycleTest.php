@@ -171,6 +171,21 @@ final class SessionLifecycleTest extends IntegrationTestCase
         );
     }
 
+    /**
+     * A response that hands out (or expires) a session cookie must never be
+     * cached by any intermediary: the cookie is the credential.
+     */
+    public function testACookieIssuingResponseCarriesCacheControlNoStore(): void
+    {
+        $manager = $this->manager();
+
+        $session = $manager->start($this->request());
+        $session->set('greeting', 'hello');
+        $response = $manager->persist($session, $this->response());
+
+        self::assertSame('no-store', $response->getHeaderLine('Cache-Control'));
+    }
+
     public function testDestroyingASessionRemovesTheRowAndExpiresTheCookie(): void
     {
         $manager = $this->manager();
