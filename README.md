@@ -144,7 +144,8 @@ tests/{Unit,Integration}
 | 4 | `lib/rendering`: Twig, contributable templates, view helpers, menu, translations, HTML error pages | ✅ |
 | 5a | `module/authentication`: users, per-company RBAC, sign-in pages, throttle + audit, bootstrap commands | ✅ |
 | 5b | Administration: company screens (`module/companies`), user/role/grant screens, company switcher, one-time passwords | ✅ |
-| 6 → 8 | `lib/api`, builder, business modules | upcoming |
+| 6 | `module/thirdparty`: the first business vertical — CompanyScoped in production, repository, pagination, search, read/manage split | ✅ |
+| 7 → | hooks & triggers, `lib/api`, documents (invoices, orders), builder | upcoming |
 
 ## Security
 
@@ -330,6 +331,41 @@ authenticated user's stored preference — validated against their accessible
 set, so a forged session value falls back instead of widening the scope.
 Anonymous requests run under `database.bootstrap_company_id` (default 1).
 
-One rule worth stating plainly: the filter scopes reads to the **accessible
-set**, not to the current company alone. An actor entitled to two companies
-reads across both; the current company is what new rows are stamped with.
+One rule worth stating plainly — in two layers since phase 6: the filter
+scopes reads to the **accessible set**, not to the current company alone. An
+actor entitled to two companies reads across both; the current company is
+what new rows are stamped with. That sentence stays true — it describes the
+SECURITY boundary, and the phase-1 tests pin it. On top of it, business
+repositories narrow every read to the **current company** (`ThirdpartyRepository`
+is the precedent): business data belongs to the company you are working in,
+which is what the account page's switcher switches. Two layers: a repository
+bug can never leak past the accessible set, and the screens show the working
+company.
+
+## The thirdparty module
+
+The first business vertical — customers, suppliers, and the prospects that
+are not yet either — and the first production consumer of everything above:
+`thirdparty_thirdparty` is fenced by the filter, stamped by prePersist,
+guarded by postLoad and the write-once flush gate. Business CRUD goes through
+the **ORM**, because the fence lives nowhere else; a DBAL read of a scoped
+table would bypass all of it (the exact inverse of the security-path rule,
+and both are deliberate).
+
+The table carries the tree's first composite per-company uniqueness —
+`(company_id, code)` — so the same code is welcome in another company and
+refused within one, case-insensitively through the server's collation.
+Thirdparty codes are free text (a business reference has no imposed grammar,
+unlike company and role codes, which commands anchor on).
+
+The list brings the first pagination (COUNT, clamp into range, `ORDER BY
+name, id` so equal names cannot swap between pages) and the first search
+(`LIKE` with an explicit `ESCAPE '!'` and the user's `%`/`_`/`!` escaped in
+the bound value — a wildcard query matches rows that contain the character,
+never everything).
+
+Permissions split for the first time: `thirdparty.read` opens the pages,
+`thirdparty.manage` the writes — and **manage presumes read** (every handler
+authorizes read first), because the role editor lets an administrator check
+one box without the other. On upgraded instances, grant both through the
+role editor; fresh installs get them via `user:create`.

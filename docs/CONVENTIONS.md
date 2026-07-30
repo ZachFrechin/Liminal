@@ -142,6 +142,28 @@ what it proves.
   missing-key rule unchanged. One sanctioned deviation: a response whose body
   IS a one-time secret (generated passwords) renders directly from the POST
   with `no-store` — the secret must never transit the session or any store.
+- **Business CRUD goes through the ORM** — the company fence (filter, stamp,
+  postLoad guard, write-once flush gate) lives nowhere else, and a DBAL read
+  of a CompanyScoped table bypasses all of it. This is the exact inverse of
+  the security/administration rule (DBAL, never ORM), and both are
+  deliberate: two domains, two rules, stated side by side.
+- **Business repositories narrow every read to the CURRENT company** in DQL
+  (`WHERE t.companyId = :current`), byId() included — a URL into another
+  accessible company 404s. The filter stays parameterized on the accessible
+  set: it is the security boundary, not the work context, and the phase-1
+  tests pin it. `ThirdpartyRepository` is the reference.
+- Search uses `LIKE` with an **explicit `ESCAPE`** (the escape char is `!` —
+  a backslash would have to survive PHP, DQL and SQL quoting in agreement)
+  and escapes the user's `%`/`_`/escape-char inside the bound value: bound
+  parameters neutralize nothing.
+- Pagination: COUNT first, clamp the page into `[1, max(1, pages)]`, always
+  give ORDER BY a unique tiebreaker (`, id`). Module-local until a second
+  list needs it — then it gets hoisted, not before.
+- Permission code grammar: `<module>.<entity>.<verb>` — collapsed to
+  `<module>.<verb>` when the module is named after its central entity
+  (`thirdparty.read`, not `thirdparty.thirdparty.read`). A read/write split
+  means **manage presumes read**: every handler authorizes read first,
+  writes authorize manage in addition; there is no permission inheritance.
 - **Say it out loud: `authentication.user.manage` held in any ONE company is
   instance-wide administration and escalation-equivalent to everything** —
   the admin tables are unscoped by design, and grant-add can assign any role
@@ -228,6 +250,14 @@ what it proves.
   lives on /account, and error pages can never carry a form.
 - "Must change password at first login" waits for the mailer lib: without a
   reset flow there is nowhere to send anyone.
+- Thirdparty deletion is unguarded while nothing references thirdparties;
+  the day documents (invoices, orders) do, the delete handler grows the
+  refusal — recorded, not accidental. Also out of scope for now: CSV
+  import/export, contact persons, list sorting options, VAT format
+  validation.
+- The per-company uniqueness of thirdparty codes rides the server's
+  case-insensitive collation (stock MariaDB utf8mb4 *_ci) — the same
+  assumption `uniq_core_company_code` already makes.
 
 ## Console commands
 

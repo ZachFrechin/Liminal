@@ -3,8 +3,9 @@
 Modular ERP core, PHP 8.4, no framework. `src/` is the kernel (config,
 container, HTTP pipeline, registries), `libs/` are the technical capabilities
 (System, Database, Security, Rendering, Module), `modules/` are the business
-verticals (Authentication is the reference; Companies is the first module
-with NO migrations — `migrationNamespace()` null is an ordinary case).
+verticals (Authentication is the admin reference; Companies has NO migrations
+— `migrationNamespace()` null is ordinary; Thirdparty is the BUSINESS
+reference: CompanyScoped entity, ORM CRUD, repository, pagination, search).
 Everything extends the system through registries filled at boot, then frozen;
 libs and modules expose services through `DefinitionProvider` definitions
 collected before the container is built — a module overrides a lib's contract
@@ -71,6 +72,16 @@ immutable after creation; the `admin` role is undeletable (screen + service).
 escalation-equivalent (grant-add can assign admin anywhere) — role.manage
 protects definitions only. Password reset calls
 `SessionManager::endAllFor()` — a credential change kills the other sessions.
+
+Business modules (6): **CRUD through the ORM** (the company fence lives only
+there — DBAL on a scoped table bypasses it; exact inverse of the
+security/admin DBAL rule, both deliberate). Repositories narrow every read
+to the CURRENT company in DQL (the filter stays on the accessible set — it
+is the security boundary, phase-1 tests pin it). LIKE search: explicit
+`ESCAPE '!'` + escape the bound value. Pagination: COUNT, clamp page,
+ORDER BY with `, id` tiebreaker. Permission split: manage presumes read
+(handlers authorize read first, writes manage too); collapse rule
+`thirdparty.read` when the module is named after its entity.
 
 Every commit: `type(scope): imperative subject`, body explains why,
 `composer check` green. Integration tests skip without a reachable DSN — run
