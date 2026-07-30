@@ -83,6 +83,18 @@ ORDER BY with `, id` tiebreaker. Permission split: manage presumes read
 (handlers authorize read first, writes manage too); collapse rule
 `thirdparty.read` when the module is named after its entity.
 
+Hooks & triggers (7): declare-then-listen (dispatcher declares the name,
+consumers subscribe by service id, freeze validates targets). Hook =
+sync, value travels, exceptions PROPAGATE, `module.noun.verb`. Trigger =
+post-commit (a CONVENTION fire points must honor), caught-and-logged,
+SCREAMING_SNAKE ≤64. Payloads `array<string, scalar|null>`, never a
+secret; `fire(..., companyId:)` when the point knows better than the
+working context. Trigger listeners never fire triggers. Every admin
+mutation fires; the audit catch-all (`AUDIT_PRIORITY = -1000`, anchor)
+writes `core_audit_event` — zero FKs, historical facts. Login stays on
+AuthEventLog. First production hook = invoice.total.compute, with
+documents.
+
 Every commit: `type(scope): imperative subject`, body explains why,
 `composer check` green. Integration tests skip without a reachable DSN — run
 them with the database up before claiming database-touching work done.

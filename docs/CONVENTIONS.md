@@ -178,6 +178,42 @@ what it proves.
   (`[A-Z][A-Z0-9_]{0,31}` for companies — a policy, not an inherited
   constraint; `[a-z][a-z0-9_]{0,63}` for roles, mirroring module slugs).
 
+## Hooks and triggers
+
+- **Declare-then-listen**: the contributor that dispatches declares the name;
+  consumers subscribe by container service id. Grammar at the registry —
+  hooks are ≥3 dotted lowercase segments (`invoice.total.compute`), triggers
+  SCREAMING_SNAKE ≤64 (the audit column's width: unstorable fails the boot).
+  No module prefix is imposed; a declaration collision breaks the boot
+  loudly, which IS the coordination. Subscriptions are validated at FREEZE,
+  never at listen() — boot order stays irrelevant.
+- The two contracts never blur: a hook listener's exception PROPAGATES (it
+  is business logic); a trigger listener's failure — miswiring included —
+  is caught and logged with the listener's name, and the next one runs.
+- Trigger payloads are typed `array<string, scalar|null>`: identifying
+  facts only (ids, codes, emails), **never a secret** — they land verbatim
+  in the audit trail. `TriggerEvent::companyId` is the company the event
+  BELONGS to: the working context unless the fire point knows better
+  (console commands pass `--company`; grants pass the granted company).
+- **Post-commit is a convention the fire points must honor**, not
+  machinery: a fire inside an open transaction would enroll listeners'
+  writes in it. The audit is therefore best-effort by construction — a
+  future audit-or-abort requirement is a hook, not a trigger.
+- A trigger listener must NOT fire triggers (unbounded recursion; a written
+  rule, not a depth counter). A hook listener MAY filter through other
+  hooks — composition, and propagation keeps it honest.
+- The audit listener sits at an ANCHOR priority
+  (`SecurityContributor::AUDIT_PRIORITY = -1000`): the forensic row exists
+  before any other listener can kill the process. `core_audit_event`
+  carries **zero foreign keys** on purpose — a lib cannot reference a
+  module's table, and an audit stores historical facts, not live
+  references.
+- Sanctioned lib edge: Security → Hook (the audit listener implements
+  TriggerListener; `AuthenticatedTriggerScope` overrides the lib's inert
+  `TriggerScope` default). The Hook lib depends on the kernel and PSR only.
+- The console now provisions `app.log_dir` like HTTP always has: commands
+  injecting `Triggers` resolve the logger at console boot.
+
 ## Rendering
 
 - Templates and translations are contributions: register a namespace or a
@@ -237,9 +273,18 @@ what it proves.
   audited administrative service, not a button.
 - The administration screens have no pagination; fine until a real
   instance proves otherwise.
-- Administrative mutations are not audited: `core_auth_event` covers the
-  login path only, and extending the lib's `AuthEvent` is its own decision,
-  not a side effect of screens.
+- ~~Administrative mutations are not audited~~ closed in phase 7: every
+  fired trigger lands in `core_audit_event` through the catch-all listener,
+  and fourteen fire points cover the admin surface. The login path keeps
+  its own `core_auth_event` (richer: ip/UA), no duplication.
+- Audit retention/purge does not exist yet — and the payloads carry emails
+  (PII) while the table is append-only: a WHEN, not an IF. `session:gc` is
+  the precedent for the future `audit:prune`.
+- No `/audit` screen yet (a 7b candidate); the table is queryable and the
+  doctor counts declarations.
+- `TriggerEvent` carries no ClientContext (ip/UA): libs cannot read request
+  attributes — the same rationale that shaped the Gate — and the login path
+  already captures them where they matter.
 - Reactivating a user silently resumes their old sessions: the forced-logout
   401 unwinds past persist, so the session row keeps its `user_id`. Coherent
   — and the reason a password RESET deletes the rows instead.

@@ -68,14 +68,47 @@ from phase 3 on — boot never consults installed/enabled state, by design.
 
 ## Hooks and triggers
 
-A strict distinction, never to be allowed to drift (implementation in phase 2):
+A strict distinction, never allowed to drift — and executable since phase 7:
 
 | | **Hook** | **Trigger** |
 |---|---|---|
 | Moment | synchronous, in the flow | afterwards, post commit |
 | May modify? | yes — the value travels listener to listener | no |
 | Exceptions | propagate (it is business logic) | caught and logged |
-| Naming | `invoice.total.compute` | `INVOICE_VALIDATED` |
+| Naming | `invoice.total.compute` (≥3 dotted segments) | `INVOICE_VALIDATED` (SCREAMING_SNAKE ≤64) |
+
+The shape is **declare-then-listen**: the contributor that *dispatches*
+declares the name in the `HookRegistry`/`TriggerRegistry` (kernel-owned,
+frozen at boot); consumers subscribe by container service id, resolved
+lazily at dispatch. Subscriptions are validated at freeze — a listener may
+subscribe to a name declared later in boot order, and a name nobody ever
+declares fails the boot. No module prefix is imposed: nothing gates by
+these names, and a collision between two declarers breaks the boot loudly,
+which *is* the coordination mechanism. Priorities follow the house rule
+(lower runs earlier; at equal priority, specifics precede catch-alls).
+
+`Hooks::filter($hook, $value, $parameters)` threads the value through the
+listeners and lets exceptions fly. `Triggers::fire($name, $payload,
+$companyId?)` enriches the event with the actor and the working company
+(or the explicit one, when the fire point knows better — console commands
+pass their `--company`), then runs every listener inside its own catch:
+failures are logged with the listener's name and the next one still runs.
+Payloads are identifying scalars only — ids, codes, emails — and **never a
+secret**. A trigger listener must not fire triggers.
+
+**Every administrative mutation is audited through this.** The security
+lib subscribes `AuditTrailListener` to *everything* at an anchor priority
+(−1000, so the forensic row exists before any other listener can kill the
+process): one append-only `core_audit_event` row per fired trigger — name,
+JSON payload, actor, company, timestamp — with **zero foreign keys**, on
+purpose: an audit stores historical facts, not live references, and a
+deleted user's id stays readable verbatim. Fourteen triggers fire today
+(USER_*, GRANT_*, ROLE_*, COMPANY_*, THIRDPARTY_*); a module added next
+year is audited with zero wiring on its part.
+
+The first production **hook** arrives with the documents phase
+(`invoice.total.compute`); until then the primitive is proven end to end
+on a fixture kernel over real HTTP.
 
 ## Getting started
 
@@ -145,7 +178,8 @@ tests/{Unit,Integration}
 | 5a | `module/authentication`: users, per-company RBAC, sign-in pages, throttle + audit, bootstrap commands | ✅ |
 | 5b | Administration: company screens (`module/companies`), user/role/grant screens, company switcher, one-time passwords | ✅ |
 | 6 | `module/thirdparty`: the first business vertical — CompanyScoped in production, repository, pagination, search, read/manage split | ✅ |
-| 7 → | hooks & triggers, `lib/api`, documents (invoices, orders), builder | upcoming |
+| 7 | Hooks & triggers (`lib/hook`, two kernel registries) + the admin-mutation audit trail as the triggers' first consumer | ✅ |
+| 8 → | documents (invoices, orders — the first production hook), `lib/api`, builder | upcoming |
 
 ## Security
 
