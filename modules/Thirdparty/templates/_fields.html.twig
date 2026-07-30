@@ -1,0 +1,41 @@
+{# The shared field set — create passes an empty `values` map, edit passes the
+   entity's current state; |default keeps strict_variables honest. #}
+<p>
+    <label for="code">{{ 'thirdparty.field.code'|trans }}</label><br>
+    <input type="text" id="code" name="code" maxlength="32" required value="{{ values.code|default('') }}">
+</p>
+<p>
+    <label for="name">{{ 'thirdparty.field.name'|trans }}</label><br>
+    <input type="text" id="name" name="name" maxlength="191" required value="{{ values.name|default('') }}">
+</p>
+<p>
+    <label for="alias">{{ 'thirdparty.field.alias'|trans }}</label><br>
+    <input type="text" id="alias" name="alias" maxlength="191" value="{{ values.alias|default('') }}">
+</p>
+<p>
+    <label><input type="checkbox" name="customer" value="1" {% if values.customer|default(false) %}checked{% endif %}> {{ 'thirdparty.kind.customer'|trans }}</label>
+    <label><input type="checkbox" name="supplier" value="1" {% if values.supplier|default(false) %}checked{% endif %}> {{ 'thirdparty.kind.supplier'|trans }}</label>
+</p>
+<p>
+    <label for="email">{{ 'thirdparty.field.email'|trans }}</label><br>
+    <input type="email" id="email" name="email" maxlength="191" value="{{ values.email|default('') }}">
+</p>
+<p>
+    <label for="phone">{{ 'thirdparty.field.phone'|trans }}</label><br>
+    <input type="text" id="phone" name="phone" maxlength="32" value="{{ values.phone|default('') }}">
+</p>
+<p>
+    <label for="address">{{ 'thirdparty.field.address'|trans }}</label><br>
+    <input type="text" id="address" name="address" maxlength="255" value="{{ values.address|default('') }}">
+    <input type="text" id="zip" name="zip" maxlength="16" placeholder="{{ 'thirdparty.field.zip'|trans }}" value="{{ values.zip|default('') }}">
+    <input type="text" id="town" name="town" maxlength="128" placeholder="{{ 'thirdparty.field.town'|trans }}" value="{{ values.town|default('') }}">
+    <input type="text" id="country_code" name="country_code" maxlength="2" placeholder="{{ 'thirdparty.field.country'|trans }}" value="{{ values.countryCode|default('') }}">
+</p>
+<p>
+    <label for="vat_number">{{ 'thirdparty.field.vat'|trans }}</label><br>
+    <input type="text" id="vat_number" name="vat_number" maxlength="32" value="{{ values.vatNumber|default('') }}">
+</p>
+<p>
+    <label for="notes">{{ 'thirdparty.field.notes'|trans }}</label><br>
+    <textarea id="notes" name="notes" rows="4">{{ values.notes|default('') }}</textarea>
+</p>

@@ -5,6 +5,10 @@
 {% block content %}
     <h1>{{ 'thirdparty.list.title'|trans }}</h1>
 
+    {% if canManage %}
+        <p><a href="{{ url('thirdparty.create') }}">{{ 'thirdparty.list.create'|trans }}</a></p>
+    {% endif %}
+
     <form method="get" action="{{ url('thirdparty.list') }}">
         <input type="search" name="q" value="{{ query }}" placeholder="{{ 'thirdparty.list.search'|trans }}">
         <button type="submit">{{ 'thirdparty.list.search'|trans }}</button>

@@ -26,5 +26,38 @@
         {% if thirdparty.notes %}<dt>{{ 'thirdparty.field.notes'|trans }}</dt><dd>{{ thirdparty.notes|nl2br }}</dd>{% endif %}
     </dl>
 
+    {% if canManage %}
+        <h2>{{ 'thirdparty.detail.edit'|trans }}</h2>
+        <form method="post" action="{{ url('thirdparty.update', {'id': thirdparty.id}) }}">
+            {{ csrf_field() }}
+            {% include '@thirdparty/_fields.html.twig' with {'values': {
+                'code': thirdparty.code,
+                'name': thirdparty.name,
+                'alias': thirdparty.alias,
+                'customer': thirdparty.customer,
+                'supplier': thirdparty.supplier,
+                'email': thirdparty.email,
+                'phone': thirdparty.phone,
+                'address': thirdparty.address,
+                'zip': thirdparty.zip,
+                'town': thirdparty.town,
+                'countryCode': thirdparty.countryCode,
+                'vatNumber': thirdparty.vatNumber,
+                'notes': thirdparty.notes,
+            }} only %}
+            <p>
+                <input type="hidden" name="active" value="0">
+                <label><input type="checkbox" name="active" value="1" {% if thirdparty.active %}checked{% endif %}> {{ 'thirdparty.field.active'|trans }}</label>
+            </p>
+            <button type="submit">{{ 'thirdparty.detail.save'|trans }}</button>
+        </form>
+
+        <h2>{{ 'thirdparty.detail.danger'|trans }}</h2>
+        <form method="post" action="{{ url('thirdparty.delete', {'id': thirdparty.id}) }}">
+            {{ csrf_field() }}
+            <button type="submit">{{ 'thirdparty.detail.delete'|trans }}</button>
+        </form>
+    {% endif %}
+
     <p><a href="{{ url('thirdparty.list') }}">{{ 'thirdparty.detail.back'|trans }}</a></p>
 {% endblock %}

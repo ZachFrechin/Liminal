@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace Liminal\Module\Thirdparty;
 
 use Liminal\Config\Configuration;
+use Liminal\Module\Thirdparty\Http\ThirdpartyCreatePageHandler;
+use Liminal\Module\Thirdparty\Http\ThirdpartyCreateSubmitHandler;
+use Liminal\Module\Thirdparty\Http\ThirdpartyDeleteHandler;
 use Liminal\Module\Thirdparty\Http\ThirdpartyDetailHandler;
 use Liminal\Module\Thirdparty\Http\ThirdpartyListHandler;
+use Liminal\Module\Thirdparty\Http\ThirdpartyUpdateHandler;
 use Liminal\Registry\Contract\DefinitionProvider;
 use Liminal\Registry\Contract\Module;
 use Liminal\Registry\EntityRegistry;
@@ -70,9 +74,15 @@ final class ThirdpartyModule implements Module, DefinitionProvider
         $registries->get(TranslationRegistry::class)
             ->add('en', __DIR__ . '/lang/en.php');
 
+        // Statics before dynamics, and {id:\d+} is load-bearing: a bare {id}
+        // would also match "create".
         $routes = $registries->get(RouteRegistry::class);
         $routes->get('/thirdparties', ThirdpartyListHandler::class, 'thirdparty.list');
+        $routes->get('/thirdparties/create', ThirdpartyCreatePageHandler::class, 'thirdparty.create');
+        $routes->post('/thirdparties/create', ThirdpartyCreateSubmitHandler::class, 'thirdparty.create_submit');
         $routes->get('/thirdparties/{id:\d+}', ThirdpartyDetailHandler::class, 'thirdparty.detail');
+        $routes->post('/thirdparties/{id:\d+}', ThirdpartyUpdateHandler::class, 'thirdparty.update');
+        $routes->post('/thirdparties/{id:\d+}/delete', ThirdpartyDeleteHandler::class, 'thirdparty.delete');
 
         // The first read/write split: read opens the pages, manage the writes,
         // and manage presumes read (every handler authorizes read first).

@@ -152,6 +152,188 @@ final class ThirdpartyHttpTest extends IntegrationTestCase
         self::assertSame(404, $kernel->handle($this->get('/thirdparties/999', $ada))->getStatusCode());
     }
 
+    public function testCreateEditDeleteRoundTripThroughTheForms(): void
+    {
+        $kernel = $this->kernel();
+        $ada = $this->login($kernel, 'ada@liminal.test');
+
+        // Create through the form; prePersist stamps the working company.
+        $form = $kernel->handle($this->get('/thirdparties/create', $ada));
+        $created = $kernel->handle($this->post(
+            '/thirdparties/create',
+            [
+                'code' => 'ACME-01',
+                'name' => 'Acme Industries',
+                'customer' => '1',
+                'email' => 'sales@acme.example',
+                '_token' => $this->tokenFrom((string) $form->getBody()),
+            ],
+            $ada,
+        ));
+
+        self::assertSame(302, $created->getStatusCode());
+        $location = $created->getHeaderLine('Location');
+        self::assertMatchesRegularExpression('~^/thirdparties/\d+$~', $location);
+        self::assertEquals(1, $this->dbal->fetchOne(
+            "SELECT company_id FROM thirdparty_thirdparty WHERE code = 'ACME-01'",
+        ));
+
+        $detail = (string) $kernel->handle($this->get($location, $ada))->getBody();
+        self::assertStringContainsString('Third party created.', $detail);
+        self::assertStringContainsString('Acme Industries', $detail);
+
+        // Edit: rename, flip to supplier, deactivate.
+        $updated = $kernel->handle($this->post(
+            $location,
+            [
+                'code' => 'ACME-01',
+                'name' => 'Acme Industries Ltd',
+                'supplier' => '1',
+                'active' => '0',
+                '_token' => $this->tokenFrom($detail),
+            ],
+            $ada,
+        ));
+
+        self::assertSame(302, $updated->getStatusCode());
+
+        $after = (string) $kernel->handle($this->get($location, $ada))->getBody();
+        self::assertStringContainsString('Third party updated.', $after);
+        self::assertStringContainsString('Acme Industries Ltd', $after);
+        self::assertStringContainsString('supplier', $after);
+        self::assertStringContainsString('inactive', $after);
+
+        // Delete: gone from the list, flash says so.
+        $deleted = $kernel->handle($this->post(
+            $location . '/delete',
+            ['_token' => $this->tokenFrom($after)],
+            $ada,
+        ));
+
+        self::assertSame(302, $deleted->getStatusCode());
+        self::assertSame('/thirdparties', $deleted->getHeaderLine('Location'));
+
+        $list = (string) $kernel->handle($this->get('/thirdparties', $ada))->getBody();
+        self::assertStringContainsString('Third party deleted.', $list);
+        self::assertStringNotContainsString('Acme Industries', $list);
+        self::assertEquals(0, $this->dbal->fetchOne('SELECT COUNT(*) FROM thirdparty_thirdparty'));
+    }
+
+    /**
+     * The composite unique through the browser: the same code refused where it
+     * exists, welcome in the company next door.
+     */
+    public function testTheSameCodeIsRefusedHereAndWelcomeNextDoor(): void
+    {
+        $this->seedSecondCompany(granting: 'ada@liminal.test');
+        $this->seedThirdparty(1, 'SHARED', 'First Holder');
+
+        $kernel = $this->kernel();
+        $ada = $this->login($kernel, 'ada@liminal.test');
+
+        $form = $kernel->handle($this->get('/thirdparties/create', $ada));
+        $token = $this->tokenFrom((string) $form->getBody());
+
+        // Same company: politely refused.
+        $refused = $kernel->handle($this->post(
+            '/thirdparties/create',
+            ['code' => 'shared', 'name' => 'Impostor', '_token' => $token],
+            $ada,
+        ));
+
+        self::assertSame(302, $refused->getStatusCode());
+        self::assertSame('/thirdparties/create', $refused->getHeaderLine('Location'));
+
+        $reloaded = (string) $kernel->handle($this->get('/thirdparties/create', $ada))->getBody();
+        self::assertStringContainsString('already exists in this company', $reloaded);
+
+        // Wait — 'shared' vs 'SHARED': the pre-check compares exactly, the
+        // collation decides; either way nothing landed.
+        self::assertEquals(1, $this->dbal->fetchOne('SELECT COUNT(*) FROM thirdparty_thirdparty'));
+
+        // Switch to ACME: the very same code is welcome there.
+        $account = (string) $kernel->handle($this->get('/account', $ada))->getBody();
+        $kernel->handle($this->post(
+            '/switch-company',
+            ['company' => '2', '_token' => $this->tokenFrom($account)],
+            $ada,
+        ));
+
+        $acmeForm = $kernel->handle($this->get('/thirdparties/create', $ada));
+        $welcomed = $kernel->handle($this->post(
+            '/thirdparties/create',
+            ['code' => 'SHARED', 'name' => 'Second Holder', '_token' => $this->tokenFrom((string) $acmeForm->getBody())],
+            $ada,
+        ));
+
+        self::assertSame(302, $welcomed->getStatusCode());
+        self::assertMatchesRegularExpression('~^/thirdparties/\d+$~', $welcomed->getHeaderLine('Location'));
+        self::assertEquals(2, $this->dbal->fetchOne('SELECT COUNT(*) FROM thirdparty_thirdparty'));
+    }
+
+    public function testValidationRefusalsFlashPolitely(): void
+    {
+        $kernel = $this->kernel();
+        $ada = $this->login($kernel, 'ada@liminal.test');
+
+        $form = $kernel->handle($this->get('/thirdparties/create', $ada));
+        $token = $this->tokenFrom((string) $form->getBody());
+
+        $noName = $kernel->handle($this->post(
+            '/thirdparties/create',
+            ['code' => 'OK', 'name' => '   ', '_token' => $token],
+            $ada,
+        ));
+        self::assertSame('/thirdparties/create', $noName->getHeaderLine('Location'));
+        self::assertStringContainsString(
+            'The name is required.',
+            (string) $kernel->handle($this->get('/thirdparties/create', $ada))->getBody(),
+        );
+
+        $badEmail = $kernel->handle($this->post(
+            '/thirdparties/create',
+            ['code' => 'OK', 'name' => 'Fine', 'email' => 'not-an-email', '_token' => $token],
+            $ada,
+        ));
+        self::assertSame('/thirdparties/create', $badEmail->getHeaderLine('Location'));
+
+        self::assertEquals(0, $this->dbal->fetchOne('SELECT COUNT(*) FROM thirdparty_thirdparty'));
+    }
+
+    /**
+     * The split, both ways: read alone opens the pages and none of the writes;
+     * manage without read opens NOTHING — manage presumes read, or a
+     * manage-only actor would create records on pages they may never see.
+     */
+    public function testReadAloneCannotWriteAndManageAlonePresumesRead(): void
+    {
+        // Bob's member role gains read only.
+        $this->dbal->executeStatement(
+            "INSERT INTO core_role_permission (role_id, permission_code)
+             SELECT id, 'thirdparty.read' FROM core_role WHERE code = 'member'",
+        );
+
+        $kernel = $this->kernel();
+        $bob = $this->login($kernel, 'bob@liminal.test');
+
+        self::assertSame(200, $kernel->handle($this->get('/thirdparties', $bob))->getStatusCode());
+        self::assertSame(403, $kernel->handle($this->get('/thirdparties/create', $bob))->getStatusCode());
+
+        // The list offers him no create link.
+        $list = (string) $kernel->handle($this->get('/thirdparties', $bob))->getBody();
+        self::assertStringNotContainsString('href="/thirdparties/create"', $list);
+
+        // A manage-only role opens nothing at all.
+        $this->dbal->executeStatement(
+            "UPDATE core_role_permission SET permission_code = 'thirdparty.manage'
+             WHERE permission_code = 'thirdparty.read'
+               AND role_id = (SELECT id FROM core_role WHERE code = 'member')",
+        );
+
+        self::assertSame(403, $kernel->handle($this->get('/thirdparties', $bob))->getStatusCode());
+        self::assertSame(403, $kernel->handle($this->get('/thirdparties/create', $bob))->getStatusCode());
+    }
+
     /**
      * @param array<string, int|string> $extra
      */

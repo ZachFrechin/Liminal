@@ -1,0 +1,13 @@
+{% extends '@liminal/layout.html.twig' %}
+
+{% block title %}{{ 'thirdparty.create.title'|trans }}{% endblock %}
+
+{% block content %}
+    <h1>{{ 'thirdparty.create.title'|trans }}</h1>
+
+    <form method="post" action="{{ url('thirdparty.create_submit') }}">
+        {{ csrf_field() }}
+        {% include '@thirdparty/_fields.html.twig' with {'values': {}} only %}
+        <button type="submit">{{ 'thirdparty.create.submit'|trans }}</button>
+    </form>
+{% endblock %}
