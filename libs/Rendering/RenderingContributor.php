@@ -5,14 +5,18 @@ declare(strict_types=1);
 namespace Liminal\Lib\Rendering;
 
 use Liminal\Config\Configuration;
+use Liminal\Http\UrlGenerator;
+use Liminal\Lib\Rendering\Http\HtmlErrorMiddleware;
 use Liminal\Lib\Rendering\Http\ViewContextMiddleware;
 use Liminal\Lib\Rendering\View\ViewContext;
 use Liminal\Registry\Contract\Contributor;
 use Liminal\Registry\Contract\DefinitionProvider;
 use Liminal\Registry\MiddlewareRegistry;
 use Liminal\Registry\RegistryCollection;
+use Liminal\Registry\RouteRegistry;
 use Liminal\Registry\TemplateRegistry;
 use Liminal\Registry\TranslationRegistry;
+use Psr\Http\Message\ResponseFactoryInterface;
 use Twig\Environment;
 
 /**
@@ -33,6 +37,12 @@ final class RenderingContributor implements Contributor, DefinitionProvider
      */
     public const int VIEW_CONTEXT_PRIORITY = -850;
 
+    /**
+     * Immediately inside the error handler (−1000): it sees an HttpException
+     * first on the unwind path, and the JSON handler stays the safety net.
+     */
+    public const int HTML_ERROR_PRIORITY = -950;
+
     public function contribute(RegistryCollection $registries): void
     {
         $registries->get(TemplateRegistry::class)
@@ -41,8 +51,9 @@ final class RenderingContributor implements Contributor, DefinitionProvider
         $registries->get(TranslationRegistry::class)
             ->add('en', __DIR__ . '/lang/en.php');
 
-        $registries->get(MiddlewareRegistry::class)
-            ->add(ViewContextMiddleware::class, self::VIEW_CONTEXT_PRIORITY);
+        $middleware = $registries->get(MiddlewareRegistry::class);
+        $middleware->add(HtmlErrorMiddleware::class, self::HTML_ERROR_PRIORITY);
+        $middleware->add(ViewContextMiddleware::class, self::VIEW_CONTEXT_PRIORITY);
     }
 
     /**
@@ -65,6 +76,19 @@ final class RenderingContributor implements Contributor, DefinitionProvider
 
             Translator::class => static fn(TranslationRegistry $files): Translator
                 => new Translator($files, $config->string('app.locale')),
+
+            HtmlErrorMiddleware::class => static fn(
+                HtmlRenderer $html,
+                RouteRegistry $routes,
+                UrlGenerator $urls,
+                ResponseFactoryInterface $responses,
+            ): HtmlErrorMiddleware => new HtmlErrorMiddleware(
+                $html,
+                $routes,
+                $urls,
+                $responses,
+                $config->string('security.login_route'),
+            ),
         ];
     }
 }

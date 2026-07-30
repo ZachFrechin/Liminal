@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 return [
+    'login_route' => 'security_fixture.login_form',
     'session' => [
         'cookie' => 'liminal',
         'idle_ttl_seconds' => 7200,

@@ -5,6 +5,10 @@ declare(strict_types=1);
 use Liminal\Support\Env;
 
 return [
+    // The route a browser is redirected to on a 401. A route name is code
+    // wiring, not deployment config, so no env var.
+    'login_route' => 'authentication.login',
+
     'session' => [
         // Set '__Host-liminal' in production: the cookie prefix pins Path=/,
         // Secure and no-Domain at the browser level for free.
