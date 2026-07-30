@@ -12,6 +12,7 @@ use Liminal\Registry\Contract\DefinitionProvider;
 use Liminal\Registry\MiddlewareRegistry;
 use Liminal\Registry\RegistryCollection;
 use Liminal\Registry\TemplateRegistry;
+use Liminal\Registry\TranslationRegistry;
 use Twig\Environment;
 
 /**
@@ -37,6 +38,9 @@ final class RenderingContributor implements Contributor, DefinitionProvider
         $registries->get(TemplateRegistry::class)
             ->add('liminal', __DIR__ . '/templates');
 
+        $registries->get(TranslationRegistry::class)
+            ->add('en', __DIR__ . '/lang/en.php');
+
         $registries->get(MiddlewareRegistry::class)
             ->add(ViewContextMiddleware::class, self::VIEW_CONTEXT_PRIORITY);
     }
@@ -58,6 +62,9 @@ final class RenderingContributor implements Contributor, DefinitionProvider
             // Shared and mutable by design — the CurrentUser precedent: the
             // ViewContextMiddleware assigns it once per request.
             ViewContext::class => static fn(): ViewContext => new ViewContext(),
+
+            Translator::class => static fn(TranslationRegistry $files): Translator
+                => new Translator($files, $config->string('app.locale')),
         ];
     }
 }

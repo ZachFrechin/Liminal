@@ -22,6 +22,14 @@ final class RenderingException extends LogicException implements LiminalExceptio
         ));
     }
 
+    public static function invalidCatalogue(string $file): self
+    {
+        return new self(sprintf(
+            'Translation catalogue "%s" is missing or does not return a map of strings.',
+            $file,
+        ));
+    }
+
     public static function orphanedMenuParent(string $label, string $parent): self
     {
         return new self(sprintf(

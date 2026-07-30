@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
     'name' => 'SecurityFixture',
     'debug' => true,
+    'locale' => 'en',
     'compile' => false,
     'cache_dir' => sys_get_temp_dir() . '/liminal-security-root/cache',
     'log_dir' => sys_get_temp_dir() . '/liminal-security-root/log',

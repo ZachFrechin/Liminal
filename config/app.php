@@ -10,6 +10,11 @@ return [
     'name' => 'Liminal',
     'debug' => Env::bool('LIMINAL_DEBUG', true),
 
+    // The locale every render resolves translations against. Deliberately
+    // configuration, not a database setting: anonymous pages must render on a
+    // checkout with no DSN at all.
+    'locale' => Env::string('LIMINAL_LOCALE', 'en'),
+
     // Compiling the container is what makes module activation a cache-rebuild step
     // rather than a restart. Off in dev so contributions are picked up immediately.
     'compile' => Env::bool('LIMINAL_COMPILE', false),

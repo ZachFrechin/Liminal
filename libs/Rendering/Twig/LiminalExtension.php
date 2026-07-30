@@ -7,12 +7,14 @@ namespace Liminal\Lib\Rendering\Twig;
 use Liminal\Http\UrlGenerator;
 use Liminal\Lib\Rendering\Exception\RenderingException;
 use Liminal\Lib\Rendering\Menu\MenuBuilder;
+use Liminal\Lib\Rendering\Translator;
 use Liminal\Lib\Rendering\View\ViewContext;
 use Liminal\Lib\Security\Authentication\CurrentUser;
 use Liminal\Lib\Security\Csrf\CsrfMiddleware;
 use Liminal\Lib\Security\Csrf\CsrfTokenManager;
 use Liminal\Lib\Security\Session\Session;
 use Twig\Extension\AbstractExtension;
+use Twig\TwigFilter;
 use Twig\TwigFunction;
 
 /**
@@ -33,6 +35,7 @@ final class LiminalExtension extends AbstractExtension
         private readonly ViewContext $viewContext,
         private readonly CurrentUser $currentUser,
         private readonly MenuBuilder $menu,
+        private readonly Translator $translator,
     ) {}
 
     /**
@@ -47,6 +50,16 @@ final class LiminalExtension extends AbstractExtension
             new TwigFunction('flash', $this->flash(...)),
             new TwigFunction('current_user', $this->currentUser->get(...)),
             new TwigFunction('menu', $this->menu->build(...)),
+        ];
+    }
+
+    /**
+     * @return list<TwigFilter>
+     */
+    public function getFilters(): array
+    {
+        return [
+            new TwigFilter('trans', $this->translator->trans(...)),
         ];
     }
 
