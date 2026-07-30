@@ -60,8 +60,21 @@ a namespace first-hit-wins, so the registry serves latest-first — a module
 shadows a lib). `strict_variables` on, no `|raw` anywhere. Content degrades
 (absent flash, missing translation key), wiring fails loud (no session for a
 CSRF token, malformed catalogue). **Error templates carry no form**: they render
-on the unwind path where the session is never persisted. Flashes are catalogue
-keys, translated by the layout at render time. Menu labels too.
+on the unwind path where the session is never persisted — the shell's two form
+regions (`sidebar_actions`/`topbar_actions` blocks) are overridden empty there.
+Flashes are catalogue keys, translated by the layout at render time, rendered
+as banners in BOTH shell faces. Menu labels too.
+
+Design system (8): reference = the claude.ai/design project; implementation =
+`public/assets/` (tokens + components CSS behind `liminal.css`, vendored OFL
+fonts, Lucide glyphs in `IconSet` — unknown name throws). Zero CDN at runtime.
+Components consume semantic aliases only (TokenDriftTest enforces); macros only
+with a real consumer (`ui.banner`, `ui.empty_state`). **Layout `{% set %}`
+leaks into child blocks** — layout variables carry `_liminal_` prefixes, never
+plain names (an unprefixed `companies` once 500'd the companies list). Shell
+dropdowns are native `<details>`; module routes it names sit behind
+`route_exists()`; switch forms hide when authentication is disabled for the
+working company.
 
 Administration (5b): CRUD failures are flash + 302 (the only sanctioned
 deviation: one-time secrets render directly from the POST with no-store —

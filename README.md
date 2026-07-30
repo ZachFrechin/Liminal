@@ -179,7 +179,8 @@ tests/{Unit,Integration}
 | 5b | Administration: company screens (`module/companies`), user/role/grant screens, company switcher, one-time passwords | ✅ |
 | 6 | `module/thirdparty`: the first business vertical — CompanyScoped in production, repository, pagination, search, read/manage split | ✅ |
 | 7 | Hooks & triggers (`lib/hook`, two kernel registries) + the admin-mutation audit trail as the triggers' first consumer | ✅ |
-| 8 → | documents (invoices, orders — the first production hook), `lib/api`, builder | upcoming |
+| 8 | Design system: tokens as served assets, vendored fonts and icons, the application shell, the feedback family | ✅ |
+| 9 → | documents (invoices, orders — the first production hook), `lib/api`, builder | upcoming |
 
 ## Security
 
@@ -246,6 +247,43 @@ Browsers get HTML refusals: a 404 renders an error page, a 401 redirects to the
 configured login route carrying the intended path as `?redirect=` — never in
 the session, since the unwind path must not mint one row per probe. JSON
 clients keep the exact JSON contract they had before rendering existed.
+
+## The design system
+
+The visual reference is a dedicated design-system project ("Design système ERP
+opensource" on claude.ai/design): warm oklch neutrals, one deep terracotta
+accent, Instrument Sans with IBM Plex Mono for anything that compares in a
+column, Lucide icons, an interface that rests on borders rather than relief.
+The repository carries its implementation as served static assets:
+
+```
+public/assets/css/liminal.css        the single entry — its @import list IS the layer order
+public/assets/css/tokens/            fonts, colors, typography, spacing, elevation, motion, base
+public/assets/css/components/        shell, feedback, badges — one file per family
+public/assets/fonts/                 vendored woff2 + the OFL license texts beside them
+```
+
+Three rules with reasons. **Nothing calls a CDN at runtime** — a self-hosted
+ERP works air-gapped, so the reference's Google Fonts import became vendored
+variable fonts and its runtime-fetched icons became `IconSet`, a dependency-
+free PHP map of Lucide glyphs (ISC) where an unknown name throws: naming a
+glyph that was never vendored is wiring, not content. **Components consume
+semantic aliases** (`--surface-card`, `--text-secondary`), never a raw neutral
+— and `TokenDriftTest` makes the contract mechanical: a component stylesheet
+consuming a custom property no token defines fails the build. **Only
+components with a real consumer get a Twig macro**: `banner` carries the
+flashes, `empty_state` the empty lists; toast, tooltip and dialog ship their
+CSS with markup proven on a fixture page, and earn macros when a production
+surface needs them.
+
+The application shell is the layout: authenticated pages get the sidebar —
+the company switcher, navigation with per-item icons contributed through
+`MenuItem` — and a topbar carrying the working company and the user menu;
+anonymous pages get a centered card under the wordmark. Every dropdown is a
+native `<details>`: the reference's scripted popovers translated honestly,
+zero JavaScript. Error pages extend the same layout but override the two
+form-carrying blocks empty, keeping the "error templates carry no form"
+invariant machine-true.
 
 ## The authentication module
 

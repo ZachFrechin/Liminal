@@ -226,9 +226,44 @@ what it proves.
   token, malformed catalogue, orphaned menu parent).
 - An error page renders on the unwind path, where the session is never
   persisted: **error templates must never carry a form**, because a token
-  minted there would reach the HTML and never the store.
+  minted there would reach the HTML and never the store. The shell enforces it
+  structurally: its two form regions live in the `sidebar_actions` and
+  `topbar_actions` blocks, and `error.html.twig` overrides both empty.
+- **Layout-level `{% set %}` shares the child templates' context** (Twig
+  inheritance renders child blocks inside the parent's flow), so every
+  variable the layout sets carries a `_liminal_` prefix. An unprefixed
+  `companies` once shadowed the companies module's own context and 500'd its
+  list page — the prefix is the fence.
 - Rendering's sanctioned lib edges: → Security, → Module, → Database. Nothing
   consumes Rendering.
+
+## Design system
+
+- The reference is the claude.ai/design project; the tree carries the
+  implementation under `public/assets/` — hand-authored files are tracked,
+  `public/assets/build/` stays reserved for future compiled artifacts.
+- **Zero CDN at runtime.** Fonts are vendored woff2 (OFL texts beside the
+  binaries, as the license requires); icons are vendored Lucide glyphs (ISC)
+  in `IconSet` — a dependency-free map where an unknown name throws, because a
+  template naming a glyph that was never vendored is wiring, not content. The
+  emitted SVG ends exactly at `</svg>`: menu labels are pinned `>Label</a>`
+  with the glyph right before them.
+- **Components consume semantic aliases** (`--surface-*`, `--text-*`,
+  `--action-*`, the semantic family scales), never a raw `--n-*` neutral.
+  `TokenDriftTest` makes the contract mechanical.
+- **Only components with a real consumer get a Twig macro** (`banner`,
+  `empty_state` in `components.html.twig`, imported as `ui`). Toast, tooltip
+  and dialog ship CSS with their markup proven on the design fixture page;
+  they gain macros when a production surface earns them. No dismiss buttons
+  server-side: a PRG flash dies on the next request by itself.
+- Flashes render as banners in BOTH shell faces — two tests assert flashes on
+  anonymous pages. Danger alone is `role="alert"`; everything else is polite
+  `role="status"`.
+- The shell hides company-switch forms when the authentication module is
+  disabled for the working company (`ModuleManager::isEnabled`) — advertising
+  a POST that answers 404 is the one lie the chrome could tell. Every module
+  route the shell names sits behind `route_exists()`, so module-less checkouts
+  (the rendering fixtures) keep rendering.
 
 ## Request security
 
@@ -303,6 +338,19 @@ what it proves.
 - The per-company uniqueness of thirdparty codes rides the server's
   case-insensitive collation (stock MariaDB utf8mb4 *_ci) — the same
   assumption `uniq_core_company_code` already makes.
+- The dark theme ships as tokens (`[data-theme="dark"]`, unvalidated per the
+  reference) with no toggle — a future user setting stamps the attribute.
+- Assets have no cache-busting and no configurable base path: `asset()` is
+  the single seam for both when they matter.
+- The shell skips what has no backend: no search box, no notifications, no
+  sidebar collapse (needs JS), no menu sections (needs a grouping concept the
+  menu lacks), no active-item highlight (needs the current route pre-router).
+- The remaining component families — core (buttons, badges), forms, data
+  (StatusPill, DataTable, Pagination), navigation — arrive as their consumers
+  do; today's `badges.css` is a provisional dress, not the data family.
+- A 404 unwinds before authentication primes the holders, so a signed-in
+  user's 404 renders the anonymous face — the same asymmetry the menu always
+  had on those pages.
 
 ## Console commands
 
