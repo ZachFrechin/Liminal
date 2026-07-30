@@ -6,6 +6,7 @@ namespace Liminal\Module\Thirdparty\Http;
 
 use Liminal\Http\Exception\HttpException;
 use Liminal\Http\UrlGenerator;
+use Liminal\Lib\Hook\Hooks;
 use Liminal\Lib\Hook\Triggers;
 use Liminal\Lib\Security\Authorization\RequestGate;
 use Liminal\Lib\Security\Session\Session;
@@ -18,9 +19,15 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
 /**
- * Deletes a thirdparty of the working company. Nothing references
- * thirdparties yet; the day documents do, this handler grows the guard that
- * refuses to orphan them — recorded gap, not an accident.
+ * Deletes a thirdparty of the working company — unless a document holds it.
+ *
+ * The guard this handler always promised is the thirdparty.deletion.veto
+ * hook: whoever keeps documents naming the party (the invoice module today,
+ * anyone tomorrow) appends a refusal reason, and this module never learns
+ * who answered. The value that travels is a list of catalogue keys; being
+ * the declarer, this dispatch site validates that shape and flashes the
+ * first reason. The schema's RESTRICT foreign key stands behind it for any
+ * writer that bypasses this handler.
  */
 final readonly class ThirdpartyDeleteHandler implements RequestHandlerInterface
 {
@@ -30,6 +37,7 @@ final readonly class ThirdpartyDeleteHandler implements RequestHandlerInterface
         private UrlGenerator $urls,
         private ResponseFactoryInterface $responses,
         private Triggers $triggers,
+        private Hooks $hooks,
     ) {}
 
     /**
@@ -56,6 +64,19 @@ final readonly class ThirdpartyDeleteHandler implements RequestHandlerInterface
         }
 
         $code = $thirdparty->getCode();
+
+        $reasons = $this->hooks->filter('thirdparty.deletion.veto', [], ['thirdparty_id' => $id]);
+
+        if (!is_array($reasons) || !array_is_list($reasons) || $reasons !== array_filter($reasons, is_string(...))) {
+            throw ThirdpartyModuleException::malformedVeto(get_debug_type($reasons));
+        }
+
+        if ($reasons !== []) {
+            $session->set('error', $reasons[0]);
+
+            return $this->responses->createResponse(302)
+                ->withHeader('Location', $this->urls->generate('thirdparty.detail', ['id' => $id]));
+        }
 
         $this->thirdparties->remove($thirdparty);
         $this->thirdparties->flush();

@@ -70,6 +70,8 @@ return [
     'invoice.form.immutable' => 'A validated invoice is immutable.',
     'invoice.form.needs_lines' => 'An invoice needs at least one line before validation.',
     'invoice.form.validated' => 'Invoice validated.',
+    'invoice.veto.referenced' => 'This third party carries invoices and cannot be deleted.',
+
     'invoice.form.created' => 'Draft invoice created.',
     'invoice.form.updated' => 'Invoice updated.',
     'invoice.form.line_added' => 'Line added.',

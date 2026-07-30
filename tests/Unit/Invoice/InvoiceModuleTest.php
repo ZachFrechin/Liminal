@@ -70,6 +70,11 @@ final class InvoiceModuleTest extends TestCase
             ['INVOICE_CREATED', 'INVOICE_UPDATED', 'INVOICE_VALIDATED', 'INVOICE_DELETED'],
             $triggers->names(),
         );
+
+        // And the first production listener: this module answers the
+        // thirdparty module's deletion veto — the edge points one way.
+        $listeners = $hooks->listenersFor('thirdparty.deletion.veto');
+        self::assertCount(1, $listeners);
     }
 
     private function registriesWith(

@@ -18,4 +18,12 @@ final class ThirdpartyModuleException extends LogicException implements LiminalE
     {
         return new self('No session is attached to the request: the session middleware did not run.');
     }
+
+    public static function malformedVeto(string $type): self
+    {
+        return new self(sprintf(
+            'A thirdparty.deletion.veto listener returned %s instead of a list of catalogue keys — the declarer validates the shape, and this one is wiring.',
+            $type,
+        ));
+    }
 }

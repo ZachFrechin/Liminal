@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Liminal\Module\Invoice;
 
 use Liminal\Config\Configuration;
+use Liminal\Module\Invoice\Hook\InvoiceThirdpartyVetoListener;
 use Liminal\Module\Invoice\Http\InvoiceCreatePageHandler;
 use Liminal\Module\Invoice\Http\InvoiceCreateSubmitHandler;
 use Liminal\Module\Invoice\Http\InvoiceDeleteHandler;
@@ -115,7 +116,11 @@ final class InvoiceModule implements Module, DefinitionProvider
 
         // The first production hook: the dispatch site owns the base totals,
         // listeners transform them, the declarer validates what comes back.
-        $registries->get(HookRegistry::class)->declare('invoice.total.compute');
+        $hooks = $registries->get(HookRegistry::class);
+        $hooks->declare('invoice.total.compute');
+        // And the first production LISTENER: the thirdparty module declares
+        // the veto, this module answers it — the edge points one way only.
+        $hooks->listen('thirdparty.deletion.veto', InvoiceThirdpartyVetoListener::class);
 
         $triggers = $registries->get(TriggerRegistry::class);
         $triggers->declare('INVOICE_CREATED');

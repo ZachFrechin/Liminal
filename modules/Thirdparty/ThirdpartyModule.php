@@ -14,6 +14,7 @@ use Liminal\Module\Thirdparty\Http\ThirdpartyUpdateHandler;
 use Liminal\Registry\Contract\DefinitionProvider;
 use Liminal\Registry\Contract\Module;
 use Liminal\Registry\EntityRegistry;
+use Liminal\Registry\HookRegistry;
 use Liminal\Registry\MenuItem;
 use Liminal\Registry\MenuRegistry;
 use Liminal\Registry\MigrationRegistry;
@@ -95,6 +96,12 @@ final class ThirdpartyModule implements Module, DefinitionProvider
         $triggers->declare('THIRDPARTY_CREATED');
         $triggers->declare('THIRDPARTY_UPDATED');
         $triggers->declare('THIRDPARTY_DELETED');
+
+        // The deletion veto: whoever holds documents naming a thirdparty
+        // answers here. This module stays a stranger to its listeners —
+        // the value that travels is a list of refusal catalogue keys, and
+        // the delete handler, as the declarer, validates that shape.
+        $registries->get(HookRegistry::class)->declare('thirdparty.deletion.veto');
 
         $registries->get(MenuRegistry::class)->add(new MenuItem(
             'thirdparty.menu.thirdparties',

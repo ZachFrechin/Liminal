@@ -335,6 +335,55 @@ final class ThirdpartyHttpTest extends IntegrationTestCase
     }
 
     /**
+     * The veto at work: a thirdparty the working company's invoices still
+     * name refuses to die — politely, with a flash naming the reason — and
+     * one without documents deletes exactly as before. The thirdparty module
+     * never learns who answered the hook.
+     */
+    public function testADocumentedThirdpartyRefusesDeletionThroughTheVeto(): void
+    {
+        $this->seedThirdparty(1, 'HELD', 'Held by documents');
+        $this->seedThirdparty(1, 'FREE', 'Free to go');
+
+        $heldId = $this->dbal->fetchOne("SELECT id FROM thirdparty_thirdparty WHERE code = 'HELD'");
+        $freeId = $this->dbal->fetchOne("SELECT id FROM thirdparty_thirdparty WHERE code = 'FREE'");
+        self::assertIsNumeric($heldId);
+        self::assertIsNumeric($freeId);
+
+        $this->dbal->insert('invoice_invoice', [
+            'company_id' => 1,
+            'thirdparty_id' => (int) $heldId,
+            'status' => 'draft',
+            'issued_on' => '2026-07-31',
+            'total_excl' => '0.00',
+            'total_tax' => '0.00',
+            'total_incl' => '0.00',
+            'created_at' => '2026-07-31 00:00:00',
+            'updated_at' => '2026-07-31 00:00:00',
+        ]);
+
+        $kernel = $this->kernel();
+        $ada = $this->login($kernel, 'ada@liminal.test');
+
+        $detail = $kernel->handle($this->get('/thirdparties/' . (int) $heldId, $ada));
+        $token = $this->tokenFrom((string) $detail->getBody());
+
+        // The refusal: back to the detail, reason flashed, row intact.
+        $refused = $kernel->handle($this->post('/thirdparties/' . (int) $heldId . '/delete', ['_token' => $token], $ada));
+        self::assertSame(302, $refused->getStatusCode());
+        self::assertSame('/thirdparties/' . (int) $heldId, $refused->getHeaderLine('Location'));
+
+        $after = (string) $kernel->handle($this->get('/thirdparties/' . (int) $heldId, $ada))->getBody();
+        self::assertStringContainsString('carries invoices and cannot be deleted', $after);
+        self::assertEquals(2, $this->dbal->fetchOne('SELECT COUNT(*) FROM thirdparty_thirdparty'));
+
+        // The unreferenced one deletes exactly as before.
+        $deleted = $kernel->handle($this->post('/thirdparties/' . (int) $freeId . '/delete', ['_token' => $token], $ada));
+        self::assertSame('/thirdparties', $deleted->getHeaderLine('Location'));
+        self::assertEquals(1, $this->dbal->fetchOne('SELECT COUNT(*) FROM thirdparty_thirdparty'));
+    }
+
+    /**
      * @param array<string, int|string> $extra
      */
     private function seedThirdparty(int $companyId, string $code, string $name, array $extra = []): void
