@@ -47,6 +47,37 @@ final class ModuleCommandsTest extends IntegrationTestCase
         putenv($this->previousDsn === null ? 'LIMINAL_DSN' : 'LIMINAL_DSN=' . $this->previousDsn);
     }
 
+    /**
+     * A virgin instance cannot log in to enable its own modules, so install
+     * does it — for the company it just seeded, and only on that path.
+     */
+    public function testAVirginInstallEnablesEveryDeclaredModule(): void
+    {
+        $first = $this->tester(SystemInstallCommand::class);
+
+        self::assertSame(Command::SUCCESS, $first->execute([]));
+        self::assertStringContainsString('enabled "fixture" for company 1', $first->getDisplay());
+
+        $connection = $this->connection();
+
+        self::assertEquals(
+            1,
+            $connection->fetchOne('SELECT enabled FROM core_module_company WHERE company_id = 1'),
+        );
+
+        // An operator disables it; re-running install must not undo that.
+        $connection->executeStatement('UPDATE core_module_company SET enabled = 0');
+
+        $second = $this->tester(SystemInstallCommand::class);
+
+        self::assertSame(Command::SUCCESS, $second->execute([]));
+        self::assertStringContainsString('module state left untouched', $second->getDisplay());
+        self::assertEquals(
+            0,
+            $connection->fetchOne('SELECT enabled FROM core_module_company WHERE company_id = 1'),
+        );
+    }
+
     public function testModuleInstallMigratesRecordsAndIsIdempotent(): void
     {
         // The global install migrates every registered namespace — including
