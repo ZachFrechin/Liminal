@@ -23,6 +23,8 @@
 <body>
 <header>
     <strong>Liminal</strong>
+    {% set user = current_user() %}
+    {% if user %}<span class="user">{{ user.displayName }}</span>{% endif %}
     {% block menu %}
         <nav>{% include '@liminal/_menu.html.twig' with {'nodes': menu()} only %}</nav>
     {% endblock %}

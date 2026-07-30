@@ -74,6 +74,9 @@ final class RenderingPipelineTest extends IntegrationTestCase
 
         self::assertStringContainsString('<title>Fixture page</title>', $html);
         self::assertStringContainsString('<h1>Rendered through the stack</h1>', $html);
+        // The shared layout greets the user, which only the contract's
+        // displayName() makes possible from a lib template.
+        self::assertStringContainsString('Alice Ashford', $html);
     }
 
     /**

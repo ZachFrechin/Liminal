@@ -24,8 +24,8 @@ final class FixtureUserProvider implements UserProvider
         $hasher = new PasswordHasher();
 
         $this->users = [
-            'alice' => ['user' => new FixtureUser(7, [1, 2]), 'hash' => $hasher->hash('alice-secret')],
-            'bob' => ['user' => new FixtureUser(8, [2]), 'hash' => $hasher->hash('bob-secret')],
+            'alice' => ['user' => new FixtureUser(7, 'Alice Ashford', [1, 2]), 'hash' => $hasher->hash('alice-secret')],
+            'bob' => ['user' => new FixtureUser(8, 'Bob Barnes', [2]), 'hash' => $hasher->hash('bob-secret')],
         ];
     }
 

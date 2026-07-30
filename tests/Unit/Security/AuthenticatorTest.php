@@ -96,6 +96,11 @@ final class AuthenticatorTest extends TestCase
                 return 7;
             }
 
+            public function displayName(): string
+            {
+                return 'Fixture user';
+            }
+
             public function accessibleCompanyIds(): array
             {
                 return $this->companies;

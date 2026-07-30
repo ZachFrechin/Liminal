@@ -17,12 +17,18 @@ final readonly class FixtureUser implements AuthenticatedUser
      */
     public function __construct(
         private int $id,
+        private string $displayName,
         private array $companies,
     ) {}
 
     public function id(): int
     {
         return $this->id;
+    }
+
+    public function displayName(): string
+    {
+        return $this->displayName;
     }
 
     public function accessibleCompanyIds(): array

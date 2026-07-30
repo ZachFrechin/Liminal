@@ -274,6 +274,11 @@ final class MenuBuilderTest extends TestCase
                 return 7;
             }
 
+            public function displayName(): string
+            {
+                return 'Fixture user';
+            }
+
             public function accessibleCompanyIds(): array
             {
                 return [1];
