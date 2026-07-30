@@ -5,3 +5,4 @@
 .phpunit.result.cache
 .env
 .env.local
+/.claude/launch.json
