@@ -83,12 +83,18 @@ A strict distinction, never to be allowed to drift (implementation in phase 2):
 composer install
 docker compose up -d db                       # LIMINAL_DB_PORT overrides the host port
 export LIMINAL_DSN='mysql://liminal:liminal@127.0.0.1:3306/liminal_test'
-php bin/liminal install                       # migrations + first company (MAIN)
-php -S localhost:8080 -t public
-curl localhost:8080/                          # {"status":"ok","routes":1}
+php bin/liminal install                       # migrations + first company + enables declared modules
+php bin/liminal authentication:user:create you@example.com   # prompts the password, mints the admin role
+php -S localhost:8080 -t public               # then sign in at localhost:8080/login
 php bin/liminal doctor
 php bin/liminal migrate:status
 ```
+
+Two commands take a virgin database to a signed-in administrator: `install`
+seeds the first company and enables every declared module for it;
+`user:create` prompts for a password (hidden, twice — there is no `--password`
+option on purpose: argv lands in shell history and `ps`) and creates the
+`admin` role holding every declared permission.
 
 ### Checks
 
@@ -116,9 +122,10 @@ of failing. Environment variables are documented in `.env.example`.
 
 ```
 bin/liminal          CLI
-config/              app.php, database.php
+config/              app.php, database.php, security.php
 docs/CONVENTIONS.md  THE coding standard — read it before contributing
-libs/                technical capabilities (System, Database, …)
+libs/                technical capabilities (System, Database, Security, Rendering, Module)
+modules/             business verticals (Authentication, …) — consume libs, fill registries
 public/index.php     single web entry point
 src/                 THE KERNEL — neither lib nor module
   Config/ Console/ Container/ Exception/ Http/ Registry/ Support/
@@ -135,7 +142,9 @@ tests/{Unit,Integration}
 | 2b | `lib/module`: Module contract, `app.modules`, install/enable lifecycle per company | ✅ |
 | 3 | `lib/security`: database sessions, deny-by-default routes, CSRF, per-request company scope, module gating | ✅ |
 | 4 | `lib/rendering`: Twig, contributable templates, view helpers, menu, translations, HTML error pages | ✅ |
-| 5 → 8 | `lib/api`, builder, business modules | upcoming |
+| 5a | `module/authentication`: users, per-company RBAC, sign-in pages, throttle + audit, bootstrap commands | ✅ |
+| 5b | `module/companies`: company CRUD, role screens, user administration | upcoming |
+| 6 → 8 | `lib/api`, builder, business modules | upcoming |
 
 ## Security
 
@@ -159,14 +168,19 @@ module gate (400).
 
 | Layer | Refusal |
 |---|---|
-| Unauthenticated on a protected route | 401 JSON (a login redirect replaces it in phase 4) |
+| Unauthenticated on a protected route | 401 JSON; a browser is redirected to the login page carrying `?redirect=` |
 | Unsafe method without a valid synchronizer token | 403 |
-| Route of a module disabled for this company | 404, identical to a nonexistent path |
-| Permission the resolver denies | `Gate::allows()` returns false (deny-all until phase 5) |
+| Route of a module disabled for this company | 404, identical to a nonexistent path (public routes bypass the gate — see below) |
+| Permission the resolver denies | `Gate::allows()` false for content, `RequestGate::authorize()` throws 403 for pages |
 
-The `UserProvider` and `PermissionResolver` defaults are deliberately inert
-(no users, no grants): the phase-5 authentication module replaces them through
-the same definition layering any module gets.
+The security lib owns the contracts — `UserProvider`, `PermissionResolver`,
+`LoginThrottle`, `AuthEventLog` — and ships inert defaults (no users, no
+grants, no limits, no log). The authentication module replaces all four
+through the same last-wins definition layering any module gets; nothing about
+it is a special case. Login throttling is checked *inside* the
+`Authenticator`, before any bcrypt runs, per identifier **and** per address —
+and success clears only the identifier counter, so a same-NAT attacker cannot
+launder an address lockout by logging into their own account.
 
 ## Rendering
 
@@ -197,6 +211,48 @@ Browsers get HTML refusals: a 404 renders an error page, a 401 redirects to the
 configured login route carrying the intended path as `?redirect=` — never in
 the session, since the unwind path must not mint one row per probe. JSON
 clients keep the exact JSON contract they had before rendering existed.
+
+## The authentication module
+
+The first business module, and the proof the primitives compose: it touches no
+core code, only fills registries and overrides lib contracts through ordinary
+definition layering.
+
+**Users** sign in with their email (the sole identifier — one uniqueness, one
+enumeration surface, and the future reset path needs it anyway), normalised in
+PHP so uniqueness never depends on the server's collation. `is_active` is the
+whole deactivation feature: filtered on login *and* on session hydration, so a
+deactivated user's live session ends at their next request.
+
+**RBAC is granted per company**: roles are global (`core_role`, with their
+permission codes), what varies is the grant — `core_user_company_role` binds
+user × company × role. A user with no grant anywhere has no accessible
+companies and cannot sign in at all. Permission reads are memoised per (user,
+company) and invalidated by the same `CompanyContext::onSwitch()` hook that
+clears the EntityManager, so a menu of N gated items costs one grants query
+per request.
+
+**None of its tables is company-scoped.** Login is pre-company (the filter
+would fence an anonymous request into the bootstrap company — a user of only
+company 2 could never sign in), and grants are cross-company administration by
+nature. The request-path security reads use plain DBAL, never the ORM: the
+company switch clears the EntityManager once per request *after*
+authentication runs, so any entity hydrated at auth time would be detached one
+middleware later, by construction.
+
+**Public routes** — `GET/POST /login`, `POST /logout` — bypass the module
+gate: pre-authentication is pre-company, so "is this module enabled for your
+company" is a question without a subject. That is what makes sign-in reachable
+before anything is enabled, and what keeps `module:disable authentication`
+from becoming a permanent lockout. Signing *out* must never depend on being
+signed in, so `/logout` is public too — still CSRF-protected, since token
+checks are method-based, not route-based.
+
+**Every login attempt leaves exactly one audit row** (`core_auth_event`:
+granted, refused, throttled, logout), append-only, with `SET NULL` on user
+deletion — deleting an account must not erase the record of what it did.
+Failed attempts flash and redirect, never throw: the error path persists no
+session state, which is precisely where a thrown failure would lose the flash.
 
 ## Multi-company
 

@@ -2,9 +2,12 @@
 
 Modular ERP core, PHP 8.4, no framework. `src/` is the kernel (config,
 container, HTTP pipeline, registries), `libs/` are the technical capabilities
-(System, Database), modules arrive in phase 2. Everything extends the system
-through registries filled at boot, then frozen; libs expose services through
-`DefinitionProvider` definitions collected before the container is built.
+(System, Database, Security, Rendering, Module), `modules/` are the business
+verticals (Authentication is the reference). Everything extends the system
+through registries filled at boot, then frozen; libs and modules expose
+services through `DefinitionProvider` definitions collected before the
+container is built — a module overrides a lib's contract by ordinary
+last-wins layering, never by special case.
 
 **The norm is [docs/CONVENTIONS.md](docs/CONVENTIONS.md). Read it before
 writing any code; it wins over habit.** Highlights: everything English,
@@ -26,12 +29,21 @@ php bin/liminal migrate:status  # read-only, never creates the metadata table
 php bin/liminal module:install <name>            # module migrations + record
 php bin/liminal module:enable <name> <company>   # per-company state (module:disable, module:list)
 php bin/liminal session:gc                       # sweep expired sessions (cron when gc_percent=0)
+php bin/liminal authentication:user:create <email>   # hidden prompt ×2 — NO --password option, ever
+php bin/liminal authentication:role:grant <email> <role>  # wires an EXISTING role, creates nothing
 ```
 
 Modules: implement `Module` (name/version/migrationNamespace), declare in
 app.modules, name every route `<module>.…` (the boot enforces it — that prefix
 is the gate's key). Shape always boots; installed/enabled is database state
-that boot never consults, and the module gate enforces it per request.
+that boot never consults, and the module gate enforces it per request —
+**except public routes**, which bypass the gate (pre-auth = pre-company;
+gating them would make `module:disable` a lockout). Module rules from 5a:
+request-path security reads are DBAL, never ORM (the company switch clears
+the EM after auth, so auth-time entities detach by construction);
+administration tables are never CompanyScoped; migration order across
+namespaces is contribution order, and a migration touching another
+namespace's table guards with `abortIf`, never `skipIf`.
 
 Security: routes are protected unless `public: true`. Middleware order is HTML
 errors (−950) → session (−900) → view context (−850) → auth (100) → CSRF (200)
@@ -46,7 +58,8 @@ a namespace first-hit-wins, so the registry serves latest-first — a module
 shadows a lib). `strict_variables` on, no `|raw` anywhere. Content degrades
 (absent flash, missing translation key), wiring fails loud (no session for a
 CSRF token, malformed catalogue). **Error templates carry no form**: they render
-on the unwind path where the session is never persisted.
+on the unwind path where the session is never persisted. Flashes are catalogue
+keys, translated by the layout at render time.
 
 Every commit: `type(scope): imperative subject`, body explains why,
 `composer check` green. Integration tests skip without a reachable DSN — run

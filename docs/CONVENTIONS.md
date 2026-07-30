@@ -100,6 +100,47 @@ docs. No exceptions.
   company, and boot never consults the database. Route names carry the
   module-name prefix (`<module>.…`) — the module gate's key, enforced at boot.
 
+## Module authoring
+
+The authentication module is the reference implementation; these rules are
+what it proves.
+
+- A module owns its slugs: route names prefixed `<module>.`, the template
+  namespace `@<module>`, its own translation catalogue and its own migration
+  namespace. Nothing is shared, nothing is scanned.
+- **Public routes are not module-gated.** A public route is pre-authentication
+  and therefore pre-company, so "enabled for your company" has no subject —
+  and gating it would let `module:disable` lock everyone out of sign-in. The
+  documented cost: a module wanting a *gated* public page must gate inside
+  its handler.
+- **Request-path security reads never use the ORM.** The company switch
+  middleware clears the EntityManager once per request, *after*
+  authentication ran: any entity hydrated at auth time is detached one
+  middleware later, by construction. Plain DBAL, and a value object
+  (`Identity`) for the authenticated user — the entities exist for
+  administration screens only.
+- **Administration tables are never `CompanyScoped`.** Two independent
+  disqualifications: an anonymous login request would be fenced into the
+  bootstrap company (a user of only company 2 could never sign in — and it
+  would work on every dev machine where everyone is in company 1), and the
+  scope trait's write-once stamp would stop an admin in company 1 from
+  creating a grant for company 2. Cross-company by nature is not an exception
+  to scoping; it is the reason the interface is opt-in.
+- Migration order across namespaces is contribution order
+  (`ContributionOrderComparator`): libs in `app.libs` order, then modules in
+  `app.modules` order; an unregistered namespace sorts last. A migration that
+  touches another namespace's table (the sanctioned FK case) must still guard
+  with `abortIf`, **never `skipIf`** — skipping records the version as
+  executed and the statement never runs.
+- A module may read the config section of the lib whose contract it
+  implements (the throttle reads `security.login_throttle`): the section
+  belongs to the contract, not the binding. It may not read another module's
+  section — there is no module→module dependency mechanism, on purpose.
+- Handlers on the login path follow the house rule with teeth: **failure is a
+  flash plus a redirect, never a throw.** Flash values are catalogue keys,
+  translated by the layout at render time; free text degrades through the
+  missing-key rule unchanged.
+
 ## Rendering
 
 - Templates and translations are contributions: register a namespace or a
@@ -139,12 +180,22 @@ docs. No exceptions.
 
 ## Known gaps (recorded, not forgotten)
 
-- `Cache-Control: no-store` is emitted on cookie-issuing responses only. A
-  policy for authenticated pages in general is a phase-5 rendering decision.
+- `Cache-Control: no-store` is emitted on cookie-issuing responses only and on
+  the authenticated pages that opt in (`/account`, `/users`); a general policy
+  for authenticated pages is still open.
 - `ResponseEmitter` does not strip bodies from HEAD responses — a pre-existing
   kernel gap; the fix is to pass the request method into `emit()`.
 - ~~`Gate::authorize()`~~ closed in phase 5a: `RequestGate` is the throwing
   companion, in the lib so no module depends on another module.
+- The menu has no "active item" flag: the view context is primed at −850,
+  before the router matched anything. The obvious implementation is wrong, not
+  merely missing — it needs a second, post-router middleware.
+- For phase 5b, recorded from 5a: creating a company must enable the declared
+  modules for it (install only covers the seeded first company — thanks to
+  the public-route bypass the failure is 404s, never a lockout); the user
+  screens must make a user with no grant anywhere visible (today that state
+  is only an empty roles cell); the role editor must refuse to delete or
+  rename the `admin` code the bootstrap command anchors on.
 
 ## Console commands
 
@@ -156,7 +207,15 @@ docs. No exceptions.
   `DatabaseHealth`, `FirstCompanySeeder`, `ModuleManager` are the
   precedents, all built on `DeferredConnection::resolver()`).
 - Diagnostics never mutate what they inspect (`doctor`, `migrate:status`);
-  `install` is the one command allowed to write.
+  writes belong to the commands whose name says so (`install`,
+  `authentication:user:create`, …).
+- A command that needs a secret prompts for it hidden — **never an option or
+  argument**, because argv lands in shell history and `ps` output. A
+  non-interactive run is refused explicitly rather than served by an invented
+  secret.
+- `CommandResolutionTest` enforces the eager-resolution rule: it resolves
+  every registered command on a DSN-less checkout, so a constructor-injected
+  `Connection` fails in CI naming the class.
 
 ## Configuration and environment
 
