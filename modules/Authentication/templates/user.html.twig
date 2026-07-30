@@ -39,6 +39,7 @@
             <tr>
                 <th>{{ 'authentication.user.grant_company'|trans }}</th>
                 <th>{{ 'authentication.user.grant_role'|trans }}</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
@@ -46,13 +47,46 @@
                 <tr>
                     <td>{{ grant.companyName }} ({{ grant.companyCode }})</td>
                     <td>{{ grant.roleLabel }} ({{ grant.roleCode }})</td>
+                    <td>
+                        <form method="post" action="{{ url('authentication.user_revoke', {'id': account.id}) }}">
+                            {{ csrf_field() }}
+                            <input type="hidden" name="company" value="{{ grant.companyId }}">
+                            <input type="hidden" name="role" value="{{ grant.roleId }}">
+                            <button type="submit">{{ 'authentication.user.revoke'|trans }}</button>
+                        </form>
+                    </td>
                 </tr>
             {% else %}
                 {# Zero rows here IS the "cannot sign in anywhere" state. #}
-                <tr><td colspan="2">{{ 'authentication.user.no_grants'|trans }}</td></tr>
+                <tr><td colspan="3">{{ 'authentication.user.no_grants'|trans }}</td></tr>
             {% endfor %}
         </tbody>
     </table>
+
+    <form method="post" action="{{ url('authentication.user_grant', {'id': account.id}) }}">
+        {{ csrf_field() }}
+        <label for="grant-company">{{ 'authentication.user.grant_company'|trans }}</label>
+        <select id="grant-company" name="company">
+            {% for company in companies %}
+                <option value="{{ company.id }}">{{ company.name }} ({{ company.code }})</option>
+            {% endfor %}
+        </select>
+        <label for="grant-role">{{ 'authentication.user.grant_role'|trans }}</label>
+        <select id="grant-role" name="role">
+            {% for role in roles %}
+                <option value="{{ role.id }}">{{ role.label }} ({{ role.code }})</option>
+            {% endfor %}
+        </select>
+        <button type="submit">{{ 'authentication.user.add_grant'|trans }}</button>
+    </form>
+
+    <h2>{{ 'authentication.user.password'|trans }}</h2>
+    <form method="post" action="{{ url('authentication.user_password', {'id': account.id}) }}">
+        {{ csrf_field() }}
+        {# Generates a fresh secret shown once, and ends the user's OTHER
+           sessions — a credential change must not leave old sessions alive. #}
+        <button type="submit">{{ 'authentication.user.reset_password'|trans }}</button>
+    </form>
 
     {% if not isSelf %}
         <h2>{{ 'authentication.user.danger'|trans }}</h2>

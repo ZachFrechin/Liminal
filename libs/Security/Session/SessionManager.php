@@ -183,6 +183,34 @@ final readonly class SessionManager
     }
 
     /**
+     * Ends every live session of one user — the sign-out-everywhere a
+     * credential change demands: after a password reset, a session an
+     * attacker may already hold must not outlive the secret it was minted
+     * under. Deletion beats concurrent writers for the same reason logout
+     * does: hydrated sessions persist by UPDATE, and zero rows is accepted.
+     *
+     * $exceptSessionId spares one session, given as the RAW id a Session
+     * object carries — hashing is this class's business alone. The actor
+     * resetting their OWN password just proved who they are, and ending their
+     * session mid-response would be theatre, not security.
+     *
+     * @return int the number of sessions ended
+     */
+    public function endAllFor(int $userId, ?string $exceptSessionId = null): int
+    {
+        $connection = ($this->connection)();
+
+        $deleted = $exceptSessionId === null
+            ? $connection->executeStatement('DELETE FROM core_session WHERE user_id = ?', [$userId])
+            : $connection->executeStatement(
+                'DELETE FROM core_session WHERE user_id = ? AND id <> ?',
+                [$userId, self::hash($exceptSessionId)],
+            );
+
+        return (int) $deleted;
+    }
+
+    /**
      * @throws JsonException
      */
     private function insert(Connection $connection, Session $session, DateTimeImmutable $now): void

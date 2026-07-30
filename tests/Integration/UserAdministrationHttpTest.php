@@ -223,9 +223,153 @@ final class UserAdministrationHttpTest extends IntegrationTestCase
         self::assertStringNotContainsString('bob@liminal.test', $list);
     }
 
+    public function testGrantingAndRevokingThroughTheFormsMovesRealAccess(): void
+    {
+        $this->seedSecondCompany(granting: null);
+
+        $kernel = $this->kernel();
+        $ada = $this->login($kernel, 'ada@liminal.test');
+        $bobId = $this->idOf('bob@liminal.test');
+        $memberRole = $this->roleIdOf('member');
+
+        $detail = $kernel->handle($this->get('/users/' . $bobId, $ada));
+        $token = $this->tokenFrom((string) $detail->getBody());
+
+        // Grant member@ACME through the form.
+        $granted = $kernel->handle($this->post(
+            '/users/' . $bobId . '/grants',
+            ['company' => '2', 'role' => (string) $memberRole, '_token' => $token],
+            $ada,
+        ));
+
+        self::assertSame(302, $granted->getStatusCode());
+
+        $after = (string) $kernel->handle($this->get('/users/' . $bobId, $ada))->getBody();
+        self::assertStringContainsString('Role granted.', $after);
+        self::assertStringContainsString('Acme Corp (ACME)', $after);
+
+        // The access is real: Bob can now switch to ACME.
+        $bob = $this->login($kernel, 'bob@liminal.test');
+        $account = (string) $kernel->handle($this->get('/account', $bob))->getBody();
+        self::assertStringContainsString('Acme Corp (ACME)', $account);
+
+        // Revoke it; the detail no longer lists it.
+        $revoked = $kernel->handle($this->post(
+            '/users/' . $bobId . '/grants/revoke',
+            ['company' => '2', 'role' => (string) $memberRole, '_token' => $token],
+            $ada,
+        ));
+
+        self::assertSame(302, $revoked->getStatusCode());
+
+        $final = (string) $kernel->handle($this->get('/users/' . $bobId, $ada))->getBody();
+        self::assertStringContainsString('Role revoked.', $final);
+        self::assertStringNotContainsString('Acme Corp (ACME)</td>', $final);
+    }
+
+    public function testATamperedGrantFormIsRefusedWithoutARicherOracle(): void
+    {
+        $kernel = $this->kernel();
+        $ada = $this->login($kernel, 'ada@liminal.test');
+        $bobId = $this->idOf('bob@liminal.test');
+
+        $detail = $kernel->handle($this->get('/users/' . $bobId, $ada));
+
+        $response = $kernel->handle($this->post(
+            '/users/' . $bobId . '/grants',
+            ['company' => '999', 'role' => '999', '_token' => $this->tokenFrom((string) $detail->getBody())],
+            $ada,
+        ));
+
+        self::assertSame(302, $response->getStatusCode());
+
+        $after = (string) $kernel->handle($this->get('/users/' . $bobId, $ada))->getBody();
+        self::assertStringContainsString('That company or role does not exist.', $after);
+        self::assertEquals(2, $this->dbal->fetchOne('SELECT COUNT(*) FROM core_user_company_role'));
+    }
+
+    /**
+     * Revoking your own last grant is allowed — it is per company and any
+     * other administrator can restore it — and the fallout is the orderly
+     * fail-closed logout that already existed, not an error.
+     */
+    public function testRevokingYourOwnLastGrantIsAnOrderlyForcedLogout(): void
+    {
+        $kernel = $this->kernel();
+        $ada = $this->login($kernel, 'ada@liminal.test');
+        $adaId = $this->idOf('ada@liminal.test');
+        $adminRole = $this->roleIdOf('admin');
+
+        $detail = $kernel->handle($this->get('/users/' . $adaId, $ada));
+
+        $revoked = $kernel->handle($this->post(
+            '/users/' . $adaId . '/grants/revoke',
+            ['company' => '1', 'role' => (string) $adminRole, '_token' => $this->tokenFrom((string) $detail->getBody())],
+            $ada,
+        ));
+
+        // The revocation itself succeeds…
+        self::assertSame(302, $revoked->getStatusCode());
+        // …and the very next request is an anonymous browser again. The 401
+        // unwinds past persist, so the ROW keeps its user_id — which is what
+        // lets the session resume if another admin restores the grant.
+        self::assertSame(302, $kernel->handle($this->get('/account', $ada))->getStatusCode());
+        self::assertSame(302, $kernel->handle($this->get('/users', $ada))->getStatusCode());
+    }
+
+    public function testResettingAPasswordShowsItOnceAndEndsTheUsersOtherSessions(): void
+    {
+        $kernel = $this->kernel();
+        $bob = $this->login($kernel, 'bob@liminal.test');
+        $ada = $this->login($kernel, 'ada@liminal.test');
+        $bobId = $this->idOf('bob@liminal.test');
+
+        $detail = $kernel->handle($this->get('/users/' . $bobId, $ada));
+
+        $reset = $kernel->handle($this->post(
+            '/users/' . $bobId . '/password',
+            ['_token' => $this->tokenFrom((string) $detail->getBody())],
+            $ada,
+        ));
+
+        self::assertSame(200, $reset->getStatusCode());
+        self::assertSame('no-store', $reset->getHeaderLine('Cache-Control'));
+
+        $html = (string) $reset->getBody();
+
+        if (preg_match('/<code class="one-time-password">([^<]+)<\/code>/', $html, $matches) !== 1) {
+            self::fail('No one-time password on the page.');
+        }
+        $password = $matches[1];
+
+        // A credential change ends the user's live sessions: Bob's browser is
+        // anonymous again, while Ada — the actor — keeps hers.
+        self::assertSame(302, $kernel->handle($this->get('/account', $bob))->getStatusCode());
+        self::assertSame(200, $kernel->handle($this->get('/account', $ada))->getStatusCode());
+
+        // The old password is dead, the shown one works.
+        [$cookie, $token] = $this->openLoginForm($kernel);
+        $old = $kernel->handle($this->post(
+            '/login',
+            ['identifier' => 'bob@liminal.test', 'password' => 'correct-horse', '_token' => $token],
+            $cookie,
+        ));
+        self::assertSame('/login', $old->getHeaderLine('Location'));
+
+        $this->login($kernel, 'bob@liminal.test', $password);
+    }
+
     private function idOf(string $email): int
     {
         $id = $this->dbal->fetchOne('SELECT id FROM core_user WHERE email = ?', [$email]);
+        self::assertIsNumeric($id);
+
+        return (int) $id;
+    }
+
+    private function roleIdOf(string $code): int
+    {
+        $id = $this->dbal->fetchOne('SELECT id FROM core_role WHERE code = ?', [$code]);
         self::assertIsNumeric($id);
 
         return (int) $id;

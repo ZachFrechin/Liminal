@@ -23,7 +23,10 @@ use Liminal\Module\Authentication\Http\UserCreatePageHandler;
 use Liminal\Module\Authentication\Http\UserCreateSubmitHandler;
 use Liminal\Module\Authentication\Http\UserDeleteHandler;
 use Liminal\Module\Authentication\Http\UserDetailHandler;
+use Liminal\Module\Authentication\Http\UserGrantHandler;
 use Liminal\Module\Authentication\Http\UserListHandler;
+use Liminal\Module\Authentication\Http\UserPasswordResetHandler;
+use Liminal\Module\Authentication\Http\UserRevokeHandler;
 use Liminal\Module\Authentication\Http\UserUpdateHandler;
 use Liminal\Module\Authentication\Security\DbalAuthEventLog;
 use Liminal\Module\Authentication\Security\DbalLoginThrottle;
@@ -111,6 +114,9 @@ final class AuthenticationModule implements Module, DefinitionProvider
         $routes->get('/users/{id:\d+}', UserDetailHandler::class, 'authentication.user');
         $routes->post('/users/{id:\d+}', UserUpdateHandler::class, 'authentication.user_update');
         $routes->post('/users/{id:\d+}/delete', UserDeleteHandler::class, 'authentication.user_delete');
+        $routes->post('/users/{id:\d+}/grants', UserGrantHandler::class, 'authentication.user_grant');
+        $routes->post('/users/{id:\d+}/grants/revoke', UserRevokeHandler::class, 'authentication.user_revoke');
+        $routes->post('/users/{id:\d+}/password', UserPasswordResetHandler::class, 'authentication.user_password');
 
         $registries->get(PermissionRegistry::class)
             ->add(new Permission(UserListHandler::PERMISSION, 'authentication.permission.user.manage', self::NAME));
