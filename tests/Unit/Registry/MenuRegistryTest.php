@@ -25,6 +25,20 @@ final class MenuRegistryTest extends TestCase
         );
     }
 
+    public function testAnItemMayNameAnIconAndDefaultsToNone(): void
+    {
+        // The icon travels with the item untouched — rendering decides what a
+        // null icon means (no glyph), the registry only carries it.
+        $registry = new MenuRegistry();
+        $registry->add(new MenuItem('Users', 'users.list', icon: 'users'));
+        $registry->add(new MenuItem('Bare', 'bare.route'));
+
+        [$iconed, $bare] = $registry->all();
+
+        self::assertSame('users', $iconed->icon);
+        self::assertNull($bare->icon);
+    }
+
     public function testTheOrderingSurvivesFreezing(): void
     {
         $registry = new MenuRegistry();
