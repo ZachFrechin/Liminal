@@ -21,4 +21,13 @@ final class RenderingException extends LogicException implements LiminalExceptio
             $function,
         ));
     }
+
+    public static function orphanedMenuParent(string $label, string $parent): self
+    {
+        return new self(sprintf(
+            'Menu item "%s" names the parent route "%s", which no contributed item declares.',
+            $label,
+            $parent,
+        ));
+    }
 }

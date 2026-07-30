@@ -24,6 +24,22 @@ final class MenuRegistry extends AbstractRegistry
         $this->items[] = $item;
     }
 
+    /**
+     * Whether any item points at this route name. Lets a consumer tell a
+     * parent that was filtered out from one that was never contributed —
+     * the difference between hiding a subtree and a wiring mistake.
+     */
+    public function has(string $route): bool
+    {
+        foreach ($this->items as $item) {
+            if ($item->route === $route) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /** @return list<MenuItem> ordered by ascending priority */
     public function all(): array
     {

@@ -1,0 +1,14 @@
+{# Recursive over MenuNode: the builder has already applied every filter, so
+   whatever reaches here is visible to this request. #}
+{% if nodes is not empty %}
+    <ul>
+        {% for node in nodes %}
+            <li>
+                <a href="{{ url(node.item.route) }}">{{ node.item.label }}</a>
+                {% if node.children is not empty %}
+                    {% include '@liminal/_menu.html.twig' with {'nodes': node.children} only %}
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}

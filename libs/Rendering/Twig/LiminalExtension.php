@@ -6,6 +6,7 @@ namespace Liminal\Lib\Rendering\Twig;
 
 use Liminal\Http\UrlGenerator;
 use Liminal\Lib\Rendering\Exception\RenderingException;
+use Liminal\Lib\Rendering\Menu\MenuBuilder;
 use Liminal\Lib\Rendering\View\ViewContext;
 use Liminal\Lib\Security\Authentication\CurrentUser;
 use Liminal\Lib\Security\Csrf\CsrfMiddleware;
@@ -31,6 +32,7 @@ final class LiminalExtension extends AbstractExtension
         private readonly CsrfTokenManager $csrf,
         private readonly ViewContext $viewContext,
         private readonly CurrentUser $currentUser,
+        private readonly MenuBuilder $menu,
     ) {}
 
     /**
@@ -44,6 +46,7 @@ final class LiminalExtension extends AbstractExtension
             new TwigFunction('csrf_field', $this->csrfField(...), ['is_safe' => ['html']]),
             new TwigFunction('flash', $this->flash(...)),
             new TwigFunction('current_user', $this->currentUser->get(...)),
+            new TwigFunction('menu', $this->menu->build(...)),
         ];
     }
 

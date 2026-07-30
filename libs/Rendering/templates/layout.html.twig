@@ -23,6 +23,9 @@
 <body>
 <header>
     <strong>Liminal</strong>
+    {% block menu %}
+        <nav>{% include '@liminal/_menu.html.twig' with {'nodes': menu()} only %}</nav>
+    {% endblock %}
     {% block header %}{% endblock %}
 </header>
 <main>

@@ -112,6 +112,36 @@ final readonly class ModuleManager
     }
 
     /**
+     * Enablement of every declared module for one company in a SINGLE query —
+     * the menu's read, where isEnabled() per item would mean one query per
+     * entry. The gate keeps isEnabled(): one route, one module.
+     *
+     * @return array<string, bool> complete over declared modules; a missing row reads false
+     */
+    public function enabledFor(int $companyId): array
+    {
+        $enabled = array_fill_keys(array_keys($this->modules->all()), false);
+
+        $rows = ($this->connection)()->fetchAllAssociative(
+            'SELECT m.name
+             FROM core_module_company mc
+             JOIN core_module m ON m.id = mc.module_id
+             WHERE mc.company_id = ? AND mc.enabled = 1',
+            [$companyId],
+        );
+
+        foreach ($rows as $row) {
+            $name = $row['name'] ?? null;
+
+            if (is_string($name) && array_key_exists($name, $enabled)) {
+                $enabled[$name] = true;
+            }
+        }
+
+        return $enabled;
+    }
+
+    /**
      * Declared modules in declaration order, then installed rows whose module
      * left app.modules — removing a declaration must not hide database state.
      *
