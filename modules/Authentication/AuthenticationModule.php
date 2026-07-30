@@ -18,6 +18,12 @@ use Liminal\Module\Authentication\Http\AccountHandler;
 use Liminal\Module\Authentication\Http\LoginPageHandler;
 use Liminal\Module\Authentication\Http\LoginSubmitHandler;
 use Liminal\Module\Authentication\Http\LogoutHandler;
+use Liminal\Module\Authentication\Http\RoleCreatePageHandler;
+use Liminal\Module\Authentication\Http\RoleCreateSubmitHandler;
+use Liminal\Module\Authentication\Http\RoleDeleteHandler;
+use Liminal\Module\Authentication\Http\RoleDetailHandler;
+use Liminal\Module\Authentication\Http\RoleListHandler;
+use Liminal\Module\Authentication\Http\RoleUpdateHandler;
 use Liminal\Module\Authentication\Http\SwitchCompanyHandler;
 use Liminal\Module\Authentication\Http\UserCreatePageHandler;
 use Liminal\Module\Authentication\Http\UserCreateSubmitHandler;
@@ -118,8 +124,18 @@ final class AuthenticationModule implements Module, DefinitionProvider
         $routes->post('/users/{id:\d+}/grants/revoke', UserRevokeHandler::class, 'authentication.user_revoke');
         $routes->post('/users/{id:\d+}/password', UserPasswordResetHandler::class, 'authentication.user_password');
 
-        $registries->get(PermissionRegistry::class)
-            ->add(new Permission(UserListHandler::PERMISSION, 'authentication.permission.user.manage', self::NAME));
+        // Role administration — its own permission: editing what a role MEANS
+        // is a different blast radius than deciding who holds it.
+        $routes->get('/roles', RoleListHandler::class, 'authentication.roles');
+        $routes->get('/roles/create', RoleCreatePageHandler::class, 'authentication.role_create');
+        $routes->post('/roles/create', RoleCreateSubmitHandler::class, 'authentication.role_create_submit');
+        $routes->get('/roles/{id:\d+}', RoleDetailHandler::class, 'authentication.role');
+        $routes->post('/roles/{id:\d+}', RoleUpdateHandler::class, 'authentication.role_update');
+        $routes->post('/roles/{id:\d+}/delete', RoleDeleteHandler::class, 'authentication.role_delete');
+
+        $permissions = $registries->get(PermissionRegistry::class);
+        $permissions->add(new Permission(UserListHandler::PERMISSION, 'authentication.permission.user.manage', self::NAME));
+        $permissions->add(new Permission(RoleListHandler::PERMISSION, 'authentication.permission.role.manage', self::NAME));
 
         // Bootstrap commands. Their constructors inject only deferred-connection
         // services: the console resolves every registered command eagerly.
@@ -134,6 +150,12 @@ final class AuthenticationModule implements Module, DefinitionProvider
             'authentication.users',
             UserListHandler::PERMISSION,
             priority: 910,
+        ));
+        $menu->add(new MenuItem(
+            'authentication.menu.roles',
+            'authentication.roles',
+            RoleListHandler::PERMISSION,
+            priority: 915,
         ));
     }
 

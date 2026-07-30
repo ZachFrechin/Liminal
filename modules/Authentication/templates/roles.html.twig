@@ -1,0 +1,32 @@
+{% extends '@liminal/layout.html.twig' %}
+
+{% block title %}{{ 'authentication.roles.title'|trans }}{% endblock %}
+
+{% block content %}
+    <h1>{{ 'authentication.roles.title'|trans }}</h1>
+
+    <p><a href="{{ url('authentication.role_create') }}">{{ 'authentication.roles.create'|trans }}</a></p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>{{ 'authentication.roles.code'|trans }}</th>
+                <th>{{ 'authentication.roles.label'|trans }}</th>
+                <th>{{ 'authentication.roles.permissions'|trans }}</th>
+                <th>{{ 'authentication.roles.grants'|trans }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for role in roles %}
+                <tr>
+                    <td><a href="{{ url('authentication.role', {'id': role.id}) }}">{{ role.code }}</a></td>
+                    <td>{{ role.label }}</td>
+                    <td>{{ role.permissionCount }}</td>
+                    {# The grant count is what a deletion would revoke, across
+                       every company at once. #}
+                    <td>{{ role.grantCount }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

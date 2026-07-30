@@ -1,0 +1,52 @@
+{% extends '@liminal/layout.html.twig' %}
+
+{% block title %}{{ role.code }} — {{ 'authentication.role.title'|trans }}{% endblock %}
+
+{% block content %}
+    {# The code is on display, never in a field: renaming it is structurally
+       impossible, which is what keeps the admin anchor safe. #}
+    <h1>{{ role.label }} <code>{{ role.code }}</code></h1>
+
+    <form method="post" action="{{ url('authentication.role_update', {'id': role.id}) }}">
+        {{ csrf_field() }}
+
+        <p>
+            <label for="label">{{ 'authentication.role.label'|trans }}</label><br>
+            <input type="text" id="label" name="label" value="{{ role.label }}" required>
+        </p>
+
+        <h2>{{ 'authentication.role.permissions'|trans }}</h2>
+        {% for group, permissions in groups %}
+            <h3>{{ group }}</h3>
+            {% for permission in permissions %}
+                <label>
+                    <input type="checkbox" name="permissions[]" value="{{ permission.code }}"
+                        {%- if permission.code in held %} checked{% endif %}>
+                    {{ permission.label|trans }} <code>{{ permission.code }}</code>
+                </label><br>
+            {% endfor %}
+        {% endfor %}
+
+        {% if unknown is not empty %}
+            {# Stored but no longer declared (a module was removed): inert at
+               runtime, shown for honesty, gone at the next save. #}
+            <p><em>{{ 'authentication.role.unknown'|trans }}</em>
+                {% for code in unknown %}<code>{{ code }}</code> {% endfor %}
+            </p>
+        {% endif %}
+
+        <p><button type="submit">{{ 'authentication.role.save'|trans }}</button></p>
+    </form>
+
+    {% if not isAdmin %}
+        <h2>{{ 'authentication.role.danger'|trans }}</h2>
+        {# Deleting a role revokes it from every holder in every company. #}
+        <p>{{ 'authentication.role.delete_warning'|trans }}</p>
+        <form method="post" action="{{ url('authentication.role_delete', {'id': role.id}) }}">
+            {{ csrf_field() }}
+            <button type="submit">{{ 'authentication.role.delete'|trans }}</button>
+        </form>
+    {% else %}
+        <p><em>{{ 'authentication.role.admin_note'|trans }}</em></p>
+    {% endif %}
+{% endblock %}

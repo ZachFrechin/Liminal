@@ -174,7 +174,7 @@ trait BrowserJourney
     }
 
     /**
-     * @param array<string, string> $body
+     * @param array<string, string|list<string>> $body checkbox groups post lists
      */
     private function post(string $path, array $body, ?string $cookie = null): ServerRequestInterface
     {

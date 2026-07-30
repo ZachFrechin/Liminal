@@ -120,7 +120,17 @@ final class AuthenticationCommandsTest extends IntegrationTestCase
         self::assertSame(Command::SUCCESS, $second->execute(['email' => 'bob@liminal.test']));
         self::assertStringContainsString('authentication.user.manage', $second->getDisplay());
         self::assertStringContainsString('Left untouched', $second->getDisplay());
-        self::assertEquals(0, $this->dbal->fetchOne('SELECT COUNT(*) FROM core_role_permission'));
+        // Only the deleted rows are missing: every OTHER declared permission
+        // the first run granted is still there, untouched.
+        self::assertEquals(
+            $this->declaredPermissionCount() - 1,
+            $this->dbal->fetchOne('SELECT COUNT(*) FROM core_role_permission'),
+        );
+    }
+
+    private function declaredPermissionCount(): int
+    {
+        return count(new Kernel(self::ROOT)->registries()->get(\Liminal\Registry\PermissionRegistry::class)->all());
     }
 
     public function testAShortPasswordIsRefusedAndNothingIsCreated(): void

@@ -152,6 +152,49 @@ final class AuthenticationSchemaTest extends IntegrationTestCase
         self::assertEquals(0, $this->dbal->fetchOne('SELECT COUNT(*) FROM core_user_company_role'));
     }
 
+    /**
+     * The 5b upgrade path: an instance whose admin role predates the
+     * role.manage permission gets it granted by migration — otherwise the new
+     * role screens would be unreachable on every upgraded instance, with no
+     * web recourse. Replaying the migration against a role that already holds
+     * the code adds nothing.
+     */
+    public function testTheUpgradeMigrationGrantsRoleManageToAnExistingAdminRole(): void
+    {
+        $this->migrate();
+
+        // Rewind to the pre-5b state: an admin role holding only user.manage,
+        // and the upgrade migration not yet recorded.
+        $this->dbal->insert('core_role', ['code' => 'admin', 'label' => 'Administrator']);
+        $roleId = (int) $this->dbal->lastInsertId();
+        $this->dbal->insert('core_role_permission', [
+            'role_id' => $roleId,
+            'permission_code' => 'authentication.user.manage',
+        ]);
+        $this->dbal->executeStatement(
+            "DELETE FROM core_migration_version WHERE version LIKE '%Version20260730000001'",
+        );
+
+        $this->migrate();
+
+        self::assertEquals(1, $this->dbal->fetchOne(
+            "SELECT COUNT(*) FROM core_role_permission
+             WHERE role_id = ? AND permission_code = 'authentication.role.manage'",
+            [$roleId],
+        ));
+
+        // Replaying against an already-granted role is a no-op, not a dupe.
+        $this->dbal->executeStatement(
+            "DELETE FROM core_migration_version WHERE version LIKE '%Version20260730000001'",
+        );
+        $this->migrate();
+
+        self::assertEquals(2, $this->dbal->fetchOne(
+            'SELECT COUNT(*) FROM core_role_permission WHERE role_id = ?',
+            [$roleId],
+        ));
+    }
+
     public function testTheEmailUniqueIndexHolds(): void
     {
         $this->migrate();
