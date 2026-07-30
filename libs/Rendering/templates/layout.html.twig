@@ -26,7 +26,12 @@
     {% block header %}{% endblock %}
 </header>
 <main>
-    {% block flash %}{% endblock %}
+    {% block flash %}
+        {% set flash_success = flash('success') %}
+        {% if flash_success %}<p class="flash flash-success" role="status">{{ flash_success }}</p>{% endif %}
+        {% set flash_error = flash('error') %}
+        {% if flash_error %}<p class="flash flash-error" role="alert">{{ flash_error }}</p>{% endif %}
+    {% endblock %}
     {% block content %}{% endblock %}
 </main>
 <footer>{% block footer %}{% endblock %}</footer>

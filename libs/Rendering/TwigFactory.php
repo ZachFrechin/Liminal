@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Liminal\Lib\Rendering;
 
+use Liminal\Lib\Rendering\Twig\LiminalExtension;
 use Liminal\Registry\TemplateRegistry;
 use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
@@ -18,7 +19,10 @@ use Twig\Loader\FilesystemLoader;
  */
 final readonly class TwigFactory
 {
-    public function __construct(private TemplateRegistry $templates) {}
+    public function __construct(
+        private TemplateRegistry $templates,
+        private LiminalExtension $extension,
+    ) {}
 
     /**
      * @param string|false $cache compiled-template directory, or false in debug
@@ -33,7 +37,7 @@ final readonly class TwigFactory
             }
         }
 
-        return new Environment($loader, [
+        $environment = new Environment($loader, [
             'cache' => $cache,
             'debug' => $debug,
             // A missing variable is a wiring bug, never a blank cell.
@@ -43,5 +47,9 @@ final readonly class TwigFactory
             // Fresh adoption: no echo-era extensions to accommodate.
             'use_yield' => true,
         ]);
+
+        $environment->addExtension($this->extension);
+
+        return $environment;
     }
 }

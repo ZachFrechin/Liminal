@@ -30,6 +30,8 @@ final class FixtureSecurityContributor implements Contributor, DefinitionProvide
         $routes->post('/logout', LogoutHandler::class, 'security_fixture.logout');
         $routes->get('/widgets', WidgetsHandler::class, 'security_fixture.widgets');
         $routes->get('/page', PageHandler::class, 'security_fixture.page');
+        $routes->get('/form', FormHandler::class, 'security_fixture.form', public: true);
+        $routes->get('/flash', FlashHandler::class, 'security_fixture.flash', public: true);
 
         $registries->get(EntityRegistry::class)
             ->add('Liminal\Tests\Integration\Fixtures\Entity', dirname(__DIR__) . '/Entity');

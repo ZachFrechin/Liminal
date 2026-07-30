@@ -80,6 +80,38 @@ final class RenderingPipelineTest extends IntegrationTestCase
         self::assertStringContainsString('<h1>Rendered through the stack</h1>', $html);
     }
 
+    /**
+     * The design property working for its living: an anonymous page carrying
+     * a form engages the session — rendering csrf_field() is the first write,
+     * which is exactly what creates the row and the cookie.
+     */
+    public function testTheFirstFormRenderCreatesTheSessionRowAndCookie(): void
+    {
+        $response = $this->kernel()->handle($this->get('/form'));
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertStringContainsString('name="_token"', (string) $response->getBody());
+        self::assertMatchesRegularExpression('/^liminal=/', $response->getHeaderLine('Set-Cookie'));
+        self::assertEquals(1, $this->dbal->fetchOne('SELECT COUNT(*) FROM core_session'));
+    }
+
+    public function testFlashSurvivesExactlyOneRequest(): void
+    {
+        $kernel = $this->kernel();
+
+        $redirect = $kernel->handle($this->get('/flash'));
+
+        self::assertSame(302, $redirect->getStatusCode());
+
+        $cookie = $this->cookieValue($redirect);
+
+        $first = (string) $kernel->handle($this->get('/form', $cookie))->getBody();
+        $second = (string) $kernel->handle($this->get('/form', $cookie))->getBody();
+
+        self::assertStringContainsString('Saved.', $first);
+        self::assertStringNotContainsString('Saved.', $second);
+    }
+
     private function kernel(): Kernel
     {
         return new Kernel(self::ROOT);

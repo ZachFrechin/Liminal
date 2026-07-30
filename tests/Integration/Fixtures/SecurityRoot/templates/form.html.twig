@@ -1,0 +1,10 @@
+{% extends '@liminal/layout.html.twig' %}
+
+{% block title %}Fixture form{% endblock %}
+
+{% block content %}
+    <form method="post" action="{{ url('security_fixture.login') }}">
+        {{ csrf_field() }}
+        <button type="submit">Submit</button>
+    </form>
+{% endblock %}

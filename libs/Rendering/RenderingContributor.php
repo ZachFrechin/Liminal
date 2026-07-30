@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Liminal\Lib\Rendering;
 
 use Liminal\Config\Configuration;
+use Liminal\Lib\Rendering\Http\ViewContextMiddleware;
+use Liminal\Lib\Rendering\View\ViewContext;
 use Liminal\Registry\Contract\Contributor;
 use Liminal\Registry\Contract\DefinitionProvider;
+use Liminal\Registry\MiddlewareRegistry;
 use Liminal\Registry\RegistryCollection;
 use Liminal\Registry\TemplateRegistry;
 use Twig\Environment;
@@ -22,10 +25,20 @@ use Twig\Environment;
  */
 final class RenderingContributor implements Contributor, DefinitionProvider
 {
+    /**
+     * Immediately inside the session middleware (−900): every HttpException
+     * thrower downstream unwinds past an already-primed ViewContext, so the
+     * HTML error page at −950 always renders THIS request's state.
+     */
+    public const int VIEW_CONTEXT_PRIORITY = -850;
+
     public function contribute(RegistryCollection $registries): void
     {
         $registries->get(TemplateRegistry::class)
             ->add('liminal', __DIR__ . '/templates');
+
+        $registries->get(MiddlewareRegistry::class)
+            ->add(ViewContextMiddleware::class, self::VIEW_CONTEXT_PRIORITY);
     }
 
     /**
@@ -41,6 +54,10 @@ final class RenderingContributor implements Contributor, DefinitionProvider
                 $config->bool('app.debug') ? false : $config->string('app.cache_dir') . '/twig',
                 $config->bool('app.debug'),
             ),
+
+            // Shared and mutable by design — the CurrentUser precedent: the
+            // ViewContextMiddleware assigns it once per request.
+            ViewContext::class => static fn(): ViewContext => new ViewContext(),
         ];
     }
 }
