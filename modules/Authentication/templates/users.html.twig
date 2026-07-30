@@ -5,22 +5,34 @@
 {% block content %}
     <h1>{{ 'authentication.users.title'|trans }}</h1>
 
+    <p><a href="{{ url('authentication.user_create') }}">{{ 'authentication.users.create'|trans }}</a></p>
+
     <table>
         <thead>
             <tr>
                 <th>{{ 'authentication.users.email'|trans }}</th>
                 <th>{{ 'authentication.users.name'|trans }}</th>
                 <th>{{ 'authentication.users.roles'|trans }}</th>
+                <th>{{ 'authentication.users.status'|trans }}</th>
             </tr>
         </thead>
         <tbody>
             {% for entry in users %}
                 <tr>
-                    <td>{{ entry.email }}</td>
+                    <td><a href="{{ url('authentication.user', {'id': entry.id}) }}">{{ entry.email }}</a></td>
                     <td>{{ entry.displayName }}</td>
-                    {# An empty cell is the visible symptom of a user who cannot
-                       log in at all: no role anywhere means no accessible company. #}
                     <td>{{ entry.roles }}</td>
+                    <td>
+                        {% if not entry.active %}
+                            <span class="badge badge-inactive">{{ 'authentication.users.inactive'|trans }}</span>
+                        {% endif %}
+                        {# The state that would otherwise be invisible: no grant in ANY
+                           company means no accessible company — this user cannot sign
+                           in at all until someone grants them a role somewhere. #}
+                        {% if not entry.hasAnyGrant %}
+                            <span class="badge badge-no-access">{{ 'authentication.users.no_access'|trans }}</span>
+                        {% endif %}
+                    </td>
                 </tr>
             {% endfor %}
         </tbody>

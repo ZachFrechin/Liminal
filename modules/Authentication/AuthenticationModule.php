@@ -19,7 +19,12 @@ use Liminal\Module\Authentication\Http\LoginPageHandler;
 use Liminal\Module\Authentication\Http\LoginSubmitHandler;
 use Liminal\Module\Authentication\Http\LogoutHandler;
 use Liminal\Module\Authentication\Http\SwitchCompanyHandler;
+use Liminal\Module\Authentication\Http\UserCreatePageHandler;
+use Liminal\Module\Authentication\Http\UserCreateSubmitHandler;
+use Liminal\Module\Authentication\Http\UserDeleteHandler;
+use Liminal\Module\Authentication\Http\UserDetailHandler;
 use Liminal\Module\Authentication\Http\UserListHandler;
+use Liminal\Module\Authentication\Http\UserUpdateHandler;
 use Liminal\Module\Authentication\Security\DbalAuthEventLog;
 use Liminal\Module\Authentication\Security\DbalLoginThrottle;
 use Liminal\Module\Authentication\Security\DbalPermissionResolver;
@@ -96,7 +101,16 @@ final class AuthenticationModule implements Module, DefinitionProvider
         $routes->post('/logout', LogoutHandler::class, 'authentication.logout', public: true);
         $routes->get('/account', AccountHandler::class, 'authentication.account');
         $routes->post('/switch-company', SwitchCompanyHandler::class, 'authentication.switch');
+
+        // User administration. Statics before dynamics, and {id:\d+} is
+        // load-bearing: a bare {id} would also match "create", and FastRoute
+        // then refuses the static route or shadows it depending on order.
         $routes->get('/users', UserListHandler::class, 'authentication.users');
+        $routes->get('/users/create', UserCreatePageHandler::class, 'authentication.user_create');
+        $routes->post('/users/create', UserCreateSubmitHandler::class, 'authentication.user_create_submit');
+        $routes->get('/users/{id:\d+}', UserDetailHandler::class, 'authentication.user');
+        $routes->post('/users/{id:\d+}', UserUpdateHandler::class, 'authentication.user_update');
+        $routes->post('/users/{id:\d+}/delete', UserDeleteHandler::class, 'authentication.user_delete');
 
         $registries->get(PermissionRegistry::class)
             ->add(new Permission(UserListHandler::PERMISSION, 'authentication.permission.user.manage', self::NAME));

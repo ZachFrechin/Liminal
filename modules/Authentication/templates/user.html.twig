@@ -1,0 +1,64 @@
+{% extends '@liminal/layout.html.twig' %}
+
+{% block title %}{{ account.displayName }} — {{ 'authentication.user.title'|trans }}{% endblock %}
+
+{% block content %}
+    <h1>{{ account.displayName }} <small>({{ account.email }})</small></h1>
+
+    <form method="post" action="{{ url('authentication.user_update', {'id': account.id}) }}">
+        {{ csrf_field() }}
+
+        <p>
+            <label for="display_name">{{ 'authentication.user.display_name'|trans }}</label><br>
+            <input type="text" id="display_name" name="display_name" value="{{ account.displayName }}" required>
+        </p>
+        <p>
+            {# The checkbox posts nothing when unchecked, so a hidden 0 rides
+               along and the checked box overrides it. #}
+            <input type="hidden" name="active" value="0">
+            <label>
+                <input type="checkbox" name="active" value="1"
+                    {%- if account.active %} checked{% endif %}
+                    {%- if isSelf %} disabled{% endif %}>
+                {{ 'authentication.user.active'|trans }}
+            </label>
+            {% if isSelf %}
+                {# Disabled is honesty, not the guard: the POST handler refuses
+                   self-deactivation regardless of what the form sends. #}
+                <input type="hidden" name="active" value="1">
+                <em>{{ 'authentication.user.self_note'|trans }}</em>
+            {% endif %}
+        </p>
+
+        <button type="submit">{{ 'authentication.user.save'|trans }}</button>
+    </form>
+
+    <h2>{{ 'authentication.user.grants'|trans }}</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>{{ 'authentication.user.grant_company'|trans }}</th>
+                <th>{{ 'authentication.user.grant_role'|trans }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for grant in grants %}
+                <tr>
+                    <td>{{ grant.companyName }} ({{ grant.companyCode }})</td>
+                    <td>{{ grant.roleLabel }} ({{ grant.roleCode }})</td>
+                </tr>
+            {% else %}
+                {# Zero rows here IS the "cannot sign in anywhere" state. #}
+                <tr><td colspan="2">{{ 'authentication.user.no_grants'|trans }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if not isSelf %}
+        <h2>{{ 'authentication.user.danger'|trans }}</h2>
+        <form method="post" action="{{ url('authentication.user_delete', {'id': account.id}) }}">
+            {{ csrf_field() }}
+            <button type="submit">{{ 'authentication.user.delete'|trans }}</button>
+        </form>
+    {% endif %}
+{% endblock %}
