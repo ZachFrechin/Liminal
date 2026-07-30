@@ -39,5 +39,6 @@ return [
     // always boots; whether they are ENABLED is per company, in the database.
     'modules' => [
         Liminal\Module\Authentication\AuthenticationModule::class,
+        Liminal\Module\Companies\CompaniesModule::class,
     ],
 ];
