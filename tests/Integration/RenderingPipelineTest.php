@@ -80,6 +80,9 @@ final class RenderingPipelineTest extends IntegrationTestCase
         // The shared layout greets the user, which only the contract's
         // displayName() makes possible from a lib template.
         self::assertStringContainsString('Alice Ashford', $html);
+        // An authenticated page wears the shell: sidebar and topbar chrome.
+        self::assertStringContainsString('<body class="shell">', $html);
+        self::assertStringContainsString('<nav class="sidebar">', $html);
     }
 
     /**
@@ -93,6 +96,8 @@ final class RenderingPipelineTest extends IntegrationTestCase
 
         self::assertSame(200, $response->getStatusCode());
         self::assertStringContainsString('name="_token"', (string) $response->getBody());
+        // Anonymous pages wear the other face: no sidebar, the centered card.
+        self::assertStringContainsString('<body class="anon">', (string) $response->getBody());
         self::assertMatchesRegularExpression('/^liminal=/', $response->getHeaderLine('Set-Cookie'));
         self::assertEquals(1, $this->dbal->fetchOne('SELECT COUNT(*) FROM core_session'));
     }

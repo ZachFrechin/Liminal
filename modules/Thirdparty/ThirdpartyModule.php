@@ -101,6 +101,7 @@ final class ThirdpartyModule implements Module, DefinitionProvider
             'thirdparty.list',
             ThirdpartyListHandler::READ,
             priority: 930,
+            icon: 'contact-round',
         ));
     }
 

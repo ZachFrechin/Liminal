@@ -6,7 +6,9 @@
             <li>
                 {# The label is a catalogue key, translated at render time like
                    flashes are — an untranslated key on screen is its own alarm. #}
-                <a href="{{ url(node.item.route) }}">{{ node.item.label|trans }}</a>
+                {# One physical line, icon before the label: tests pin '>Label</a>'
+                   and the icon markup ends exactly at </svg>. #}
+                <a href="{{ url(node.item.route) }}">{% if node.item.icon %}{{ icon(node.item.icon) }}{% endif %}{{ node.item.label|trans }}</a>
                 {% if node.children is not empty %}
                     {% include '@liminal/_menu.html.twig' with {'nodes': node.children} only %}
                 {% endif %}

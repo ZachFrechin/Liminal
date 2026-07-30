@@ -84,6 +84,7 @@ final class CompaniesModule implements Module, DefinitionProvider
             'companies.list',
             CompanyListHandler::PERMISSION,
             priority: 920,
+            icon: 'building-2',
         ));
     }
 

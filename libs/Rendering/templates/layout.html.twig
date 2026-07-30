@@ -1,6 +1,14 @@
-{# The base shell every page extends. Deliberately spartan: semantic HTML,
-   one embedded style block, no framework — restyle at will. No template in
-   this tree may ever use |raw: autoescaping is the XSS story. #}
+{# The application shell every page extends. One skeleton, two faces: an
+   authenticated request gets the sidebar (company switcher, navigation) and
+   the topbar (working company, user menu); an anonymous one gets a centered
+   card under the wordmark. Dropdowns are native <details> — no JavaScript
+   anywhere. No template in this tree may ever use |raw: autoescaping is the
+   XSS story.
+
+   The two action blocks exist for the unwind path: error pages extend this
+   layout, and error templates must never carry a form (a token minted there
+   reaches the HTML but never the store). error.html.twig overrides both
+   blocks empty — chrome stays, forms disappear. #}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,43 +17,85 @@
     <title>{% block title %}Liminal{% endblock %}</title>
     {% block head %}
     <link rel="stylesheet" href="{{ asset('css/liminal.css') }}">
-    {# The embedded rules below predate the design system; they sit after the
-       stylesheet on purpose, winning cascade ties until the shell replaces
-       them — deleted with the shell commit. #}
-    <style>
-        :root { color-scheme: light dark; }
-        body { font-family: system-ui, sans-serif; margin: 0; line-height: 1.5; }
-        header { border-bottom: 1px solid color-mix(in srgb, currentColor 20%, transparent); padding: .75rem 1.25rem; display: flex; gap: 1.5rem; align-items: baseline; }
-        header strong { font-size: 1.05rem; }
-        main { padding: 1.25rem; max-width: 60rem; }
-        nav ul { list-style: none; margin: 0; padding: 0; display: flex; gap: 1rem; }
-        nav ul ul { display: block; margin-left: 1rem; }
-        footer { padding: .75rem 1.25rem; opacity: .6; font-size: .85rem; }
-    </style>
     {% endblock %}
 </head>
-<body>
-<header>
-    <strong>Liminal</strong>
-    {% set user = current_user() %}
-    {% if user %}<span class="user">{{ user.displayName }}</span>{% endif %}
-    {% block menu %}
-        <nav>{% include '@liminal/_menu.html.twig' with {'nodes': menu()} only %}</nav>
-    {% endblock %}
-    {% block header %}{% endblock %}
-</header>
-<main>
-    {% block flash %}
-        {# Handlers flash catalogue KEYS, translated here so the language is
-           the reader's at render time; free text degrades through |trans
-           unchanged, because a missing key resolves to itself. #}
-        {% set flash_success = flash('success') %}
-        {% if flash_success %}<p class="flash flash-success" role="status">{{ flash_success|trans }}</p>{% endif %}
-        {% set flash_error = flash('error') %}
-        {% if flash_error %}<p class="flash flash-error" role="alert">{{ flash_error|trans }}</p>{% endif %}
-    {% endblock %}
-    {% block content %}{% endblock %}
-</main>
-<footer>{% block footer %}{% endblock %}</footer>
+{% set _liminal_user = current_user() %}
+<body class="{{ _liminal_user ? 'shell' : 'anon' }}">
+{% if _liminal_user %}
+    {% set _liminal_companies = accessible_companies() %}
+    <nav class="sidebar">
+        {% block sidebar_actions %}
+            <details class="company-switcher">
+                <summary>
+                    {% for company in _liminal_companies %}{% if company.current %}<span class="monogram">{{ company.code|slice(0, 2) }}</span><span class="switcher-label">{{ company.name }}</span>{% endif %}{% endfor %}
+                    {{ icon('chevrons-up-down', 14) }}
+                </summary>
+                <div class="switcher-panel">
+                    {% set switching = company_switching() %}
+                    {% for company in _liminal_companies %}
+                        {% if company.current %}
+                            <span class="switcher-row is-current"><span class="monogram monogram-sm">{{ company.code|slice(0, 2) }}</span>{{ company.name }}{{ icon('check', 14) }}</span>
+                        {% elseif switching %}
+                            <form method="post" action="{{ url('authentication.switch') }}">
+                                {{ csrf_field() }}
+                                <input type="hidden" name="company" value="{{ company.id }}">
+                                <button type="submit" class="switcher-row"><span class="monogram monogram-sm">{{ company.code|slice(0, 2) }}</span>{{ company.name }}</button>
+                            </form>
+                        {% else %}
+                            {# The switch route belongs to the authentication module: disabled
+                               for the working company its POST answers 404 — names stay, forms go. #}
+                            <span class="switcher-row">{{ company.name }}</span>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </details>
+        {% endblock %}
+        <div class="sidebar-nav">
+            {% block menu %}
+                <nav>{% include '@liminal/_menu.html.twig' with {'nodes': menu()} only %}</nav>
+            {% endblock %}
+        </div>
+        <div class="sidebar-foot">Liminal</div>
+    </nav>
+{% endif %}
+<div class="frame">
+    {% if _liminal_user %}
+        <header class="topbar">
+            {% for company in _liminal_companies %}{% if company.current %}<span class="topbar-context">{{ company.name }}</span>{% endif %}{% endfor %}
+            {% block header %}{% endblock %}
+            {% block topbar_actions %}
+                <details class="user-menu">
+                    <summary><span class="avatar">{{ _liminal_user.displayName|slice(0, 1)|upper }}</span><span class="user-name">{{ _liminal_user.displayName }}</span>{{ icon('chevron-down', 13) }}</summary>
+                    <div class="user-menu-panel">
+                        {% if route_exists('authentication.account') %}
+                            <a href="{{ url('authentication.account') }}">{{ icon('user-round', 14) }}{{ 'authentication.menu.account'|trans }}</a>
+                        {% endif %}
+                        {% if route_exists('authentication.logout') %}
+                            <form method="post" action="{{ url('authentication.logout') }}">
+                                {{ csrf_field() }}
+                                <button type="submit">{{ icon('log-out', 14) }}{{ 'authentication.account.sign_out'|trans }}</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </details>
+            {% endblock %}
+        </header>
+    {% else %}
+        <div class="anon-brand"><span class="monogram">L</span><span class="wordmark">Liminal</span></div>
+    {% endif %}
+    <main>
+        {% block flash %}
+            {# Handlers flash catalogue KEYS, translated here so the language is
+               the reader's at render time; free text degrades through |trans
+               unchanged, because a missing key resolves to itself. #}
+            {% set flash_success = flash('success') %}
+            {% if flash_success %}<p class="flash flash-success" role="status">{{ flash_success|trans }}</p>{% endif %}
+            {% set flash_error = flash('error') %}
+            {% if flash_error %}<p class="flash flash-error" role="alert">{{ flash_error|trans }}</p>{% endif %}
+        {% endblock %}
+        {% block content %}{% endblock %}
+    </main>
+    <footer>{% block footer %}{% endblock %}</footer>
+</div>
 </body>
 </html>

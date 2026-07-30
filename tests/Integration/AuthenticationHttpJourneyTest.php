@@ -154,7 +154,8 @@ final class AuthenticationHttpJourneyTest extends IntegrationTestCase
 
         self::assertStringContainsString('Welcome back.', $html);
         self::assertStringContainsString('Signed in as Ada Admin (ada@liminal.test).', $html);
-        self::assertStringContainsString('Main company (MAIN) — current', $html);
+        // The shell's switcher summary names the working company.
+        self::assertStringContainsString('"switcher-label">Main company<', $html);
 
         // The cost-4 hash was rewritten at the house cost by the write-back —
         // and still verifies.
@@ -322,10 +323,10 @@ final class AuthenticationHttpJourneyTest extends IntegrationTestCase
 
         $account = (string) $kernel->handle($this->get('/account', $cookie))->getBody();
 
-        // Both companies listed, MAIN current, ACME offered as a button.
-        self::assertStringContainsString('Main company (MAIN) — current', $account);
-        self::assertStringContainsString('Acme Corp (ACME)', $account);
-        self::assertStringContainsString('Work in this company', $account);
+        // Both companies in the shell switcher: MAIN current, ACME a real
+        // switch form whose button carries the name.
+        self::assertStringContainsString('"switcher-label">Main company<', $account);
+        self::assertStringContainsString('>Acme Corp</button>', $account);
 
         $switch = $kernel->handle($this->post(
             '/switch-company',
@@ -339,8 +340,10 @@ final class AuthenticationHttpJourneyTest extends IntegrationTestCase
         $after = (string) $kernel->handle($this->get('/account', $cookie))->getBody();
 
         self::assertStringContainsString('Working company switched.', $after);
-        self::assertStringContainsString('Acme Corp (ACME) — current', $after);
-        self::assertStringNotContainsString('Main company (MAIN) — current', $after);
+        // The roles swapped: ACME is the summary label, MAIN the offered form.
+        self::assertStringContainsString('"switcher-label">Acme Corp<', $after);
+        self::assertStringNotContainsString('"switcher-label">Main company<', $after);
+        self::assertStringContainsString('>Main company</button>', $after);
     }
 
     /**
@@ -367,7 +370,7 @@ final class AuthenticationHttpJourneyTest extends IntegrationTestCase
         $after = (string) $kernel->handle($this->get('/account', $cookie))->getBody();
 
         self::assertStringContainsString('That company is not yours to work in.', $after);
-        self::assertStringContainsString('Main company (MAIN) — current', $after);
+        self::assertStringContainsString('"switcher-label">Main company<', $after);
     }
 
     /**

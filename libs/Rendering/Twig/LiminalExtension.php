@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Liminal\Lib\Rendering\Twig;
 
 use Liminal\Http\UrlGenerator;
+use Liminal\Lib\Database\Scope\CompanyContext;
+use Liminal\Lib\Database\Scope\CompanyDirectory;
+use Liminal\Lib\Module\ModuleManager;
 use Liminal\Lib\Rendering\Exception\RenderingException;
 use Liminal\Lib\Rendering\Icon\IconSet;
 use Liminal\Lib\Rendering\Menu\MenuBuilder;
@@ -38,6 +41,9 @@ final class LiminalExtension extends AbstractExtension
         private readonly MenuBuilder $menu,
         private readonly Translator $translator,
         private readonly IconSet $icons,
+        private readonly CompanyDirectory $companies,
+        private readonly CompanyContext $companyContext,
+        private readonly ModuleManager $modules,
     ) {}
 
     /**
@@ -55,6 +61,9 @@ final class LiminalExtension extends AbstractExtension
             new TwigFunction('menu', $this->menu->build(...)),
             // Safe like csrf_field: the markup is a code constant, never data.
             new TwigFunction('icon', $this->icons->svg(...), ['is_safe' => ['html']]),
+            new TwigFunction('accessible_companies', $this->accessibleCompanies(...)),
+            new TwigFunction('company_switching', $this->companySwitching(...)),
+            new TwigFunction('route_exists', $this->urls->has(...)),
         ];
     }
 
@@ -101,6 +110,42 @@ final class LiminalExtension extends AbstractExtension
             // Defensive: the token is base64url, but escaping is not optional.
             htmlspecialchars($this->csrfToken(), ENT_QUOTES),
         );
+    }
+
+    /**
+     * The shell's switcher data: the companies this user reaches, by name,
+     * the working one flagged. Anonymous short-circuits BEFORE any connection
+     * contact — a DSN-less checkout must still serve its public pages, the
+     * MenuBuilder precedent. One bounded IN-query per render, menu parity.
+     *
+     * @return list<array{id: int, code: string, name: string, current: bool}>
+     */
+    private function accessibleCompanies(): array
+    {
+        if ($this->currentUser->get() === null) {
+            return [];
+        }
+
+        $current = $this->companyContext->currentId();
+
+        return array_map(
+            fn(array $company): array => [...$company, 'current' => $company['id'] === $current],
+            $this->companies->byIds($this->companyContext->accessibleIds()),
+        );
+    }
+
+    /**
+     * Whether the shell may render switch forms. The switch route belongs to
+     * the authentication module: disabled for the working company, its POST
+     * answers 404 — advertising forms that cannot land is the one lie the
+     * shell could tell. Naming the module here is presentation knowledge of
+     * the admin reference module, and only evaluates where its routes exist.
+     */
+    private function companySwitching(): bool
+    {
+        return $this->currentUser->get() !== null
+            && $this->urls->has('authentication.switch')
+            && $this->modules->isEnabled('authentication', $this->companyContext->currentId());
     }
 
     private function flash(string $key): ?string

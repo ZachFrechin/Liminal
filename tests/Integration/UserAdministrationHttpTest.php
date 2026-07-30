@@ -248,10 +248,10 @@ final class UserAdministrationHttpTest extends IntegrationTestCase
         self::assertStringContainsString('Role granted.', $after);
         self::assertStringContainsString('Acme Corp (ACME)', $after);
 
-        // The access is real: Bob can now switch to ACME.
+        // The access is real: Bob's shell now offers the ACME switch form.
         $bob = $this->login($kernel, 'bob@liminal.test');
         $account = (string) $kernel->handle($this->get('/account', $bob))->getBody();
-        self::assertStringContainsString('Acme Corp (ACME)', $account);
+        self::assertStringContainsString('>Acme Corp</button>', $account);
 
         // Revoke it; the detail no longer lists it.
         $revoked = $kernel->handle($this->post(

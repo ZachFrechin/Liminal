@@ -14,6 +14,7 @@ use Liminal\Lib\Database\Install\FirstCompanySeeder;
 use Liminal\Lib\Database\Migration\MigrationFactory;
 use Liminal\Lib\Database\Migration\MigrationRunner;
 use Liminal\Lib\Database\Scope\CompanyContext;
+use Liminal\Lib\Database\Scope\CompanyDirectory;
 use Liminal\Registry\CommandRegistry;
 use Liminal\Registry\Contract\Contributor;
 use Liminal\Registry\Contract\DefinitionProvider;
@@ -90,6 +91,11 @@ final class DatabaseContributor implements Contributor, DefinitionProvider
 
             FirstCompanySeeder::class => static fn(ContainerInterface $container): FirstCompanySeeder
                 => new FirstCompanySeeder(DeferredConnection::resolver($container)),
+
+            // Deferred like the seeder: the rendering extension injects this,
+            // and templates render on DSN-less checkouts (public pages).
+            CompanyDirectory::class => static fn(ContainerInterface $container): CompanyDirectory
+                => new CompanyDirectory(DeferredConnection::resolver($container)),
         ];
     }
 

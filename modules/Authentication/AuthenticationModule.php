@@ -157,18 +157,20 @@ final class AuthenticationModule implements Module, DefinitionProvider
         $commands->add(RoleGrantCommand::class);
 
         $menu = $registries->get(MenuRegistry::class);
-        $menu->add(new MenuItem('authentication.menu.account', 'authentication.account', priority: 900));
+        $menu->add(new MenuItem('authentication.menu.account', 'authentication.account', priority: 900, icon: 'user-round'));
         $menu->add(new MenuItem(
             'authentication.menu.users',
             'authentication.users',
             UserListHandler::PERMISSION,
             priority: 910,
+            icon: 'users',
         ));
         $menu->add(new MenuItem(
             'authentication.menu.roles',
             'authentication.roles',
             RoleListHandler::PERMISSION,
             priority: 915,
+            icon: 'shield-check',
         ));
     }
 

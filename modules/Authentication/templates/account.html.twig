@@ -5,27 +5,7 @@
 {% block content %}
     <h1>{{ 'authentication.account.title'|trans }}</h1>
 
+    {# The company switcher and sign-out moved into the shell — visible on
+       every page. This page keeps the identity, and will grow the profile. #}
     <p>{{ 'authentication.account.signed_in_as'|trans({'name': user.displayName, 'email': user.email}) }}</p>
-
-    <h2>{{ 'authentication.account.companies'|trans }}</h2>
-    <ul>
-        {% for company in companies %}
-            <li>
-                {{ company.name }} ({{ company.code }})
-                {%- if company.id == currentCompany %} — {{ 'authentication.account.current'|trans }}
-                {%- else %}
-                    <form method="post" action="{{ url('authentication.switch') }}" class="inline">
-                        {{ csrf_field() }}
-                        <input type="hidden" name="company" value="{{ company.id }}">
-                        <button type="submit">{{ 'authentication.account.switch'|trans }}</button>
-                    </form>
-                {%- endif %}
-            </li>
-        {% endfor %}
-    </ul>
-
-    <form method="post" action="{{ url('authentication.logout') }}">
-        {{ csrf_field() }}
-        <button type="submit">{{ 'authentication.account.sign_out'|trans }}</button>
-    </form>
 {% endblock %}

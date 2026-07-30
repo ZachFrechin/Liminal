@@ -1,8 +1,14 @@
 {# Carries no form on purpose: this page renders on the unwind path, where the
-   session is never persisted, so any token minted here would be a lie. #}
+   session is never persisted, so any token minted here would be a lie. The
+   shell's two form regions — the company switcher and the user menu — are
+   emptied below for exactly that reason; navigation and context remain. #}
 {% extends '@liminal/layout.html.twig' %}
 
 {% block title %}{{ status }} — {{ 'error.title'|trans }}{% endblock %}
+
+{% block sidebar_actions %}{% endblock %}
+
+{% block topbar_actions %}{% endblock %}
 
 {% block content %}
     <h1>{{ status }}</h1>

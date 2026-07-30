@@ -26,6 +26,16 @@ final readonly class UrlGenerator
     public function __construct(private RouteRegistry $routes) {}
 
     /**
+     * Whether any route carries this name. Lets a shared template distinguish
+     * a checkout without a module (hide the link) from a typo in a route name
+     * (generate() still throws) — the MenuRegistry::has() rationale.
+     */
+    public function has(string $name): bool
+    {
+        return $this->routes->named($name) !== null;
+    }
+
+    /**
      * @param array<string, string|int|float> $parameters
      *
      * @throws UrlGenerationException when the name is unknown, a placeholder has no value, or the path uses optional segments

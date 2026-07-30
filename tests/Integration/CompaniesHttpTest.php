@@ -123,7 +123,7 @@ final class CompaniesHttpTest extends IntegrationTestCase
         $inAcme = $kernel->handle($this->get('/account', $bob));
 
         self::assertSame(200, $inAcme->getStatusCode());
-        self::assertStringContainsString('Acme Corp (ACME) — current', (string) $inAcme->getBody());
+        self::assertStringContainsString('"switcher-label">Acme Corp<', (string) $inAcme->getBody());
     }
 
     public function testInvalidAndDuplicateCodesAreRefusedPolitely(): void
@@ -179,9 +179,9 @@ final class CompaniesHttpTest extends IntegrationTestCase
         self::assertStringContainsString('Main office', $after);
         self::assertStringContainsString('MAIN', $after);
 
-        // The account page follows the new name immediately.
+        // The shell switcher follows the new name immediately.
         self::assertStringContainsString(
-            'Main office (MAIN) — current',
+            '"switcher-label">Main office<',
             (string) $kernel->handle($this->get('/account', $ada))->getBody(),
         );
 
