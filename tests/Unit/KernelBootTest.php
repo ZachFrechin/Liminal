@@ -6,10 +6,12 @@ namespace Liminal\Tests\Unit;
 
 use Liminal\Exception\KernelException;
 use Liminal\Kernel;
+use Liminal\Registry\HookRegistry;
 use Liminal\Registry\ModuleRegistry;
 use Liminal\Registry\RouteRegistry;
 use Liminal\Registry\TemplateRegistry;
 use Liminal\Registry\TranslationRegistry;
+use Liminal\Registry\TriggerRegistry;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -151,8 +153,8 @@ final class KernelBootTest extends TestCase
 
     /**
      * The registry loops in definitions()/mergeDefinitions() cover every
-     * registry mechanically — including the rendering-phase newcomers: bound
-     * as the same frozen instances, and reserved against redefinition.
+     * registry mechanically — including each phase's newcomers: bound as the
+     * same frozen instances, and reserved against redefinition.
      */
     public function testTheRenderingRegistriesAreAutoBound(): void
     {
@@ -165,6 +167,20 @@ final class KernelBootTest extends TestCase
         self::assertSame(
             $kernel->registries()->get(TranslationRegistry::class),
             $kernel->container()->get(TranslationRegistry::class),
+        );
+    }
+
+    public function testTheListenerRegistriesAreAutoBound(): void
+    {
+        $kernel = new Kernel(self::FIXTURES . '/providing');
+
+        self::assertSame(
+            $kernel->registries()->get(HookRegistry::class),
+            $kernel->container()->get(HookRegistry::class),
+        );
+        self::assertSame(
+            $kernel->registries()->get(TriggerRegistry::class),
+            $kernel->container()->get(TriggerRegistry::class),
         );
     }
 }

@@ -22,6 +22,7 @@ use Liminal\Registry\Contract\Contributor;
 use Liminal\Registry\Contract\DefinitionProvider;
 use Liminal\Registry\Contract\Module;
 use Liminal\Registry\EntityRegistry;
+use Liminal\Registry\HookRegistry;
 use Liminal\Registry\MenuRegistry;
 use Liminal\Registry\MiddlewareRegistry;
 use Liminal\Registry\MigrationRegistry;
@@ -33,6 +34,7 @@ use Liminal\Registry\RouteRegistry;
 use Liminal\Registry\SettingsRegistry;
 use Liminal\Registry\TemplateRegistry;
 use Liminal\Registry\TranslationRegistry;
+use Liminal\Registry\TriggerRegistry;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -206,6 +208,8 @@ final class Kernel
             new MigrationRegistry(),
             new SettingsRegistry(),
             new CommandRegistry(),
+            new HookRegistry(),
+            new TriggerRegistry(),
             new TemplateRegistry(),
             new TranslationRegistry(),
             new ModuleRegistry($modules),
