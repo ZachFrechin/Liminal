@@ -180,7 +180,8 @@ tests/{Unit,Integration}
 | 6 | `module/thirdparty`: the first business vertical — CompanyScoped in production, repository, pagination, search, read/manage split | ✅ |
 | 7 | Hooks & triggers (`lib/hook`, two kernel registries) + the admin-mutation audit trail as the triggers' first consumer | ✅ |
 | 8 | Design system: tokens as served assets, vendored fonts and icons, the application shell, the feedback family | ✅ |
-| 9 → | documents (invoices, orders — the first production hook), `lib/api`, builder | upcoming |
+| 9 | `module/invoice`: customer invoices — drafts, gap-free per-company-per-year numbering, per-rate VAT, the first production hook and the thirdparty deletion veto | ✅ |
+| 10 → | orders (the invoice machinery, second document), `lib/api`, builder | upcoming |
 
 ## Security
 
@@ -441,3 +442,34 @@ Permissions split for the first time: `thirdparty.read` opens the pages,
 authorizes read first), because the role editor lets an administrator check
 one box without the other. On upgraded instances, grant both through the
 role editor; fresh installs get them via `user:create`.
+
+## The invoice module
+
+The first document vertical, and the phase where the hook primitive earns
+its production proof twice over. `invoice.total.compute` — the literal name
+the phase-0 table promised — dispatches wherever an invoice adds itself up:
+the calculator owns the base value, listeners transform it (a discount
+module, a rounding rule), and the dispatch site, as the declarer, validates
+the shape that comes back. And `thirdparty.deletion.veto` closes the gap the
+thirdparty module recorded at birth: thirdparty declares and dispatches, the
+invoice module answers with a refusal reason when documents still name the
+party — **thirdparty never learns who answered**. The dependency that IS
+real (an invoice names the party it bills, a foreign key materialises it)
+runs in the one sanctioned direction: invoice imports thirdparty, declared
+in the manifest, ordered in `app.modules`; the reverse edge is the hook.
+
+Money never floats. The tree's first DECIMAL columns map to PHP strings;
+computation happens in integer cents, per-field form caps keep every product
+inside int64, and VAT rounds **per rate group** so the printed ventilation
+always agrees with the totals. Totals are stored on the invoice at every
+line write — lists never recompute — and frozen by validation.
+
+Validation is the one-way door, atomically: the tree's first
+`wrapInTransaction` claims the `(company, year)` counter with a
+throttle-style atomic upsert (the row lock serialises concurrent
+validations — consecutive numbers, no gaps, any failure rolls the claim
+back), refreshes the issue date to the validation day (émission IS
+validation: a December draft validated in January belongs to January's
+sequence), mints `INV-YYYY-NNNN`, and freezes the record. A validated
+invoice refuses every mutation with a flash, and there is deliberately no
+force flag anywhere.

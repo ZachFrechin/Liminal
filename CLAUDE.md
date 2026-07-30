@@ -91,10 +91,24 @@ there — DBAL on a scoped table bypasses it; exact inverse of the
 security/admin DBAL rule, both deliberate). Repositories narrow every read
 to the CURRENT company in DQL (the filter stays on the accessible set — it
 is the security boundary, phase-1 tests pin it). LIKE search: explicit
-`ESCAPE '!'` + escape the bound value. Pagination: COUNT, clamp page,
-ORDER BY with `, id` tiebreaker. Permission split: manage presumes read
-(handlers authorize read first, writes manage too); collapse rule
-`thirdparty.read` when the module is named after its entity.
+`ESCAPE '!'` + escape the bound value. Pagination: lib `Page<T>`, COUNT,
+clamp page, ORDER BY with `, id` tiebreaker, PER_PAGE on the repository.
+Permission split: manage presumes read (handlers authorize read first,
+writes manage too); collapse rule `thirdparty.read` when the module is
+named after its entity.
+
+Invoice (9): module→module dependency sanctioned ONE direction, declared
+(invoice imports thirdparty — the FK is real; reverse = the veto hook,
+never an import). NO mapped associations — plain FK columns + `JOIN … WITH`
+(both aliases get the filter, repository narrows both). Money = integer
+cents over DECIMAL strings, per-field form caps (int64), VAT rounded per
+rate group. Validation = the tree's one `wrapInTransaction` (counter upsert
++ freeze, one commit; ANY in-wrap throw closes the EM — inverse of the
+bare-flush rule; émission IS validation, number from the validation day's
+year). Company-delete cascade carries documents (measured); targeted
+thirdparty delete refused by RESTRICT + answered politely by
+`thirdparty.deletion.veto`. Production hooks: `invoice.total.compute`
+(dispatch validates the returned InvoiceTotals) + the veto listener.
 
 Hooks & triggers (7): declare-then-listen (dispatcher declares the name,
 consumers subscribe by service id, freeze validates targets). Hook =

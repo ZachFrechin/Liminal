@@ -157,8 +157,36 @@ what it proves.
   and escapes the user's `%`/`_`/escape-char inside the bound value: bound
   parameters neutralize nothing.
 - Pagination: COUNT first, clamp the page into `[1, max(1, pages)]`, always
-  give ORDER BY a unique tiebreaker (`, id`). Module-local until a second
-  list needs it — then it gets hoisted, not before.
+  give ORDER BY a unique tiebreaker (`, id`). The generic `Page<T>` lives in
+  the database lib (hoisted when the invoice list became the second one, as
+  promised); page SIZE stays a constant of each repository.
+- **A business module may depend on the business module it references — one
+  direction, declared.** An invoice names the party it bills; the foreign
+  key materialises the dependency, and hiding the class import behind raw
+  SQL would not remove it, only make it unreviewable. The manifest docblocks
+  the edge, `app.modules` orders the dependency first. The REVERSE direction
+  is never a class import: it is a hook (`thirdparty.deletion.veto` — the
+  referenced module declares and dispatches, the referencing one answers,
+  and the declarer validates the returned shape). Config sections remain
+  strictly module-private (above).
+- **Money never floats.** DECIMAL columns map to PHP strings; computation
+  happens in integer cents; form value objects cap each field so no product
+  can leave int64 (a shared wide regex is how cents get fabricated through
+  float promotion); VAT rounds **per rate group** so the printed ventilation
+  agrees with the totals. `modules/Invoice/Money/Cents.php` is the reference.
+- Cascade semantics are MEASURED, not assumed: MariaDB resolves the
+  company-delete diamond (documents, lines and thirdparties cascade in one
+  statement — the RESTRICT never fires when the referencing row dies in the
+  same cascade), while a TARGETED delete of a referenced thirdparty is
+  refused by the schema. `InvoiceScopeTest` pins both. The future
+  company-deletion service still deletes documents first, applicatively.
+- Validation of a document is a one-way door and **émission IS validation**:
+  the issue date refreshes to the validation day and the number is minted
+  from that day's year inside the same transaction that claims the
+  per-company-per-year counter (atomic upsert, the throttle precedent, row
+  lock held to the outer commit). Inside `wrapInTransaction`, ANY throw
+  closes the EntityManager — the deliberate inverse of the bare-flush rule
+  the scope tests pin — and the caller never touches the ORM afterwards.
 - Permission code grammar: `<module>.<entity>.<verb>` — collapsed to
   `<module>.<verb>` when the module is named after its central entity
   (`thirdparty.read`, not `thirdparty.thirdparty.read`). A read/write split
@@ -310,8 +338,8 @@ what it proves.
   instance proves otherwise.
 - ~~Administrative mutations are not audited~~ closed in phase 7: every
   fired trigger lands in `core_audit_event` through the catch-all listener,
-  and fourteen fire points cover the admin surface. The login path keeps
-  its own `core_auth_event` (richer: ip/UA), no duplication.
+  and eighteen fire points cover the admin and document surfaces. The login
+  path keeps its own `core_auth_event` (richer: ip/UA), no duplication.
 - Audit retention/purge does not exist yet — and the payloads carry emails
   (PII) while the table is append-only: a WHEN, not an IF. `session:gc` is
   the precedent for the future `audit:prune`.
@@ -330,11 +358,19 @@ what it proves.
   lives on /account, and error pages can never carry a form.
 - "Must change password at first login" waits for the mailer lib: without a
   reset flow there is nowhere to send anyone.
-- Thirdparty deletion is unguarded while nothing references thirdparties;
-  the day documents (invoices, orders) do, the delete handler grows the
-  refusal — recorded, not accidental. Also out of scope for now: CSV
-  import/export, contact persons, list sorting options, VAT format
-  validation.
+- ~~Thirdparty deletion is unguarded~~ closed in phase 9: the delete
+  handler dispatches `thirdparty.deletion.veto` and the invoice module
+  answers — the promised guard, delivered by the hook primitive so the
+  modules stay strangers. Still out of scope: CSV import/export, contact
+  persons, list sorting options, VAT format validation.
+- Invoice gaps, recorded: no line edit (remove and re-add), no credit note
+  or cancellation (a validated invoice only ever gains a counterpart, never
+  loses itself), no PDF, no configurable number format (the fixed
+  `INV-YYYY-NNNN` becomes a per-company setting when SettingsService gains
+  its first real consumer), no stored `vatByRate` (recomputed until the
+  first production listener of `invoice.total.compute` makes stored and
+  recomputed diverge), and the party select is unbounded (it becomes a
+  search past a real company's size).
 - The per-company uniqueness of thirdparty codes rides the server's
   case-insensitive collation (stock MariaDB utf8mb4 *_ci) — the same
   assumption `uniq_core_company_code` already makes.
