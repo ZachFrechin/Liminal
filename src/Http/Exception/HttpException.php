@@ -62,6 +62,16 @@ final class HttpException extends RuntimeException implements LiminalException
     }
 
     /**
+     * The permission 403. The message deliberately does not name the code that
+     * was refused: telling a client which permission it lacks maps the
+     * authorization model for whoever is probing.
+     */
+    public static function forbidden(): self
+    {
+        return new self(403, 'You are not allowed to do that.');
+    }
+
+    /**
      * @param list<string> $allowed
      */
     public static function methodNotAllowed(array $allowed): self

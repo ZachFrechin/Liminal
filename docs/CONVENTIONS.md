@@ -143,7 +143,8 @@ docs. No exceptions.
   policy for authenticated pages in general is a phase-5 rendering decision.
 - `ResponseEmitter` does not strip bodies from HEAD responses — a pre-existing
   kernel gap; the fix is to pass the request method into `emit()`.
-- `Gate::authorize()` (the throwing helper) waits for real controllers, phase 5.
+- ~~`Gate::authorize()`~~ closed in phase 5a: `RequestGate` is the throwing
+  companion, in the lib so no module depends on another module.
 
 ## Console commands
 
