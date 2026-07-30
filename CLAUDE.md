@@ -3,11 +3,12 @@
 Modular ERP core, PHP 8.4, no framework. `src/` is the kernel (config,
 container, HTTP pipeline, registries), `libs/` are the technical capabilities
 (System, Database, Security, Rendering, Module), `modules/` are the business
-verticals (Authentication is the reference). Everything extends the system
-through registries filled at boot, then frozen; libs and modules expose
-services through `DefinitionProvider` definitions collected before the
-container is built — a module overrides a lib's contract by ordinary
-last-wins layering, never by special case.
+verticals (Authentication is the reference; Companies is the first module
+with NO migrations — `migrationNamespace()` null is an ordinary case).
+Everything extends the system through registries filled at boot, then frozen;
+libs and modules expose services through `DefinitionProvider` definitions
+collected before the container is built — a module overrides a lib's contract
+by ordinary last-wins layering, never by special case.
 
 **The norm is [docs/CONVENTIONS.md](docs/CONVENTIONS.md). Read it before
 writing any code; it wins over habit.** Highlights: everything English,
@@ -59,7 +60,17 @@ shadows a lib). `strict_variables` on, no `|raw` anywhere. Content degrades
 (absent flash, missing translation key), wiring fails loud (no session for a
 CSRF token, malformed catalogue). **Error templates carry no form**: they render
 on the unwind path where the session is never persisted. Flashes are catalogue
-keys, translated by the layout at render time.
+keys, translated by the layout at render time. Menu labels too.
+
+Administration (5b): CRUD failures are flash + 302 (the only sanctioned
+deviation: one-time secrets render directly from the POST with no-store —
+never through session or store). Self-deactivation/self-deletion refused;
+self-revocation allowed (per company, recoverable). Company/role codes are
+immutable after creation; the `admin` role is undeletable (screen + service).
+`user.manage` in ONE company = instance-wide administration and
+escalation-equivalent (grant-add can assign admin anywhere) — role.manage
+protects definitions only. Password reset calls
+`SessionManager::endAllFor()` — a credential change kills the other sessions.
 
 Every commit: `type(scope): imperative subject`, body explains why,
 `composer check` green. Integration tests skip without a reachable DSN — run

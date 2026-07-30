@@ -139,7 +139,22 @@ what it proves.
 - Handlers on the login path follow the house rule with teeth: **failure is a
   flash plus a redirect, never a throw.** Flash values are catalogue keys,
   translated by the layout at render time; free text degrades through the
-  missing-key rule unchanged.
+  missing-key rule unchanged. One sanctioned deviation: a response whose body
+  IS a one-time secret (generated passwords) renders directly from the POST
+  with `no-store` — the secret must never transit the session or any store.
+- **Say it out loud: `authentication.user.manage` held in any ONE company is
+  instance-wide administration and escalation-equivalent to everything** —
+  the admin tables are unscoped by design, and grant-add can assign any role
+  in any company, `admin` included. `authentication.role.manage` protects
+  role *definitions*, a different blast radius — it does not close that
+  path. Nobody reading the permission list should believe otherwise.
+- Permission checkboxes and any other stored-code write are filtered against
+  the `PermissionRegistry`; stored codes the registry no longer declares are
+  inert (the resolver only joins), render as "unknown", and must never be
+  passed through `Gate::allows`, which throws on undeclared codes.
+- Company and role codes are immutable after creation and follow a grammar
+  (`[A-Z][A-Z0-9_]{0,31}` for companies — a policy, not an inherited
+  constraint; `[a-z][a-z0-9_]{0,63}` for roles, mirroring module slugs).
 
 ## Rendering
 
@@ -190,12 +205,29 @@ what it proves.
 - The menu has no "active item" flag: the view context is primed at −850,
   before the router matched anything. The obvious implementation is wrong, not
   merely missing — it needs a second, post-router middleware.
-- For phase 5b, recorded from 5a: creating a company must enable the declared
-  modules for it (install only covers the seeded first company — thanks to
-  the public-route bypass the failure is 404s, never a lockout); the user
-  screens must make a user with no grant anywhere visible (today that state
-  is only an empty roles cell); the role editor must refuse to delete or
-  rename the `admin` code the bootstrap command anchors on.
+- ~~The three 5a obligations~~ closed in 5b: company creation enables the
+  installed modules transactionally, the "no access" badge makes the
+  no-grant-anywhere user visible, and the `admin` role code can be neither
+  renamed (structurally — the code is never an input) nor deleted (refused
+  in the screen AND the service).
+- Company deletion does not exist on purpose: the foreign keys silently
+  cascade grants, settings and module enablement away — it will be an
+  audited administrative service, not a button.
+- The administration screens have no pagination; fine until a real
+  instance proves otherwise.
+- Administrative mutations are not audited: `core_auth_event` covers the
+  login path only, and extending the lib's `AuthEvent` is its own decision,
+  not a side effect of screens.
+- Reactivating a user silently resumes their old sessions: the forced-logout
+  401 unwinds past persist, so the session row keeps its `user_id`. Coherent
+  — and the reason a password RESET deletes the rows instead.
+- The switcher trap: with the authentication module disabled for the CURRENT
+  company, `/account` and `/switch-company` are 404 and the browser offers no
+  way out — `module:enable authentication <company>` is the escape. Hosting
+  the switch route in the security lib would not help while the only form
+  lives on /account, and error pages can never carry a form.
+- "Must change password at first login" waits for the mailer lib: without a
+  reset flow there is nowhere to send anyone.
 
 ## Console commands
 

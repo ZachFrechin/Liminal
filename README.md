@@ -143,7 +143,7 @@ tests/{Unit,Integration}
 | 3 | `lib/security`: database sessions, deny-by-default routes, CSRF, per-request company scope, module gating | ✅ |
 | 4 | `lib/rendering`: Twig, contributable templates, view helpers, menu, translations, HTML error pages | ✅ |
 | 5a | `module/authentication`: users, per-company RBAC, sign-in pages, throttle + audit, bootstrap commands | ✅ |
-| 5b | `module/companies`: company CRUD, role screens, user administration | upcoming |
+| 5b | Administration: company screens (`module/companies`), user/role/grant screens, company switcher, one-time passwords | ✅ |
 | 6 → 8 | `lib/api`, builder, business modules | upcoming |
 
 ## Security
@@ -253,6 +253,54 @@ granted, refused, throttled, logout), append-only, with `SET NULL` on user
 deletion — deleting an account must not erase the record of what it did.
 Failed attempts flash and redirect, never throw: the error path persists no
 session state, which is precisely where a thrown failure would lose the flash.
+
+## Administration
+
+Phase 5b turns the read-only pages into administration, across two modules —
+the boundary follows the tables: `module/companies` owns the company axis UX
+(`core_company` schema stays in the Database lib, making companies the tree's
+first module with **no migrations** — `migrationNamespace()` returns null and
+the lifecycle carries that as an ordinary case), while user, role and grant
+screens grow inside `module/authentication`, whose tables they are.
+
+**Users** (`/users`, permission `authentication.user.manage`): create with a
+server-generated one-time password — no mailer exists yet, so the secret is
+shown exactly once, rendered straight from the POST with `no-store`, never
+stored or logged in the clear; rename, deactivate (ends the live session at
+the user's next request), delete, grants per company, and password resets
+that end the user's *other* sessions — a credential change must not leave a
+session an attacker may hold alive. Self-deactivation and self-deletion are
+refused; self-revocation is allowed (per company, another admin can restore
+it) and ends in the orderly forced logout if it was your last grant.
+
+**Roles** (`/roles`, permission `authentication.role.manage` — its own
+permission, because editing what a role *means* is a different blast radius
+than deciding who holds it): label and permission checkboxes are editable,
+the code never is, deleting `admin` is refused twice (screen and service),
+and deleting any other role is labelled the mass revocation the cascade makes
+it. Editing a role changes its holders' access on their next request. An
+upgrade migration grants `role.manage` to pre-existing `admin` roles — a code
+that did not exist cannot have been deliberately revoked.
+
+**Companies** (`/companies`, permission `companies.company.manage`): list,
+create, rename (codes are immutable, SCREAMING_SNAKE by policy). Creating a
+company enables every declared-and-installed module for it **in the same
+transaction as its row** — a company born on the web is immediately livable,
+which the closing journey proves end to end. Declared-but-not-installed
+modules surface on the company's detail page as standing information with
+the `module:install` remedy.
+
+**The switcher**: `/account` lists your companies by name with a "Work in
+this company" button each; the choice lands in the session and the switch
+middleware applies it on the next request. One recorded trap: if the
+authentication module is disabled for your *current* company, `/account` and
+the switcher are 404 and the console (`module:enable authentication <id>`)
+is the way out.
+
+Instances upgrading to 5b: run `php bin/liminal migrate`, then
+`module:install companies` and `module:enable companies <id>` for each
+company that should see the screens; grant `companies.company.manage`
+through the role editor.
 
 ## Multi-company
 
