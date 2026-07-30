@@ -202,12 +202,17 @@ body.anon .frame > main {
 }
 body.anon .frame > footer { flex: none; }
 body.anon form { display: grid; gap: var(--sp-6); }
-body.anon form p br { display: none; }
 body.anon button[type="submit"] { width: 100%; background: var(--action-primary-bg); color: var(--action-primary-fg); border-color: transparent; }
 body.anon button[type="submit"]:hover { background: var(--action-primary-bg-hover); }
 
 /* ── Controls ──────────────────────────────────────────────────────── */
 form p { margin: 0; display: grid; gap: var(--sp-2); justify-items: start; }
+/* The label<br>input pattern predates the shell: the break is presentational
+   legacy, the grid already stacks. */
+form p br { display: none; }
+/* GET forms are search rows: field and button on one line. */
+main form[method="get"] { display: flex; gap: var(--sp-4); align-items: center; }
+main form[method="get"] input { flex: 1; width: auto; }
 label { font: var(--text-label); color: var(--text-secondary); }
 input, select, textarea {
   height: var(--control-h);
