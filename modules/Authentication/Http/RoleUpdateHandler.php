@@ -6,6 +6,7 @@ namespace Liminal\Module\Authentication\Http;
 
 use Liminal\Http\Exception\HttpException;
 use Liminal\Http\UrlGenerator;
+use Liminal\Lib\Hook\Triggers;
 use Liminal\Lib\Security\Authorization\RequestGate;
 use Liminal\Lib\Security\Session\Session;
 use Liminal\Lib\Security\Session\SessionMiddleware;
@@ -33,6 +34,7 @@ final readonly class RoleUpdateHandler implements RequestHandlerInterface
         private RoleFormSupport $form,
         private UrlGenerator $urls,
         private ResponseFactoryInterface $responses,
+        private Triggers $triggers,
     ) {}
 
     /**
@@ -64,6 +66,7 @@ final readonly class RoleUpdateHandler implements RequestHandlerInterface
             $session->set('error', 'authentication.role.invalid');
         } else {
             $this->users->updateRole($id, $label, $this->form->declaredOnly($body['permissions'] ?? null));
+            $this->triggers->fire('ROLE_UPDATED', ['role_id' => $id, 'label' => $label]);
             $session->set('success', 'authentication.role.updated');
         }
 

@@ -6,6 +6,7 @@ namespace Liminal\Module\Companies\Http;
 
 use Liminal\Http\Exception\HttpException;
 use Liminal\Http\UrlGenerator;
+use Liminal\Lib\Hook\Triggers;
 use Liminal\Lib\Security\Authorization\RequestGate;
 use Liminal\Lib\Security\Session\Session;
 use Liminal\Lib\Security\Session\SessionMiddleware;
@@ -26,6 +27,7 @@ final readonly class CompanyRenameHandler implements RequestHandlerInterface
         private CompanyAdministration $companies,
         private UrlGenerator $urls,
         private ResponseFactoryInterface $responses,
+        private Triggers $triggers,
     ) {}
 
     /**
@@ -57,6 +59,8 @@ final readonly class CompanyRenameHandler implements RequestHandlerInterface
             $session->set('error', 'companies.company.name_required');
         } else {
             $this->companies->rename($id, $name);
+            // No old/new diff in v1: the previous name was never in scope.
+            $this->triggers->fire('COMPANY_RENAMED', ['company_id' => $id, 'name' => $name], companyId: $id);
             $session->set('success', 'companies.company.renamed');
         }
 

@@ -6,6 +6,7 @@ namespace Liminal\Module\Authentication\Http;
 
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Liminal\Http\UrlGenerator;
+use Liminal\Lib\Hook\Triggers;
 use Liminal\Lib\Security\Authorization\RequestGate;
 use Liminal\Lib\Security\Session\Session;
 use Liminal\Lib\Security\Session\SessionMiddleware;
@@ -31,6 +32,7 @@ final readonly class RoleCreateSubmitHandler implements RequestHandlerInterface
         private RoleFormSupport $form,
         private UrlGenerator $urls,
         private ResponseFactoryInterface $responses,
+        private Triggers $triggers,
     ) {}
 
     public function handle(ServerRequestInterface $request): ResponseInterface
@@ -63,6 +65,7 @@ final readonly class RoleCreateSubmitHandler implements RequestHandlerInterface
             return $this->redirectTo('authentication.role_create');
         }
 
+        $this->triggers->fire('ROLE_CREATED', ['role_id' => $id, 'code' => $code]);
         $session->set('success', 'authentication.role.created');
 
         return $this->redirectTo('authentication.role', ['id' => $id]);

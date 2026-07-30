@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Liminal\Module\Authentication\Http;
 
 use Liminal\Http\Exception\HttpException;
+use Liminal\Lib\Hook\Triggers;
 use Liminal\Lib\Rendering\HtmlRenderer;
 use Liminal\Lib\Security\Authorization\RequestGate;
 use Liminal\Lib\Security\Password\PasswordHasher;
@@ -36,6 +37,7 @@ final readonly class UserPasswordResetHandler implements RequestHandlerInterface
         private UserAdministration $users,
         private PasswordHasher $hasher,
         private SessionManager $sessions,
+        private Triggers $triggers,
     ) {}
 
     /**
@@ -64,6 +66,9 @@ final readonly class UserPasswordResetHandler implements RequestHandlerInterface
 
         $this->users->replacePasswordHash($id, $this->hasher->hash($password));
         $this->sessions->endAllFor($id, $session->id());
+        // After endAllFor: the event means "reset COMPLETED". The secret is in
+        // scope right here and must never enter a payload.
+        $this->triggers->fire('USER_PASSWORD_RESET', ['user_id' => $id, 'email' => $user['email']]);
 
         return $this->html->respond(
             '@authentication/one_time_password.html.twig',

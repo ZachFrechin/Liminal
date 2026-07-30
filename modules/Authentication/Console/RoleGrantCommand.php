@@ -6,6 +6,7 @@ namespace Liminal\Module\Authentication\Console;
 
 use Liminal\Lib\Database\Health\DatabaseHealth;
 use Liminal\Lib\Database\Health\DatabaseStatusKind;
+use Liminal\Lib\Hook\Triggers;
 use Liminal\Module\Authentication\Administration\UserAdministration;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -32,6 +33,7 @@ final class RoleGrantCommand extends Command
     public function __construct(
         private readonly UserAdministration $users,
         private readonly DatabaseHealth $database,
+        private readonly Triggers $triggers,
     ) {
         parent::__construct();
     }
@@ -88,6 +90,11 @@ final class RoleGrantCommand extends Command
             return Command::SUCCESS;
         }
 
+        $this->triggers->fire(
+            'GRANT_ADDED',
+            ['user_id' => $userId, 'company_id' => $companyId, 'role_id' => $roleId],
+            companyId: $companyId,
+        );
         $io->success(sprintf('Granted "%s" to %s in company %d.', $roleCode, $email, $companyId));
 
         return Command::SUCCESS;

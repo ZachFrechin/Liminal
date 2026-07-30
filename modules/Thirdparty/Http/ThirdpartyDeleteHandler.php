@@ -6,6 +6,7 @@ namespace Liminal\Module\Thirdparty\Http;
 
 use Liminal\Http\Exception\HttpException;
 use Liminal\Http\UrlGenerator;
+use Liminal\Lib\Hook\Triggers;
 use Liminal\Lib\Security\Authorization\RequestGate;
 use Liminal\Lib\Security\Session\Session;
 use Liminal\Lib\Security\Session\SessionMiddleware;
@@ -28,6 +29,7 @@ final readonly class ThirdpartyDeleteHandler implements RequestHandlerInterface
         private ThirdpartyRepository $thirdparties,
         private UrlGenerator $urls,
         private ResponseFactoryInterface $responses,
+        private Triggers $triggers,
     ) {}
 
     /**
@@ -53,8 +55,11 @@ final readonly class ThirdpartyDeleteHandler implements RequestHandlerInterface
             throw HttpException::notFound($request->getUri()->getPath());
         }
 
+        $code = $thirdparty->getCode();
+
         $this->thirdparties->remove($thirdparty);
         $this->thirdparties->flush();
+        $this->triggers->fire('THIRDPARTY_DELETED', ['thirdparty_id' => $id, 'code' => $code]);
         $session->set('success', 'thirdparty.form.deleted');
 
         return $this->responses->createResponse(302)

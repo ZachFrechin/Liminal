@@ -23,6 +23,7 @@ use Liminal\Registry\RegistryCollection;
 use Liminal\Registry\RouteRegistry;
 use Liminal\Registry\TemplateRegistry;
 use Liminal\Registry\TranslationRegistry;
+use Liminal\Registry\TriggerRegistry;
 
 /**
  * The thirdparty module: the parties this installation does business with —
@@ -89,6 +90,11 @@ final class ThirdpartyModule implements Module, DefinitionProvider
         $permissions = $registries->get(PermissionRegistry::class);
         $permissions->add(new Permission(ThirdpartyListHandler::READ, 'thirdparty.permission.read', self::NAME));
         $permissions->add(new Permission(ThirdpartyListHandler::MANAGE, 'thirdparty.permission.manage', self::NAME));
+
+        $triggers = $registries->get(TriggerRegistry::class);
+        $triggers->declare('THIRDPARTY_CREATED');
+        $triggers->declare('THIRDPARTY_UPDATED');
+        $triggers->declare('THIRDPARTY_DELETED');
 
         $registries->get(MenuRegistry::class)->add(new MenuItem(
             'thirdparty.menu.thirdparties',

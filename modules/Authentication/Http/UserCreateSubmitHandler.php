@@ -6,6 +6,7 @@ namespace Liminal\Module\Authentication\Http;
 
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Liminal\Http\UrlGenerator;
+use Liminal\Lib\Hook\Triggers;
 use Liminal\Lib\Rendering\HtmlRenderer;
 use Liminal\Lib\Security\Authorization\RequestGate;
 use Liminal\Lib\Security\Password\PasswordHasher;
@@ -40,6 +41,7 @@ final readonly class UserCreateSubmitHandler implements RequestHandlerInterface
         private PasswordHasher $hasher,
         private UrlGenerator $urls,
         private ResponseFactoryInterface $responses,
+        private Triggers $triggers,
     ) {}
 
     public function handle(ServerRequestInterface $request): ResponseInterface
@@ -75,6 +77,9 @@ final readonly class UserCreateSubmitHandler implements RequestHandlerInterface
 
             return $this->backToForm();
         }
+
+        // Post-commit, and without the secret: the payload lands in the audit.
+        $this->triggers->fire('USER_CREATED', ['user_id' => $id, 'email' => $email]);
 
         return $this->html->respond(
             '@authentication/one_time_password.html.twig',

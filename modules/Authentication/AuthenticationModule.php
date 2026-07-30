@@ -51,6 +51,7 @@ use Liminal\Registry\RegistryCollection;
 use Liminal\Registry\RouteRegistry;
 use Liminal\Registry\TemplateRegistry;
 use Liminal\Registry\TranslationRegistry;
+use Liminal\Registry\TriggerRegistry;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -136,6 +137,18 @@ final class AuthenticationModule implements Module, DefinitionProvider
         $permissions = $registries->get(PermissionRegistry::class);
         $permissions->add(new Permission(UserListHandler::PERMISSION, 'authentication.permission.user.manage', self::NAME));
         $permissions->add(new Permission(RoleListHandler::PERMISSION, 'authentication.permission.role.manage', self::NAME));
+
+        // What this module announces to whoever listens — the audit hears all
+        // of it through the security lib's catch-all.
+        $triggers = $registries->get(TriggerRegistry::class);
+
+        foreach ([
+            'USER_CREATED', 'USER_UPDATED', 'USER_DELETED', 'USER_PASSWORD_RESET',
+            'GRANT_ADDED', 'GRANT_REVOKED',
+            'ROLE_CREATED', 'ROLE_UPDATED', 'ROLE_DELETED',
+        ] as $name) {
+            $triggers->declare($name);
+        }
 
         // Bootstrap commands. Their constructors inject only deferred-connection
         // services: the console resolves every registered command eagerly.

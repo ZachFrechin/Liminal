@@ -6,6 +6,7 @@ namespace Liminal\Module\Thirdparty\Http;
 
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Liminal\Http\UrlGenerator;
+use Liminal\Lib\Hook\Triggers;
 use Liminal\Lib\Security\Authorization\RequestGate;
 use Liminal\Lib\Security\Session\Session;
 use Liminal\Lib\Security\Session\SessionMiddleware;
@@ -33,6 +34,7 @@ final readonly class ThirdpartyCreateSubmitHandler implements RequestHandlerInte
         private ThirdpartyRepository $thirdparties,
         private UrlGenerator $urls,
         private ResponseFactoryInterface $responses,
+        private Triggers $triggers,
     ) {}
 
     public function handle(ServerRequestInterface $request): ResponseInterface
@@ -87,6 +89,8 @@ final readonly class ThirdpartyCreateSubmitHandler implements RequestHandlerInte
             return $this->redirectTo('thirdparty.create');
         }
 
+        // Post-commit: getId() is only non-null past the flush.
+        $this->triggers->fire('THIRDPARTY_CREATED', ['thirdparty_id' => (int) $thirdparty->getId(), 'code' => $form->code]);
         $session->set('success', 'thirdparty.form.created');
 
         return $this->redirectTo('thirdparty.detail', ['id' => (int) $thirdparty->getId()]);

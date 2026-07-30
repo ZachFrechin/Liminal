@@ -6,6 +6,7 @@ namespace Liminal\Module\Authentication\Http;
 
 use Liminal\Http\Exception\HttpException;
 use Liminal\Http\UrlGenerator;
+use Liminal\Lib\Hook\Triggers;
 use Liminal\Lib\Security\Authorization\RequestGate;
 use Liminal\Lib\Security\Session\Session;
 use Liminal\Lib\Security\Session\SessionMiddleware;
@@ -31,6 +32,7 @@ final readonly class RoleDeleteHandler implements RequestHandlerInterface
         private UserAdministration $users,
         private UrlGenerator $urls,
         private ResponseFactoryInterface $responses,
+        private Triggers $triggers,
     ) {}
 
     /**
@@ -63,6 +65,7 @@ final readonly class RoleDeleteHandler implements RequestHandlerInterface
         }
 
         $this->users->deleteRole($id);
+        $this->triggers->fire('ROLE_DELETED', ['role_id' => $id, 'code' => $role['code']]);
         $session->set('success', 'authentication.role.deleted');
 
         return $this->responses->createResponse(302)

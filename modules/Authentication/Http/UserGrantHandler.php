@@ -6,6 +6,7 @@ namespace Liminal\Module\Authentication\Http;
 
 use Liminal\Http\Exception\HttpException;
 use Liminal\Http\UrlGenerator;
+use Liminal\Lib\Hook\Triggers;
 use Liminal\Lib\Security\Authorization\RequestGate;
 use Liminal\Lib\Security\Session\Session;
 use Liminal\Lib\Security\Session\SessionMiddleware;
@@ -29,6 +30,7 @@ final readonly class UserGrantHandler implements RequestHandlerInterface
         private UserAdministration $users,
         private UrlGenerator $urls,
         private ResponseFactoryInterface $responses,
+        private Triggers $triggers,
     ) {}
 
     /**
@@ -63,12 +65,19 @@ final readonly class UserGrantHandler implements RequestHandlerInterface
             return $this->backToDetail($id);
         }
 
-        $session->set(
-            'success',
-            $this->users->grant($id, $companyId, $roleId)
-                ? 'authentication.user.grant_added'
-                : 'authentication.user.grant_already',
-        );
+        $granted = $this->users->grant($id, $companyId, $roleId);
+
+        if ($granted) {
+            // Only a REAL mutation fires — and the event belongs to the
+            // granted company, not necessarily the working one.
+            $this->triggers->fire(
+                'GRANT_ADDED',
+                ['user_id' => $id, 'company_id' => $companyId, 'role_id' => $roleId],
+                companyId: $companyId,
+            );
+        }
+
+        $session->set('success', $granted ? 'authentication.user.grant_added' : 'authentication.user.grant_already');
 
         return $this->backToDetail($id);
     }

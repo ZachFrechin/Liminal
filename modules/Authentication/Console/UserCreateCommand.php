@@ -6,6 +6,7 @@ namespace Liminal\Module\Authentication\Console;
 
 use Liminal\Lib\Database\Health\DatabaseHealth;
 use Liminal\Lib\Database\Health\DatabaseStatusKind;
+use Liminal\Lib\Hook\Triggers;
 use Liminal\Lib\Security\Password\PasswordHasher;
 use Liminal\Module\Authentication\Administration\UserAdministration;
 use Liminal\Registry\PermissionRegistry;
@@ -49,6 +50,7 @@ final class UserCreateCommand extends Command
         private readonly PasswordHasher $hasher,
         private readonly PermissionRegistry $permissions,
         private readonly DatabaseHealth $database,
+        private readonly Triggers $triggers,
     ) {
         parent::__construct();
     }
@@ -111,6 +113,8 @@ final class UserCreateCommand extends Command
             ?: explode('@', $email)[0];
 
         $userId = $this->users->createUser($email, $this->hasher->hash($password), $displayName);
+        // Console scope knows no actor; the --company IS the event's company.
+        $this->triggers->fire('USER_CREATED', ['user_id' => $userId, 'email' => $email], companyId: $companyId);
 
         $role = $this->users->ensureRole(
             self::ROLE_CODE,
@@ -119,6 +123,7 @@ final class UserCreateCommand extends Command
         );
 
         if ($role['created']) {
+            $this->triggers->fire('ROLE_CREATED', ['role_id' => $role['id'], 'code' => self::ROLE_CODE], companyId: $companyId);
             $io->text(sprintf(
                 'Created the "%s" role with %d declared permission(s).',
                 self::ROLE_CODE,
@@ -134,6 +139,12 @@ final class UserCreateCommand extends Command
         }
 
         $this->users->grant($userId, $companyId, $role['id']);
+        // Always a fresh grant on a freshly created user: fire unconditionally.
+        $this->triggers->fire(
+            'GRANT_ADDED',
+            ['user_id' => $userId, 'company_id' => $companyId, 'role_id' => $role['id']],
+            companyId: $companyId,
+        );
 
         $io->success(sprintf(
             'Created %s (%s, id %d) holding "%s" in company %d.',

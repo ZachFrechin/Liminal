@@ -15,6 +15,7 @@ use Liminal\Registry\RegistryCollection;
 use Liminal\Registry\RouteRegistry;
 use Liminal\Registry\TemplateRegistry;
 use Liminal\Registry\TranslationRegistry;
+use Liminal\Registry\TriggerRegistry;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
@@ -83,6 +84,7 @@ final class AuthenticationModuleTest extends TestCase
             new TranslationRegistry(),
             new PermissionRegistry(),
             new MenuRegistry(),
+            new TriggerRegistry(),
         ]);
     }
 }

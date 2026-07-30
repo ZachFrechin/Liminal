@@ -7,6 +7,7 @@ namespace Liminal\Module\Thirdparty\Http;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Liminal\Http\Exception\HttpException;
 use Liminal\Http\UrlGenerator;
+use Liminal\Lib\Hook\Triggers;
 use Liminal\Lib\Security\Authorization\RequestGate;
 use Liminal\Lib\Security\Session\Session;
 use Liminal\Lib\Security\Session\SessionMiddleware;
@@ -30,6 +31,7 @@ final readonly class ThirdpartyUpdateHandler implements RequestHandlerInterface
         private ThirdpartyRepository $thirdparties,
         private UrlGenerator $urls,
         private ResponseFactoryInterface $responses,
+        private Triggers $triggers,
     ) {}
 
     /**
@@ -100,6 +102,7 @@ final readonly class ThirdpartyUpdateHandler implements RequestHandlerInterface
             return $this->backToDetail($id);
         }
 
+        $this->triggers->fire('THIRDPARTY_UPDATED', ['thirdparty_id' => $id, 'code' => $form->code]);
         $session->set('success', 'thirdparty.form.updated');
 
         return $this->backToDetail($id);

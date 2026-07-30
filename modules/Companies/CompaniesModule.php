@@ -23,6 +23,7 @@ use Liminal\Registry\RegistryCollection;
 use Liminal\Registry\RouteRegistry;
 use Liminal\Registry\TemplateRegistry;
 use Liminal\Registry\TranslationRegistry;
+use Liminal\Registry\TriggerRegistry;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -73,6 +74,10 @@ final class CompaniesModule implements Module, DefinitionProvider
 
         $registries->get(PermissionRegistry::class)
             ->add(new Permission(CompanyListHandler::PERMISSION, 'companies.permission.company.manage', self::NAME));
+
+        $triggers = $registries->get(TriggerRegistry::class);
+        $triggers->declare('COMPANY_CREATED');
+        $triggers->declare('COMPANY_RENAMED');
 
         $registries->get(MenuRegistry::class)->add(new MenuItem(
             'companies.menu.companies',

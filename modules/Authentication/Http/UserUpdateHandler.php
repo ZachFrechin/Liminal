@@ -6,6 +6,7 @@ namespace Liminal\Module\Authentication\Http;
 
 use Liminal\Http\Exception\HttpException;
 use Liminal\Http\UrlGenerator;
+use Liminal\Lib\Hook\Triggers;
 use Liminal\Lib\Security\Authentication\CurrentUser;
 use Liminal\Lib\Security\Authorization\RequestGate;
 use Liminal\Lib\Security\Session\Session;
@@ -33,6 +34,7 @@ final readonly class UserUpdateHandler implements RequestHandlerInterface
         private CurrentUser $currentUser,
         private UrlGenerator $urls,
         private ResponseFactoryInterface $responses,
+        private Triggers $triggers,
     ) {}
 
     /**
@@ -77,6 +79,8 @@ final readonly class UserUpdateHandler implements RequestHandlerInterface
 
         $this->users->updateDisplayName($id, $displayName);
         $this->users->setActive($id, $active);
+        // One fire for the whole edit gesture, after both writes.
+        $this->triggers->fire('USER_UPDATED', ['user_id' => $id, 'display_name' => $displayName, 'active' => $active]);
         $session->set('success', 'authentication.user.updated');
 
         return $this->backToDetail($id);

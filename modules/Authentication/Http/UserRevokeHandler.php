@@ -6,6 +6,7 @@ namespace Liminal\Module\Authentication\Http;
 
 use Liminal\Http\Exception\HttpException;
 use Liminal\Http\UrlGenerator;
+use Liminal\Lib\Hook\Triggers;
 use Liminal\Lib\Security\Authorization\RequestGate;
 use Liminal\Lib\Security\Session\Session;
 use Liminal\Lib\Security\Session\SessionMiddleware;
@@ -32,6 +33,7 @@ final readonly class UserRevokeHandler implements RequestHandlerInterface
         private UserAdministration $users,
         private UrlGenerator $urls,
         private ResponseFactoryInterface $responses,
+        private Triggers $triggers,
     ) {}
 
     /**
@@ -61,6 +63,11 @@ final readonly class UserRevokeHandler implements RequestHandlerInterface
         $roleId = is_numeric($body['role'] ?? null) ? (int) $body['role'] : 0;
 
         if ($this->users->revoke($id, $companyId, $roleId)) {
+            $this->triggers->fire(
+                'GRANT_REVOKED',
+                ['user_id' => $id, 'company_id' => $companyId, 'role_id' => $roleId],
+                companyId: $companyId,
+            );
             $session->set('success', 'authentication.user.grant_removed');
         } else {
             $session->set('error', 'authentication.user.grant_missing');

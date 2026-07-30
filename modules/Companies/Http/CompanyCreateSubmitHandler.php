@@ -6,6 +6,7 @@ namespace Liminal\Module\Companies\Http;
 
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Liminal\Http\UrlGenerator;
+use Liminal\Lib\Hook\Triggers;
 use Liminal\Lib\Security\Authorization\RequestGate;
 use Liminal\Lib\Security\Session\Session;
 use Liminal\Lib\Security\Session\SessionMiddleware;
@@ -29,6 +30,7 @@ final readonly class CompanyCreateSubmitHandler implements RequestHandlerInterfa
         private CompanyAdministration $companies,
         private UrlGenerator $urls,
         private ResponseFactoryInterface $responses,
+        private Triggers $triggers,
     ) {}
 
     public function handle(ServerRequestInterface $request): ResponseInterface
@@ -60,6 +62,13 @@ final readonly class CompanyCreateSubmitHandler implements RequestHandlerInterfa
 
             return $this->redirectTo('companies.create');
         }
+
+        // The event belongs to the NEWBORN company, not the working one.
+        $this->triggers->fire(
+            'COMPANY_CREATED',
+            ['company_id' => $creation->companyId, 'code' => $code, 'not_installed' => implode(',', $creation->notInstalled)],
+            companyId: $creation->companyId,
+        );
 
         $session->set(
             $creation->notInstalled === [] ? 'success' : 'error',

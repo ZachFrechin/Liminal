@@ -6,6 +6,7 @@ namespace Liminal\Module\Authentication\Http;
 
 use Liminal\Http\Exception\HttpException;
 use Liminal\Http\UrlGenerator;
+use Liminal\Lib\Hook\Triggers;
 use Liminal\Lib\Security\Authentication\CurrentUser;
 use Liminal\Lib\Security\Authorization\RequestGate;
 use Liminal\Lib\Security\Session\Session;
@@ -31,6 +32,7 @@ final readonly class UserDeleteHandler implements RequestHandlerInterface
         private CurrentUser $currentUser,
         private UrlGenerator $urls,
         private ResponseFactoryInterface $responses,
+        private Triggers $triggers,
     ) {}
 
     /**
@@ -51,7 +53,9 @@ final readonly class UserDeleteHandler implements RequestHandlerInterface
         // a real autoincrement id) covers the impossible fallthrough.
         $id = is_numeric($raw) ? (int) $raw : 0;
 
-        if ($this->users->userById($id) === null) {
+        $user = $this->users->userById($id);
+
+        if ($user === null) {
             throw HttpException::notFound($request->getUri()->getPath());
         }
 
@@ -63,6 +67,8 @@ final readonly class UserDeleteHandler implements RequestHandlerInterface
         }
 
         $this->users->deleteUser($id);
+        // The row is gone; the hoisted copy is what the audit remembers.
+        $this->triggers->fire('USER_DELETED', ['user_id' => $id, 'email' => $user['email']]);
         $session->set('success', 'authentication.user.deleted');
 
         return $this->responses->createResponse(302)
