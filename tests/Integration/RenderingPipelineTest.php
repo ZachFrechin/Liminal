@@ -73,6 +73,9 @@ final class RenderingPipelineTest extends IntegrationTestCase
         $html = (string) $response->getBody();
 
         self::assertStringContainsString('<title>Fixture page</title>', $html);
+        // The design-system stylesheet is a layout responsibility: every page
+        // that extends the shared shell must reference it.
+        self::assertStringContainsString('<link rel="stylesheet" href="/assets/css/liminal.css">', $html);
         self::assertStringContainsString('<h1>Rendered through the stack</h1>', $html);
         // The shared layout greets the user, which only the contract's
         // displayName() makes possible from a lib template.

@@ -1,0 +1,124 @@
+/* Color tokens. Warm oklch neutrals (hue ~56-78, chroma ≤ 0.015 — never a
+   bluish grey), one deep terracotta accent, four semantic families sharing
+   chroma and lightness. Components consume ONLY the semantic aliases below;
+   raw scales are the vocabulary the aliases are defined in. */
+:root {
+  color-scheme: light;
+
+  /* ── Warm neutrals (the base of the whole interface) ───────────── */
+  --n-0:   oklch(1 0 0);
+  --n-25:  oklch(0.990 0.004 78);
+  --n-50:  oklch(0.976 0.006 78);
+  --n-100: oklch(0.951 0.008 76);
+  --n-150: oklch(0.928 0.009 76);
+  --n-200: oklch(0.903 0.010 75);
+  --n-300: oklch(0.848 0.011 72);
+  --n-400: oklch(0.705 0.013 68);
+  --n-500: oklch(0.588 0.014 65);
+  --n-600: oklch(0.482 0.015 62);
+  --n-700: oklch(0.386 0.015 60);
+  --n-800: oklch(0.288 0.013 58);
+  --n-900: oklch(0.208 0.012 56);
+  --n-950: oklch(0.158 0.011 56);
+
+  /* ── The single accent: deep terracotta ────────────────────────── */
+  --accent-50:  oklch(0.968 0.016 45);
+  --accent-100: oklch(0.936 0.032 45);
+  --accent-200: oklch(0.872 0.056 44);
+  --accent-300: oklch(0.792 0.084 43);
+  --accent-400: oklch(0.668 0.112 41);
+  --accent-500: oklch(0.572 0.124 39);
+  --accent-600: oklch(0.492 0.112 38);
+  --accent-700: oklch(0.424 0.096 37);
+  --accent-800: oklch(0.348 0.078 36);
+  --accent-900: oklch(0.278 0.058 35);
+
+  /* ── Semantics (same chroma/lightness, varied hues) ────────────── */
+  --success-50:  oklch(0.960 0.020 150);
+  --success-200: oklch(0.860 0.052 150);
+  --success-500: oklch(0.560 0.098 150);
+  --success-700: oklch(0.432 0.082 150);
+
+  --warning-50:  oklch(0.966 0.026 85);
+  --warning-200: oklch(0.888 0.070 85);
+  --warning-500: oklch(0.700 0.116 78);
+  --warning-700: oklch(0.500 0.092 72);
+
+  --danger-50:  oklch(0.962 0.020 22);
+  --danger-200: oklch(0.868 0.056 22);
+  --danger-500: oklch(0.552 0.132 22);
+  --danger-700: oklch(0.448 0.118 22);
+
+  --info-50:  oklch(0.960 0.018 245);
+  --info-200: oklch(0.862 0.048 245);
+  --info-500: oklch(0.556 0.098 245);
+  --info-700: oklch(0.442 0.084 245);
+
+  /* ── Semantic aliases: components use ONLY these ───────────────── */
+  --surface-app:      var(--n-50);      /* application background */
+  --surface-card:     var(--n-0);       /* cards, panels, tables */
+  --surface-sunken:   var(--n-100);     /* recessed areas, table headers */
+  --surface-hover:    var(--n-50);      /* row / item hover */
+  --surface-active:   var(--n-150);     /* selected item (neutral) */
+  --surface-selected: var(--accent-50); /* selected item (accent) */
+  --surface-chrome:   var(--n-25);      /* bars, sidebar, toolbars */
+  --surface-inverse:  var(--n-900);
+  --surface-overlay:  color-mix(in oklab, var(--n-950) 46%, transparent);
+
+  --border-subtle:  var(--n-150);
+  --border-default: var(--n-200);
+  --border-strong:  var(--n-300);
+  --border-focus:   var(--accent-500);
+
+  --text-primary:   var(--n-900);
+  --text-secondary: var(--n-600);
+  --text-tertiary:  var(--n-500);
+  --text-disabled:  var(--n-400);
+  --text-inverse:   var(--n-25);
+  --text-accent:    var(--accent-700);
+  --text-link:      var(--accent-700);
+  --text-link-hover: var(--accent-600);
+
+  --action-primary-bg:       var(--accent-600);
+  --action-primary-bg-hover: var(--accent-700);
+  --action-primary-fg:       var(--n-25);
+  --action-quiet-bg-hover:   var(--n-100);
+  --action-danger-bg:        var(--danger-700);
+
+  --focus-ring: 0 0 0 2px var(--n-0), 0 0 0 4px color-mix(in oklab, var(--accent-500) 55%, transparent);
+}
+
+/* Dark theme — attribute-driven only; no toggle exists yet, and the reference
+   marks it "delivered, not validated on screen". */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --surface-app:      var(--n-950);
+  --surface-card:     oklch(0.196 0.012 56);
+  --surface-sunken:   oklch(0.172 0.011 56);
+  --surface-hover:    oklch(0.228 0.012 56);
+  --surface-active:   oklch(0.252 0.013 56);
+  --surface-selected: oklch(0.276 0.036 40);
+  --surface-chrome:   oklch(0.180 0.011 56);
+  --surface-inverse:  var(--n-50);
+  --surface-overlay:  color-mix(in oklab, oklch(0.10 0.01 56) 62%, transparent);
+
+  --border-subtle:  oklch(0.262 0.012 56);
+  --border-default: oklch(0.302 0.013 56);
+  --border-strong:  oklch(0.386 0.015 60);
+
+  --text-primary:   var(--n-50);
+  --text-secondary: var(--n-400);
+  --text-tertiary:  var(--n-500);
+  --text-disabled:  var(--n-600);
+  --text-inverse:   var(--n-950);
+  --text-accent:    var(--accent-300);
+  --text-link:      var(--accent-300);
+  --text-link-hover: var(--accent-200);
+
+  --action-primary-bg:       var(--accent-500);
+  --action-primary-bg-hover: var(--accent-400);
+  --action-primary-fg:       oklch(0.152 0.010 40);
+  --action-quiet-bg-hover:   oklch(0.252 0.013 56);
+  --focus-ring: 0 0 0 2px var(--surface-card), 0 0 0 4px color-mix(in oklab, var(--accent-400) 60%, transparent);
+}

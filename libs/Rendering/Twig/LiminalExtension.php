@@ -45,6 +45,7 @@ final class LiminalExtension extends AbstractExtension
     {
         return [
             new TwigFunction('url', $this->url(...)),
+            new TwigFunction('asset', $this->asset(...)),
             new TwigFunction('csrf_token', $this->csrfToken(...)),
             new TwigFunction('csrf_field', $this->csrfField(...), ['is_safe' => ['html']]),
             new TwigFunction('flash', $this->flash(...)),
@@ -70,6 +71,15 @@ final class LiminalExtension extends AbstractExtension
     {
         // A template naming a dead route is wiring: the exception propagates.
         return $this->urls->generate($name, $parameters);
+    }
+
+    private function asset(string $path): string
+    {
+        // Static files live under the public docroot; the webserver serves
+        // them without ever reaching the kernel. The prefix is fixed because
+        // the application already assumes a root mount everywhere URLs are
+        // made — this method is the single seam if that ever changes.
+        return '/assets/' . ltrim($path, '/');
     }
 
     private function csrfToken(): string

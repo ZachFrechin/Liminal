@@ -8,6 +8,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Liminal{% endblock %}</title>
     {% block head %}
+    <link rel="stylesheet" href="{{ asset('css/liminal.css') }}">
+    {# The embedded rules below predate the design system; they sit after the
+       stylesheet on purpose, winning cascade ties until the shell replaces
+       them — deleted with the shell commit. #}
     <style>
         :root { color-scheme: light dark; }
         body { font-family: system-ui, sans-serif; margin: 0; line-height: 1.5; }

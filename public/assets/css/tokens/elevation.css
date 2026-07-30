@@ -1,0 +1,14 @@
+/* Elevation tokens. Warm-tinted, very low shadows: the interface rests on
+   its borders, not on relief. xs on controls, sm on cards, md on tooltips,
+   lg on dialogs and toasts. No decorative gradient anywhere. */
+:root {
+  --shadow-none: none;
+  --shadow-xs: 0 1px 1px color-mix(in oklab, var(--n-900) 5%, transparent);
+  --shadow-sm: 0 1px 2px color-mix(in oklab, var(--n-900) 7%, transparent);
+  --shadow-md: 0 2px 6px -1px color-mix(in oklab, var(--n-900) 10%, transparent),
+               0 1px 2px color-mix(in oklab, var(--n-900) 6%, transparent);
+  --shadow-lg: 0 10px 24px -6px color-mix(in oklab, var(--n-900) 16%, transparent),
+               0 2px 6px -2px color-mix(in oklab, var(--n-900) 8%, transparent);
+  --shadow-inset: inset 0 1px 0 color-mix(in oklab, var(--n-0) 60%, transparent);
+  --ring-inset: inset 0 0 0 1px var(--border-default);
+}

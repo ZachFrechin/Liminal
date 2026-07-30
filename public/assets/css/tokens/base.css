@@ -1,0 +1,46 @@
+/* Base layer. Box model, body defaults, links, focus ring, headings, form
+   font inheritance, selection, scrollbars — everything the tokens promise
+   before any component exists. */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--surface-app);
+  color: var(--text-primary);
+  font: var(--text-body);
+  letter-spacing: var(--ls-snug);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  text-wrap: pretty;
+}
+
+a { color: var(--text-link); text-decoration: none; border-bottom: 1px solid color-mix(in oklab, var(--text-link) 30%, transparent); }
+a:hover { color: var(--text-link-hover); border-bottom-color: currentColor; }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
+}
+
+h1, h2, h3, h4, p { margin: 0; }
+h1 { font: var(--text-h1); letter-spacing: var(--ls-tight); }
+h2 { font: var(--text-h2); letter-spacing: var(--ls-tight); }
+h3 { font: var(--text-h3); letter-spacing: var(--ls-snug); }
+
+button, input, select, textarea { font: inherit; letter-spacing: inherit; color: inherit; }
+
+table { border-collapse: collapse; }
+
+::selection { background: var(--accent-200); }
+
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-thumb { background: var(--n-300); border-radius: var(--radius-pill); border: 3px solid transparent; background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background: var(--n-400); background-clip: content-box; }
+::-webkit-scrollbar-track { background: transparent; }
+
+.numeric { font-variant-numeric: tabular-nums lining-nums; font-feature-settings: var(--numeric-features); }
+
+/* Lucide icons are inlined as SVG by the icon() Twig function */
+svg.lucide { stroke: currentColor; fill: none; stroke-width: var(--icon-stroke, 1.8); stroke-linecap: round; stroke-linejoin: round; }

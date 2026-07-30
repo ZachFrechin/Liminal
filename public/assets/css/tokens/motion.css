@@ -1,0 +1,19 @@
+/* Motion tokens. 80ms row hover, 130ms control properties, 180ms dialogs and
+   navigation, 260ms panels. No decorative entrance animation;
+   prefers-reduced-motion zeroes everything. */
+:root {
+  --dur-instant: 80ms;
+  --dur-fast: 130ms;
+  --dur-base: 180ms;
+  --dur-slow: 260ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0.13, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --transition-control: background-color var(--dur-fast) var(--ease-standard),
+                        border-color var(--dur-fast) var(--ease-standard),
+                        color var(--dur-fast) var(--ease-standard),
+                        box-shadow var(--dur-fast) var(--ease-standard);
+}
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-instant: 0ms; --dur-fast: 0ms; --dur-base: 0ms; --dur-slow: 0ms; }
+}

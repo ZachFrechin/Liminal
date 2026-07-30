@@ -1,0 +1,44 @@
+/* Spacing tokens. 2/4px scale — the ERP is dense, half-steps earn their keep.
+   Border over relief: 1px subtle between rows, default on controls; radii
+   3/5/7/10/14 — controls at 5, cards at 7, dialogs at 10. */
+:root {
+  --sp-0: 0;
+  --sp-1: 2px;
+  --sp-2: 4px;
+  --sp-3: 6px;
+  --sp-4: 8px;
+  --sp-5: 10px;
+  --sp-6: 12px;
+  --sp-7: 16px;
+  --sp-8: 20px;
+  --sp-9: 24px;
+  --sp-10: 32px;
+  --sp-11: 40px;
+  --sp-12: 48px;
+  --sp-13: 64px;
+
+  --radius-xs: 3px;
+  --radius-sm: 5px;
+  --radius-md: 7px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-pill: 999px;
+
+  --border-width: 1px;
+  --border-width-strong: 1.5px;
+
+  /* Application geometry (dense but breathing) */
+  --control-h-sm: 26px;
+  --control-h:    32px;
+  --control-h-lg: 38px;
+  --row-h:        36px;
+  --row-h-dense:  30px;
+  --topbar-h:     48px;
+  --subbar-h:     40px;
+  --sidebar-w:    248px;
+  --sidebar-w-collapsed: 56px;
+  --page-max:     1440px;
+  --page-pad:     var(--sp-9);
+  --field-pad-x:  var(--sp-5);
+  --cell-pad-x:   var(--sp-6);
+}

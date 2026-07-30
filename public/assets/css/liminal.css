@@ -1,0 +1,12 @@
+/* Liminal design system — single CSS entry point. The import list IS the
+   documentation of the layer order: fonts, then the token vocabulary, then
+   the base layer that applies it. Component families append below the
+   tokens as they land. The reference design lives in the "Design système
+   ERP opensource" claude.ai project; this tree is its implementation. */
+@import "tokens/fonts.css";
+@import "tokens/colors.css";
+@import "tokens/typography.css";
+@import "tokens/spacing.css";
+@import "tokens/elevation.css";
+@import "tokens/motion.css";
+@import "tokens/base.css";
