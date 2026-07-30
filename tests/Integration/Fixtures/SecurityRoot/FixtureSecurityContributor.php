@@ -11,6 +11,7 @@ use Liminal\Registry\Contract\DefinitionProvider;
 use Liminal\Registry\EntityRegistry;
 use Liminal\Registry\RegistryCollection;
 use Liminal\Registry\RouteRegistry;
+use Liminal\Registry\TemplateRegistry;
 
 /**
  * The security lib's test double of a phase-5 authentication module: it
@@ -28,9 +29,13 @@ final class FixtureSecurityContributor implements Contributor, DefinitionProvide
         $routes->get('/me', MeHandler::class, 'security_fixture.me');
         $routes->post('/logout', LogoutHandler::class, 'security_fixture.logout');
         $routes->get('/widgets', WidgetsHandler::class, 'security_fixture.widgets');
+        $routes->get('/page', PageHandler::class, 'security_fixture.page');
 
         $registries->get(EntityRegistry::class)
             ->add('Liminal\Tests\Integration\Fixtures\Entity', dirname(__DIR__) . '/Entity');
+
+        $registries->get(TemplateRegistry::class)
+            ->add('security_fixture', __DIR__ . '/templates');
     }
 
     /**

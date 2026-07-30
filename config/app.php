@@ -25,6 +25,7 @@ return [
         Liminal\Lib\Database\DatabaseContributor::class,
         Liminal\Lib\Security\SecurityContributor::class,
         Liminal\Lib\Module\ModuleContributor::class,
+        Liminal\Lib\Rendering\RenderingContributor::class,
         Liminal\Lib\System\SystemContributor::class,
     ],
 
