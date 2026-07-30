@@ -19,7 +19,11 @@ return [
     'authentication.account.signed_in_as' => 'Signed in as %name% (%email%).',
     'authentication.account.companies' => 'Companies you can reach',
     'authentication.account.current' => 'current',
+    'authentication.account.switch' => 'Work in this company',
     'authentication.account.sign_out' => 'Sign out',
+
+    'authentication.switch.done' => 'Working company switched.',
+    'authentication.switch.refused' => 'That company is not yours to work in.',
 
     'authentication.logout.done' => 'You have been signed out.',
 

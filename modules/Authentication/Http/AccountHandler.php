@@ -7,13 +7,14 @@ namespace Liminal\Module\Authentication\Http;
 use Liminal\Lib\Database\Scope\CompanyContext;
 use Liminal\Lib\Rendering\HtmlRenderer;
 use Liminal\Lib\Security\Authentication\CurrentUser;
+use Liminal\Module\Authentication\Administration\UserAdministration;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
 /**
- * Where a successful login lands: who you are, which companies you reach, and
- * the one you are working in.
+ * Where a successful login lands: who you are, which companies you reach —
+ * by name, with a switch button each — and the one you are working in.
  *
  * It is also the phase's only proof that the whole stack composes — layout,
  * greeting, menu, company scope and sign-out in one page — which is why a login
@@ -25,6 +26,7 @@ final readonly class AccountHandler implements RequestHandlerInterface
         private HtmlRenderer $html,
         private CurrentUser $currentUser,
         private CompanyContext $context,
+        private UserAdministration $administration,
     ) {}
 
     public function handle(ServerRequestInterface $request): ResponseInterface
@@ -37,7 +39,7 @@ final readonly class AccountHandler implements RequestHandlerInterface
                 // Non-null here: the route is protected, so the authentication
                 // middleware already refused anyone anonymous.
                 'user' => $user,
-                'companies' => $user?->accessibleCompanyIds() ?? [],
+                'companies' => $this->accessibleCompanies($user?->accessibleCompanyIds() ?? []),
                 'currentCompany' => $this->context->currentId(),
             ],
             200,
@@ -45,5 +47,22 @@ final readonly class AccountHandler implements RequestHandlerInterface
             // back-button cache after sign-out.
             ['Cache-Control' => 'no-store'],
         );
+    }
+
+    /**
+     * The names behind the ids the identity carries. A company deleted between
+     * the grant read and this render simply drops off the list — content
+     * degrades, and the switch handler revalidates anyway.
+     *
+     * @param list<int> $accessibleIds
+     *
+     * @return list<array{id: int, code: string, name: string}>
+     */
+    private function accessibleCompanies(array $accessibleIds): array
+    {
+        return array_values(array_filter(
+            $this->administration->listCompanies(),
+            static fn(array $company): bool => in_array($company['id'], $accessibleIds, true),
+        ));
     }
 }

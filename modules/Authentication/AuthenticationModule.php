@@ -18,6 +18,7 @@ use Liminal\Module\Authentication\Http\AccountHandler;
 use Liminal\Module\Authentication\Http\LoginPageHandler;
 use Liminal\Module\Authentication\Http\LoginSubmitHandler;
 use Liminal\Module\Authentication\Http\LogoutHandler;
+use Liminal\Module\Authentication\Http\SwitchCompanyHandler;
 use Liminal\Module\Authentication\Http\UserListHandler;
 use Liminal\Module\Authentication\Security\DbalAuthEventLog;
 use Liminal\Module\Authentication\Security\DbalLoginThrottle;
@@ -94,6 +95,7 @@ final class AuthenticationModule implements Module, DefinitionProvider
         $routes->post('/login', LoginSubmitHandler::class, 'authentication.login_submit', public: true);
         $routes->post('/logout', LogoutHandler::class, 'authentication.logout', public: true);
         $routes->get('/account', AccountHandler::class, 'authentication.account');
+        $routes->post('/switch-company', SwitchCompanyHandler::class, 'authentication.switch');
         $routes->get('/users', UserListHandler::class, 'authentication.users');
 
         $registries->get(PermissionRegistry::class)

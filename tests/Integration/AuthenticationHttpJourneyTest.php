@@ -189,7 +189,7 @@ final class AuthenticationHttpJourneyTest extends IntegrationTestCase
 
         self::assertStringContainsString('Welcome back.', $html);
         self::assertStringContainsString('Signed in as Ada Admin (ada@liminal.test).', $html);
-        self::assertStringContainsString('1 — current', $html);
+        self::assertStringContainsString('Main company (MAIN) — current', $html);
 
         // The cost-4 hash was rewritten at the house cost by the write-back —
         // and still verifies.
@@ -345,6 +345,67 @@ final class AuthenticationHttpJourneyTest extends IntegrationTestCase
     }
 
     /**
+     * The switcher writes the preference; the middleware applies it on the
+     * NEXT request — which is exactly what the second GET proves.
+     */
+    public function testSwitchingCompaniesMovesTheWorkingScopeOnTheNextRequest(): void
+    {
+        $this->seedSecondCompany(granting: 'ada@liminal.test');
+
+        $kernel = $this->kernel();
+        $cookie = $this->login($kernel, 'ada@liminal.test');
+
+        $account = (string) $kernel->handle($this->get('/account', $cookie))->getBody();
+
+        // Both companies listed, MAIN current, ACME offered as a button.
+        self::assertStringContainsString('Main company (MAIN) — current', $account);
+        self::assertStringContainsString('Acme Corp (ACME)', $account);
+        self::assertStringContainsString('Work in this company', $account);
+
+        $switch = $kernel->handle($this->post(
+            '/switch-company',
+            ['company' => '2', '_token' => $this->tokenFrom($account)],
+            $cookie,
+        ));
+
+        self::assertSame(302, $switch->getStatusCode());
+        self::assertSame('/account', $switch->getHeaderLine('Location'));
+
+        $after = (string) $kernel->handle($this->get('/account', $cookie))->getBody();
+
+        self::assertStringContainsString('Working company switched.', $after);
+        self::assertStringContainsString('Acme Corp (ACME) — current', $after);
+        self::assertStringNotContainsString('Main company (MAIN) — current', $after);
+    }
+
+    /**
+     * An explicit click on a company that is not yours earns an explicit
+     * refusal — and the scope does not move.
+     */
+    public function testSwitchingToSomeoneElsesCompanyIsRefused(): void
+    {
+        $this->seedSecondCompany(granting: null);
+
+        $kernel = $this->kernel();
+        $cookie = $this->login($kernel, 'ada@liminal.test');
+
+        $token = $this->tokenFrom((string) $kernel->handle($this->get('/account', $cookie))->getBody());
+
+        $switch = $kernel->handle($this->post(
+            '/switch-company',
+            ['company' => '2', '_token' => $token],
+            $cookie,
+        ));
+
+        self::assertSame(302, $switch->getStatusCode());
+
+        $after = (string) $kernel->handle($this->get('/account', $cookie))->getBody();
+
+        self::assertStringContainsString('That company is not yours to work in.', $after);
+        self::assertStringContainsString('Main company (MAIN) — current', $after);
+    }
+
+    /**
      * After max_failures wrong passwords the RIGHT password is refused too,
      * with Retry-After as the honest signal — proof the throttle is consulted
      * before any verification buys CPU.
@@ -384,6 +445,39 @@ final class AuthenticationHttpJourneyTest extends IntegrationTestCase
     private function kernel(): Kernel
     {
         return new Kernel(self::ROOT);
+    }
+
+    /**
+     * A second company the way company creation will build it: row plus module
+     * enablement — without the latter, every authentication page would 404 the
+     * moment anyone switches there.
+     */
+    private function seedSecondCompany(?string $granting): void
+    {
+        $this->dbal->insert('core_company', [
+            'id' => 2,
+            'code' => 'ACME',
+            'name' => 'Acme Corp',
+            'created_at' => '2026-07-30 00:00:00',
+            'updated_at' => '2026-07-30 00:00:00',
+        ]);
+
+        $this->dbal->executeStatement(
+            "INSERT INTO core_module_company (module_id, company_id, enabled)
+             SELECT id, 2, 1 FROM core_module WHERE name = 'authentication'",
+        );
+
+        if ($granting === null) {
+            return;
+        }
+
+        $this->dbal->executeStatement(
+            'INSERT INTO core_user_company_role (user_id, company_id, role_id)
+             SELECT u.id, 2, r.id FROM core_user u
+             JOIN core_role r ON r.code = \'admin\'
+             WHERE u.email = ?',
+            [$granting],
+        );
     }
 
     /**
