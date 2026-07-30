@@ -1,0 +1,56 @@
+{% extends '@liminal/layout.html.twig' %}
+
+{% block title %}{{ 'thirdparty.list.title'|trans }}{% endblock %}
+
+{% block content %}
+    <h1>{{ 'thirdparty.list.title'|trans }}</h1>
+
+    <form method="get" action="{{ url('thirdparty.list') }}">
+        <input type="search" name="q" value="{{ query }}" placeholder="{{ 'thirdparty.list.search'|trans }}">
+        <button type="submit">{{ 'thirdparty.list.search'|trans }}</button>
+    </form>
+
+    {% if page.total == 0 %}
+        <p>{{ 'thirdparty.list.empty'|trans }}</p>
+    {% else %}
+        <table>
+            <thead>
+                <tr>
+                    <th>{{ 'thirdparty.list.code'|trans }}</th>
+                    <th>{{ 'thirdparty.list.name'|trans }}</th>
+                    <th>{{ 'thirdparty.list.kind'|trans }}</th>
+                    <th>{{ 'thirdparty.list.status'|trans }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for thirdparty in page.items %}
+                    <tr>
+                        <td><a href="{{ url('thirdparty.detail', {'id': thirdparty.id}) }}">{{ thirdparty.code }}</a></td>
+                        <td>
+                            {{ thirdparty.name }}
+                            {% if thirdparty.alias %} <em>({{ thirdparty.alias }})</em>{% endif %}
+                        </td>
+                        <td>
+                            {% if thirdparty.customer %}<span class="badge">{{ 'thirdparty.kind.customer'|trans }}</span>{% endif %}
+                            {% if thirdparty.supplier %}<span class="badge">{{ 'thirdparty.kind.supplier'|trans }}</span>{% endif %}
+                            {% if not thirdparty.customer and not thirdparty.supplier %}{{ 'thirdparty.kind.prospect'|trans }}{% endif %}
+                        </td>
+                        <td>
+                            {% if not thirdparty.active %}<span class="badge badge-inactive">{{ 'thirdparty.list.inactive'|trans }}</span>{% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <p class="pagination">
+            {% if page.hasPrevious %}
+                <a href="{{ url('thirdparty.list', {'page': page.page - 1, 'q': query}) }}">{{ 'thirdparty.list.previous'|trans }}</a>
+            {% endif %}
+            {{ 'thirdparty.list.page_of'|trans({'page': page.page, 'pages': page.pages, 'total': page.total}) }}
+            {% if page.hasNext %}
+                <a href="{{ url('thirdparty.list', {'page': page.page + 1, 'q': query}) }}">{{ 'thirdparty.list.next'|trans }}</a>
+            {% endif %}
+        </p>
+    {% endif %}
+{% endblock %}

@@ -76,6 +76,11 @@ final class RoleAdministrationHttpTest extends IntegrationTestCase
 
         $detail = $kernel->handle($this->get('/roles/' . $memberId, $ada));
 
+        // The edit page renders a checkbox label for EVERY declared
+        // permission, other modules' included — none may leak as a raw key.
+        self::assertStringNotContainsString('thirdparty.permission.', (string) $detail->getBody());
+        self::assertStringNotContainsString('companies.permission.', (string) $detail->getBody());
+
         $update = $kernel->handle($this->post(
             '/roles/' . $memberId,
             [
