@@ -1,4 +1,5 @@
 {% extends '@liminal/layout.html.twig' %}
+{% import '@liminal/components.html.twig' as ui %}
 
 {% block title %}{{ 'thirdparty.list.title'|trans }}{% endblock %}
 
@@ -15,7 +16,7 @@
     </form>
 
     {% if page.total == 0 %}
-        <p>{{ 'thirdparty.list.empty'|trans }}</p>
+        {{ ui.empty_state('contact-round', 'thirdparty.list.empty'|trans) }}
     {% else %}
         <table>
             <thead>

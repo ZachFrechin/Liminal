@@ -1,0 +1,21 @@
+/* Minimal token dress for the badges and pagination the admin lists already
+   render. Provisional on purpose: the data family (StatusPill, DataTable,
+   Pagination proper) is a later step — this only keeps today's markup from
+   standing naked inside the shell. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+  color: var(--text-secondary);
+  font: var(--text-label);
+  font-size: var(--fs-11);
+  white-space: nowrap;
+}
+.badge-inactive { background: var(--warning-50); border-color: var(--warning-200); color: var(--warning-700); }
+.badge-no-access { background: var(--danger-50); border-color: var(--danger-200); color: var(--danger-700); }
+
+.pagination { display: flex; align-items: center; gap: var(--sp-4); font: var(--text-meta); color: var(--text-tertiary); }

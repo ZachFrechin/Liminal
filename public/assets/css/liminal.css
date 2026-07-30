@@ -11,3 +11,5 @@
 @import "tokens/motion.css";
 @import "tokens/base.css";
 @import "components/shell.css";
+@import "components/feedback.css";
+@import "components/badges.css";

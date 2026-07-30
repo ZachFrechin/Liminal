@@ -1,0 +1,21 @@
+{# The design system's Twig vocabulary — import as
+   {% import '@liminal/components.html.twig' as ui %}.
+   A module can shadow this whole file through the template registry
+   (latest contribution first), the ordinary override rule.
+
+   Only components with a real consumer get a macro: banner (the flashes)
+   and empty_state (empty lists). Toast, tooltip and dialog ship as CSS
+   classes with their markup proven on the design fixture page — they gain
+   macros when a production surface needs them. #}
+
+{% macro banner(tone, message) %}
+    {# The tone→glyph map mirrors the reference; danger alone is assertive,
+       everything else is polite status. One physical line: the message must
+       stay regex-capturable for the enumeration oracle. #}
+    {% set glyphs = {'info': 'info', 'success': 'circle-check-big', 'warning': 'triangle-alert', 'danger': 'octagon-alert', 'neutral': 'info'} %}
+    <div class="banner banner-{{ tone }}" role="{{ tone == 'danger' ? 'alert' : 'status' }}">{{ icon(glyphs[tone]|default('info'), 16) }}<div class="banner-body"><p class="banner-message">{{ message }}</p></div></div>
+{% endmacro %}
+
+{% macro empty_state(glyph, title, description = null) %}
+    <div class="empty-state"><span class="empty-state-icon">{{ icon(glyph, 18) }}</span><strong class="empty-state-title">{{ title }}</strong>{% if description %}<p class="empty-state-description">{{ description }}</p>{% endif %}</div>
+{% endmacro %}

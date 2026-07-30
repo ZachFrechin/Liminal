@@ -116,6 +116,9 @@ final class RenderingPipelineTest extends IntegrationTestCase
         $second = (string) $kernel->handle($this->get('/form', $cookie))->getBody();
 
         self::assertStringContainsString('Saved.', $first);
+        // A flash is a banner: polite status tone, icon inline, message text.
+        self::assertStringContainsString('<div class="banner banner-success" role="status">', $first);
+        self::assertStringContainsString('<p class="banner-message">Saved.</p>', $first);
         self::assertStringNotContainsString('Saved.', $second);
     }
 

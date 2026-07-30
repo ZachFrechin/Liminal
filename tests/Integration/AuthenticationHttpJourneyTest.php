@@ -112,12 +112,18 @@ final class AuthenticationHttpJourneyTest extends IntegrationTestCase
             ));
 
             $flash = (string) $kernel->handle($this->get('/login', $cookie))->getBody();
-            preg_match('/<p class="flash flash-error"[^>]*>([^<]*)<\/p>/', $flash, $matches);
+            preg_match(
+                '/<div class="banner banner-danger" role="alert">.*?<p class="banner-message">([^<]*)<\/p>/s',
+                $flash,
+                $matches,
+            );
 
             $surface[$identifier] = [
                 $response->getStatusCode(),
                 $response->getHeaderLine('Location'),
-                $matches[1] ?? '(no flash)',
+                // The oracle must never degrade silently: a non-matching regex
+                // makes both sides '(no flash)' and the comparison vacuous.
+                $matches[1] ?? self::fail('The login flash banner did not render — the enumeration oracle lost its surface.'),
             ];
         }
 

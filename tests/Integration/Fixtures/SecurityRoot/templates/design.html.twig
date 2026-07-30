@@ -1,0 +1,34 @@
+{% extends '@liminal/layout.html.twig' %}
+{% import '@liminal/components.html.twig' as ui %}
+
+{% block title %}Design fixture{% endblock %}
+
+{% block content %}
+    <h1>Feedback family</h1>
+
+    {{ ui.banner('info', 'An informative note.') }}
+    {{ ui.banner('success', 'Something worked.') }}
+    {{ ui.banner('warning', 'Something needs attention.') }}
+    {{ ui.banner('danger', 'Something failed.') }}
+
+    {{ ui.empty_state('inbox', 'Nothing here yet', 'Create the first entry to get started.') }}
+
+    {# Toast: the floating voice — pattern proven here, macro when a scripted
+       surface consumes it. #}
+    <div class="toast toast-success" role="status">{{ icon('circle-check-big', 16) }}<div class="toast-body"><strong class="toast-title">Module enabled</strong><span class="toast-message">Available for the working company.</span></div></div>
+
+    {# Tooltip: pure CSS, hover and keyboard focus. #}
+    <span class="tooltip"><button type="button">Hover me</button><span class="tooltip-bubble" role="tooltip">A short explanation</span></span>
+
+    {# Dialog: the skin, statically open inside a positioned box — opening
+       mechanics arrive with a real consumer. #}
+    <div style="position: relative; min-height: 240px;">
+        <div class="dialog-overlay">
+            <div class="dialog dialog-sm">
+                <header class="dialog-header"><h3 class="dialog-title">Invite a user</h3><p class="dialog-description">The link stays valid seven days.</p></header>
+                <div class="dialog-body"><p>Dialog body content.</p></div>
+                <footer class="dialog-footer"><button type="button">Cancel</button><button type="button">Send</button></footer>
+            </div>
+        </div>
+    </div>
+{% endblock %}

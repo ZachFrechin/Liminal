@@ -1,0 +1,138 @@
+/* The feedback family: banner, toast, tooltip, dialog, empty state — the
+   reference's components/feedback/ card, translated to classes. Banners are
+   the in-flow voice (flashes render as banners); toasts are the floating one
+   and wait for a scripted surface; tooltips are pure CSS on hover and focus;
+   the dialog ships its skin, its opening mechanics come later. No dismiss
+   buttons anywhere: a PRG flash dies on the next request by itself, and a
+   dismiss without JavaScript would be a lie. */
+
+/* ── Banner ────────────────────────────────────────────────────────── */
+.banner {
+  display: flex;
+  gap: var(--sp-5);
+  align-items: flex-start;
+  padding: var(--sp-5) var(--sp-6);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+}
+.banner > svg.lucide { flex: none; margin-top: 1px; color: var(--text-secondary); }
+.banner-body { display: grid; gap: var(--sp-2); flex: 1; min-width: 0; }
+.banner-title { font: var(--text-ui); color: var(--text-primary); }
+.banner-message { font: var(--text-body-sm); color: var(--text-secondary); }
+
+.banner-info { background: var(--info-50); border-color: var(--info-200); }
+.banner-info > svg.lucide { color: var(--info-700); }
+.banner-success { background: var(--success-50); border-color: var(--success-200); }
+.banner-success > svg.lucide { color: var(--success-700); }
+.banner-warning { background: var(--warning-50); border-color: var(--warning-200); }
+.banner-warning > svg.lucide { color: var(--warning-700); }
+.banner-danger { background: var(--danger-50); border-color: var(--danger-200); }
+.banner-danger > svg.lucide { color: var(--danger-700); }
+
+/* ── Toast ─────────────────────────────────────────────────────────── */
+.toast {
+  display: flex;
+  gap: var(--sp-5);
+  align-items: flex-start;
+  width: 360px;
+  max-width: 100%;
+  padding: var(--sp-6);
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+.toast > svg.lucide { flex: none; margin-top: 1px; }
+.toast-body { display: grid; gap: var(--sp-2); flex: 1; min-width: 0; }
+.toast-title { font: var(--text-ui); }
+.toast-message { font: var(--text-meta); color: var(--text-secondary); }
+.toast-success > svg.lucide { color: var(--success-500); }
+.toast-danger > svg.lucide { color: var(--danger-500); }
+.toast-warning > svg.lucide { color: var(--warning-500); }
+.toast-info > svg.lucide { color: var(--info-500); }
+
+/* ── Tooltip (pure CSS: hover and keyboard focus) ──────────────────── */
+.tooltip { position: relative; display: inline-flex; }
+.tooltip-bubble {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translate(-50%, -6px);
+  z-index: 50;
+  pointer-events: none;
+  display: none;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: 5px var(--sp-5);
+  border-radius: var(--radius-xs);
+  background: var(--surface-inverse);
+  color: var(--text-inverse);
+  font: var(--text-meta);
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+}
+.tooltip:hover > .tooltip-bubble, .tooltip:focus-within > .tooltip-bubble { display: flex; }
+.tooltip-bubble[data-side="bottom"] { bottom: auto; top: 100%; transform: translate(-50%, 6px); }
+.tooltip-bubble[data-side="left"] { bottom: auto; left: auto; right: 100%; top: 50%; transform: translate(-6px, -50%); }
+.tooltip-bubble[data-side="right"] { bottom: auto; left: 100%; top: 50%; transform: translate(6px, -50%); }
+
+/* ── Dialog (skin only — opening mechanics arrive with a consumer) ─── */
+.dialog-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--sp-12) var(--sp-7);
+  background: var(--surface-overlay);
+  backdrop-filter: blur(1.5px);
+}
+.dialog {
+  width: 520px;
+  max-width: 100%;
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+.dialog-sm { width: 400px; }
+.dialog-lg { width: 720px; }
+.dialog-header { display: grid; gap: var(--sp-2); padding: var(--sp-7) var(--sp-7) var(--sp-5); }
+.dialog-title { font: var(--text-h3); letter-spacing: var(--ls-snug); }
+.dialog-description { font: var(--text-body-sm); color: var(--text-secondary); }
+.dialog-body { padding: 0 var(--sp-7) var(--sp-7); }
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-4);
+  padding: var(--sp-6) var(--sp-7);
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-chrome);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+/* ── Empty state ───────────────────────────────────────────────────── */
+.empty-state {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-4);
+  text-align: center;
+  padding: var(--sp-12) var(--sp-7);
+}
+.empty-state-compact { padding: var(--sp-9) var(--sp-7); }
+.empty-state-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-tertiary);
+  margin-bottom: var(--sp-2);
+}
+.empty-state-title { font: var(--text-ui); font-size: var(--fs-14); }
+.empty-state-description { font: var(--text-body-sm); color: var(--text-secondary); max-width: 44ch; }

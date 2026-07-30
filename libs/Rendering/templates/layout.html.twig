@@ -9,6 +9,7 @@
    layout, and error templates must never carry a form (a token minted there
    reaches the HTML but never the store). error.html.twig overrides both
    blocks empty — chrome stays, forms disappear. #}
+{% import '@liminal/components.html.twig' as ui %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -87,11 +88,12 @@
         {% block flash %}
             {# Handlers flash catalogue KEYS, translated here so the language is
                the reader's at render time; free text degrades through |trans
-               unchanged, because a missing key resolves to itself. #}
+               unchanged, because a missing key resolves to itself. Flashes are
+               banners — the in-flow voice — on both faces of the shell. #}
             {% set flash_success = flash('success') %}
-            {% if flash_success %}<p class="flash flash-success" role="status">{{ flash_success|trans }}</p>{% endif %}
+            {% if flash_success %}{{ ui.banner('success', flash_success|trans) }}{% endif %}
             {% set flash_error = flash('error') %}
-            {% if flash_error %}<p class="flash flash-error" role="alert">{{ flash_error|trans }}</p>{% endif %}
+            {% if flash_error %}{{ ui.banner('danger', flash_error|trans) }}{% endif %}
         {% endblock %}
         {% block content %}{% endblock %}
     </main>
