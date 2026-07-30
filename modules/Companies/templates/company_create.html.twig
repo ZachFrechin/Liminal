@@ -1,0 +1,24 @@
+{% extends '@liminal/layout.html.twig' %}
+
+{% block title %}{{ 'companies.create.title'|trans }}{% endblock %}
+
+{% block content %}
+    <h1>{{ 'companies.create.title'|trans }}</h1>
+
+    <form method="post" action="{{ url('companies.create_submit') }}">
+        {{ csrf_field() }}
+
+        <p>
+            <label for="code">{{ 'companies.create.code'|trans }}</label><br>
+            <input type="text" id="code" name="code" required pattern="[A-Za-z][A-Za-z0-9_]*"
+                   style="text-transform: uppercase">
+            <em>{{ 'companies.create.code_hint'|trans }}</em>
+        </p>
+        <p>
+            <label for="name">{{ 'companies.create.name'|trans }}</label><br>
+            <input type="text" id="name" name="name" required>
+        </p>
+
+        <button type="submit">{{ 'companies.create.submit'|trans }}</button>
+    </form>
+{% endblock %}

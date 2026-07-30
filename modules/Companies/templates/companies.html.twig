@@ -1,0 +1,28 @@
+{% extends '@liminal/layout.html.twig' %}
+
+{% block title %}{{ 'companies.list.title'|trans }}{% endblock %}
+
+{% block content %}
+    <h1>{{ 'companies.list.title'|trans }}</h1>
+
+    <p><a href="{{ url('companies.create') }}">{{ 'companies.list.create'|trans }}</a></p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>{{ 'companies.list.code'|trans }}</th>
+                <th>{{ 'companies.list.name'|trans }}</th>
+                <th>{{ 'companies.list.created'|trans }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for company in companies %}
+                <tr>
+                    <td><a href="{{ url('companies.company', {'id': company.id}) }}">{{ company.code }}</a></td>
+                    <td>{{ company.name }}</td>
+                    <td>{{ company.createdAt }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

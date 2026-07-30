@@ -8,9 +8,21 @@ use Liminal\Config\Configuration;
 use Liminal\Lib\Database\DeferredConnection;
 use Liminal\Lib\Module\ModuleManager;
 use Liminal\Module\Companies\Administration\CompanyAdministration;
+use Liminal\Module\Companies\Http\CompanyCreatePageHandler;
+use Liminal\Module\Companies\Http\CompanyCreateSubmitHandler;
+use Liminal\Module\Companies\Http\CompanyDetailHandler;
+use Liminal\Module\Companies\Http\CompanyListHandler;
+use Liminal\Module\Companies\Http\CompanyRenameHandler;
 use Liminal\Registry\Contract\DefinitionProvider;
 use Liminal\Registry\Contract\Module;
+use Liminal\Registry\MenuItem;
+use Liminal\Registry\MenuRegistry;
+use Liminal\Registry\Permission;
+use Liminal\Registry\PermissionRegistry;
 use Liminal\Registry\RegistryCollection;
+use Liminal\Registry\RouteRegistry;
+use Liminal\Registry\TemplateRegistry;
+use Liminal\Registry\TranslationRegistry;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -44,9 +56,30 @@ final class CompaniesModule implements Module, DefinitionProvider
 
     public function contribute(RegistryCollection $registries): void
     {
-        // Routes, templates, catalogue, permission and menu arrive with the
-        // screens; the manifest alone is already a complete, installable
-        // module — which is precisely what this phase proves.
+        $registries->get(TemplateRegistry::class)
+            ->add(self::NAME, __DIR__ . '/templates');
+
+        $registries->get(TranslationRegistry::class)
+            ->add('en', __DIR__ . '/lang/en.php');
+
+        // Statics before dynamics, and {id:\d+} is load-bearing (a bare {id}
+        // would also match "create").
+        $routes = $registries->get(RouteRegistry::class);
+        $routes->get('/companies', CompanyListHandler::class, 'companies.list');
+        $routes->get('/companies/create', CompanyCreatePageHandler::class, 'companies.create');
+        $routes->post('/companies/create', CompanyCreateSubmitHandler::class, 'companies.create_submit');
+        $routes->get('/companies/{id:\d+}', CompanyDetailHandler::class, 'companies.company');
+        $routes->post('/companies/{id:\d+}', CompanyRenameHandler::class, 'companies.company_rename');
+
+        $registries->get(PermissionRegistry::class)
+            ->add(new Permission(CompanyListHandler::PERMISSION, 'companies.permission.company.manage', self::NAME));
+
+        $registries->get(MenuRegistry::class)->add(new MenuItem(
+            'companies.menu.companies',
+            'companies.list',
+            CompanyListHandler::PERMISSION,
+            priority: 920,
+        ));
     }
 
     /**
