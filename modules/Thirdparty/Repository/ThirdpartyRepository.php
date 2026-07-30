@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Liminal\Module\Thirdparty\Repository;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Liminal\Lib\Database\Pagination\Page;
 use Liminal\Lib\Database\Scope\CompanyContext;
 use Liminal\Module\Thirdparty\Entity\Thirdparty;
 
@@ -37,6 +38,8 @@ use Liminal\Module\Thirdparty\Entity\Thirdparty;
  */
 final readonly class ThirdpartyRepository
 {
+    public const int PER_PAGE = 25;
+
     /** Longer than any legitimate search, short enough to bound the LIKE. */
     private const int MAX_QUERY_LENGTH = 100;
 
@@ -52,8 +55,10 @@ final readonly class ThirdpartyRepository
      * of 1 (never page 0 and a negative offset), and a stale link to page 12
      * of what is now 3 pages lands on page 3. ORDER BY name alone would let
      * equal names swap between pages on MariaDB — id breaks the tie.
+     *
+     * @return Page<Thirdparty>
      */
-    public function page(int $page, ?string $query): ThirdpartyPage
+    public function page(int $page, ?string $query): Page
     {
         $needle = $this->needle($query);
         $where = 't.companyId = :company' . ($needle === null ? '' : ' AND (' . self::SEARCH . ')');
@@ -68,7 +73,7 @@ final readonly class ThirdpartyRepository
         }
 
         $total = (int) $count->getSingleScalarResult();
-        $pages = max(1, (int) ceil($total / ThirdpartyPage::PER_PAGE));
+        $pages = max(1, (int) ceil($total / self::PER_PAGE));
         $page = max(1, min($page, $pages));
 
         $select = $this->entityManager->createQuery(
@@ -80,13 +85,13 @@ final readonly class ThirdpartyRepository
             $select->setParameter('q', $needle);
         }
 
-        $select->setFirstResult(($page - 1) * ThirdpartyPage::PER_PAGE);
-        $select->setMaxResults(ThirdpartyPage::PER_PAGE);
+        $select->setFirstResult(($page - 1) * self::PER_PAGE);
+        $select->setMaxResults(self::PER_PAGE);
 
         /** @var list<Thirdparty> $items */
         $items = $select->getResult();
 
-        return new ThirdpartyPage($items, $total, $page, $pages);
+        return new Page($items, $total, $page, $pages, self::PER_PAGE);
     }
 
     /**

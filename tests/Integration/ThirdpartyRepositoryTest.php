@@ -10,7 +10,6 @@ use Liminal\Kernel;
 use Liminal\Lib\Database\Migration\MigrationRunner;
 use Liminal\Lib\Database\Scope\CompanyContext;
 use Liminal\Module\Thirdparty\Entity\Thirdparty;
-use Liminal\Module\Thirdparty\Repository\ThirdpartyPage;
 use Liminal\Module\Thirdparty\Repository\ThirdpartyRepository;
 use Liminal\Support\Env;
 use PHPUnit\Framework\Attributes\CoversNothing;
@@ -203,9 +202,11 @@ final class ThirdpartyRepositoryTest extends IntegrationTestCase
         self::assertFalse($this->repository->codeTaken('FREE'));
     }
 
-    public function testPerPageIsWhatThePageObjectSays(): void
+    public function testPerPageIsWhatTheRepositorySays(): void
     {
-        self::assertSame(25, ThirdpartyPage::PER_PAGE);
+        // The page size is the repository's property; the hoisted Page object
+        // just carries whatever its list decided.
+        self::assertSame(25, ThirdpartyRepository::PER_PAGE);
     }
 
     private function seedRow(int $companyId, string $code, string $name, ?string $alias = null): void
