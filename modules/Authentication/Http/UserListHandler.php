@@ -37,7 +37,7 @@ final readonly class UserListHandler implements RequestHandlerInterface
 
         return $this->html->respond(
             '@authentication/users.html.twig',
-            ['users' => $this->users->listForCompany($this->context->currentId())],
+            ['users' => $this->users->listAll($this->context->currentId())],
             200,
             ['Cache-Control' => 'no-store'],
         );

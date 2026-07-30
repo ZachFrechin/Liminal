@@ -18,4 +18,14 @@ final class AuthenticationModuleException extends LogicException implements Limi
     {
         return new self('No session is attached to the request: the session middleware did not run.');
     }
+
+    /**
+     * The service-level guard behind the screen's polite refusal: whatever the
+     * UI forgets, deleting the role the bootstrap command anchors on is a
+     * programming error, not a data condition.
+     */
+    public static function protectedRole(string $code): self
+    {
+        return new self(sprintf('The "%s" role is protected and cannot be deleted.', $code));
+    }
 }

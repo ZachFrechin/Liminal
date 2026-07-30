@@ -9,7 +9,8 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * A user account, for administration screens.
+ * A user account, mapped for schema tooling and future ORM consumers — the
+ * administration screens read and write through DBAL like everything else.
  *
  * Deliberately NOT CompanyScoped: users are reached across companies (a user may
  * belong to several), and the scope filter would make that unanswerable — see

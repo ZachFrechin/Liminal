@@ -74,8 +74,10 @@ final class AuthenticationModule implements Module, DefinitionProvider
         $registries->get(MigrationRegistry::class)
             ->add(self::MIGRATION_NAMESPACE, __DIR__ . '/Migrations');
 
-        // Registered for the administration screens phase 5b builds; the
-        // request-path security reads never touch the ORM (see DbalUserProvider).
+        // Registered so schema tooling and future ORM consumers see the shape.
+        // Nothing on the request path touches them: security reads are DBAL by
+        // rule, and the administration writes stayed DBAL like every other
+        // production write in the tree.
         $registries->get(EntityRegistry::class)
             ->add(self::ENTITY_NAMESPACE, __DIR__ . '/Entity');
 

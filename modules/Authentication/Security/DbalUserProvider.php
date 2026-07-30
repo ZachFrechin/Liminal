@@ -18,7 +18,8 @@ use SensitiveParameter;
  * The rule this obeys: request-path security reads never go through Doctrine.
  * The company switch clears the EntityManager on every request, one middleware
  * after authentication, so an entity read here would be detached before any
- * template could use it. The Doctrine entities exist for administration screens.
+ * template could use it. The Doctrine entities stay registered for schema
+ * tooling and future ORM consumers; administration went DBAL too.
  *
  * Both lookups filter on is_active, which is the entire deactivation feature:
  * forLogin() returning null is indistinguishable from an unknown email, and
