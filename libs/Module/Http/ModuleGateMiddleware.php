@@ -50,6 +50,18 @@ final readonly class ModuleGateMiddleware implements MiddlewareInterface
             return $handler->handle($request);
         }
 
+        if ($match->route->public) {
+            // A public route is pre-authentication, therefore pre-company: the
+            // only company available here is the bootstrap default, so gating
+            // by enablement would gate every visitor against company 1
+            // regardless of who they are. It would also resolve a Connection to
+            // answer — breaking public pages on a DSN-less checkout — and would
+            // let `module:disable authentication` lock every user out of the
+            // login page with no way back in. A module wanting a gated public
+            // page gates it in its handler.
+            return $handler->handle($request);
+        }
+
         $module = $this->moduleOf($match->route->name);
 
         if ($module !== null && !$this->manager->isEnabled($module, $this->context->currentId())) {

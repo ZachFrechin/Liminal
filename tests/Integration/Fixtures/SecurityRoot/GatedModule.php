@@ -9,8 +9,8 @@ use Liminal\Registry\RegistryCollection;
 use Liminal\Registry\RouteRegistry;
 
 /**
- * A declared module with one public route, so the gate can be observed
- * without authentication getting in the way first.
+ * A declared module with one protected route (what the gate acts on) and one
+ * public route (what it must leave alone).
  */
 final class GatedModule implements Module
 {
@@ -31,7 +31,10 @@ final class GatedModule implements Module
 
     public function contribute(RegistryCollection $registries): void
     {
-        $registries->get(RouteRegistry::class)
-            ->get('/gated', GatedHandler::class, 'gated.index', public: true);
+        $routes = $registries->get(RouteRegistry::class);
+        // One of each: the gate only ever looks at the protected one, and the
+        // public one proves it stays out of the way.
+        $routes->get('/gated', GatedHandler::class, 'gated.index');
+        $routes->get('/gated-public', GatedHandler::class, 'gated.public', public: true);
     }
 }

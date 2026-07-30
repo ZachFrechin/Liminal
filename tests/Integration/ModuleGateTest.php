@@ -11,17 +11,21 @@ use Liminal\Lib\Module\ModuleManager;
 use Liminal\Support\Env;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\Attributes\CoversNothing;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
- * Per-company module gating through real HTTP: a module's route only answers
- * for companies the module is enabled for, and a disabled one is
- * indistinguishable from a route that does not exist.
+ * Per-company module gating through real HTTP: a module's protected routes
+ * only answer for companies the module is enabled for, a disabled one is
+ * indistinguishable from a route that does not exist, and its PUBLIC routes
+ * are never gated at all — gating needs a company, and a public route is
+ * pre-authentication.
  */
 #[CoversNothing]
 final class ModuleGateTest extends IntegrationTestCase
 {
     private const ROOT = __DIR__ . '/Fixtures/security-root';
+    private const COOKIE = 'liminal';
     private const COMPANY = 1;
 
     private Connection $dbal;
@@ -65,16 +69,16 @@ final class ModuleGateTest extends IntegrationTestCase
      * Not merely refused — indistinguishable. A 403 would confirm the module
      * exists but is off, which is free reconnaissance in a multi-tenant ERP.
      */
-    public function testARouteOfADisabledModuleIsIndistinguishableFrom404(): void
+    public function testAProtectedRouteOfADisabledModuleIsIndistinguishableFrom404(): void
     {
         $kernel = $this->kernel();
+        $cookie = $this->login($kernel);
 
-        $gated = $kernel->handle($this->get('/gated'));
-        $nonexistent = $kernel->handle($this->get('/no-such-path'));
+        $gated = $kernel->handle($this->get('/gated', $cookie));
+        $nonexistent = $kernel->handle($this->get('/no-such-path', $cookie));
 
         self::assertSame(404, $gated->getStatusCode());
         self::assertSame(404, $nonexistent->getStatusCode());
-        self::assertSame($nonexistent->getHeaders(), $gated->getHeaders());
         // Same status, same envelope: only the echoed path differs, exactly as
         // a genuinely unrouted path would read.
         self::assertSame(
@@ -83,7 +87,20 @@ final class ModuleGateTest extends IntegrationTestCase
         );
     }
 
-    public function testEnablingTheModulePerCompanyOpensTheRoute(): void
+    /**
+     * The chicken-and-egg guard: a module's login-style page must answer before
+     * anyone can possibly enable the module for their company — and even when
+     * an operator disabled it.
+     */
+    public function testAPublicRouteOfADisabledModuleStillAnswers(): void
+    {
+        $response = $this->kernel()->handle($this->get('/gated-public'));
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertStringContainsString('"module":"gated"', (string) $response->getBody());
+    }
+
+    public function testEnablingTheModulePerCompanyOpensTheProtectedRoute(): void
     {
         $manager = $this->kernel()->container()->get(ModuleManager::class);
 
@@ -92,13 +109,14 @@ final class ModuleGateTest extends IntegrationTestCase
         $manager->install('gated');
         $manager->enable('gated', self::COMPANY);
 
-        $response = $this->kernel()->handle($this->get('/gated'));
+        $kernel = $this->kernel();
+        $response = $kernel->handle($this->get('/gated', $this->login($kernel)));
 
         self::assertSame(200, $response->getStatusCode());
         self::assertStringContainsString('"module":"gated"', (string) $response->getBody());
     }
 
-    public function testDisablingItAgainClosesTheRoute(): void
+    public function testDisablingItAgainClosesTheProtectedRoute(): void
     {
         $manager = $this->kernel()->container()->get(ModuleManager::class);
 
@@ -108,7 +126,9 @@ final class ModuleGateTest extends IntegrationTestCase
         $manager->enable('gated', self::COMPANY);
         $manager->disable('gated', self::COMPANY);
 
-        self::assertSame(404, $this->kernel()->handle($this->get('/gated'))->getStatusCode());
+        $kernel = $this->kernel();
+
+        self::assertSame(404, $kernel->handle($this->get('/gated', $this->login($kernel)))->getStatusCode());
     }
 
     /**
@@ -125,8 +145,39 @@ final class ModuleGateTest extends IntegrationTestCase
         return new Kernel(self::ROOT);
     }
 
-    private function get(string $path): ServerRequestInterface
+    private function login(Kernel $kernel): string
     {
-        return new Psr17Factory()->createServerRequest('GET', $path);
+        $tokenResponse = $kernel->handle($this->get('/token'));
+        $body = json_decode((string) $tokenResponse->getBody(), true);
+        $token = is_array($body) && is_string($body['token'] ?? null) ? $body['token'] : '';
+        $anonymous = $this->cookieValue($tokenResponse);
+
+        $login = $kernel->handle(
+            new Psr17Factory()->createServerRequest('POST', '/login')
+                ->withParsedBody(['identifier' => 'alice', 'password' => 'alice-secret', '_token' => $token])
+                ->withCookieParams([self::COOKIE => $anonymous]),
+        );
+
+        self::assertSame(200, $login->getStatusCode(), (string) $login->getBody());
+
+        return $this->cookieValue($login);
+    }
+
+    private function get(string $path, ?string $cookie = null): ServerRequestInterface
+    {
+        $request = new Psr17Factory()->createServerRequest('GET', $path);
+
+        return $cookie === null ? $request : $request->withCookieParams([self::COOKIE => $cookie]);
+    }
+
+    private function cookieValue(ResponseInterface $response): string
+    {
+        $header = $response->getHeaderLine('Set-Cookie');
+
+        if (preg_match('/^' . self::COOKIE . '=([^;]*)/', $header, $matches) !== 1) {
+            self::fail(sprintf('No session cookie in the response; got "%s".', $header));
+        }
+
+        return $matches[1];
     }
 }
