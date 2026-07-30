@@ -8,6 +8,7 @@ use Liminal\Lib\Security\Authentication\LoginCandidate;
 use Liminal\Lib\Security\Contract\AuthenticatedUser;
 use Liminal\Lib\Security\Contract\UserProvider;
 use Liminal\Lib\Security\Password\PasswordHasher;
+use SensitiveParameter;
 
 /**
  * The in-memory provider the fixture contributor binds OVER the lib's
@@ -45,5 +46,10 @@ final class FixtureUserProvider implements UserProvider
         $entry = $this->users[$identifier] ?? null;
 
         return $entry === null ? null : new LoginCandidate($entry['user'], $entry['hash']);
+    }
+
+    public function rehash(int $id, #[SensitiveParameter] string $hash): void
+    {
+        // In-memory fixture: the hash it was built with is the only one.
     }
 }

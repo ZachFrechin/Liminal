@@ -9,6 +9,16 @@ return [
     // wiring, not deployment config, so no env var.
     'login_route' => 'authentication.login',
 
+    // Login rate limiting. Deliberately configuration, not database settings:
+    // these protect the pre-company login path, must work before any row
+    // exists, and must not be per-company state an admin can zero out.
+    'login_throttle' => [
+        'max_failures' => Env::int('LIMINAL_LOGIN_MAX_FAILURES', 10),
+        'address_max_failures' => Env::int('LIMINAL_LOGIN_ADDRESS_MAX_FAILURES', 30),
+        'window_seconds' => Env::int('LIMINAL_LOGIN_WINDOW', 900),
+        'lockout_seconds' => Env::int('LIMINAL_LOGIN_LOCKOUT', 900),
+    ],
+
     'session' => [
         // Set '__Host-liminal' in production: the cookie prefix pins Path=/,
         // Secure and no-Domain at the browser level for free.

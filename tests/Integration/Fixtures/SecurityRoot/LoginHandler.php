@@ -6,6 +6,7 @@ namespace Liminal\Tests\Integration\Fixtures\SecurityRoot;
 
 use Liminal\Http\JsonResponseFactory;
 use Liminal\Lib\Security\Authentication\Authenticator;
+use Liminal\Lib\Security\Authentication\ClientContext;
 use Liminal\Lib\Security\Session\Session;
 use Liminal\Lib\Security\Session\SessionMiddleware;
 use Psr\Http\Message\ResponseInterface;
@@ -36,12 +37,12 @@ final readonly class LoginHandler implements RequestHandlerInterface
         $identifier = is_array($body) && is_string($body['identifier'] ?? null) ? $body['identifier'] : '';
         $password = is_array($body) && is_string($body['password'] ?? null) ? $body['password'] : '';
 
-        $user = $this->authenticator->attempt($identifier, $password, $session);
+        $result = $this->authenticator->attempt($identifier, $password, $session, ClientContext::fromRequest($request));
 
-        if ($user === null) {
+        if (!$result->isGranted()) {
             return $this->json->response(400, ['error' => 'invalid credentials']);
         }
 
-        return $this->json->response(200, ['user' => $user->id()]);
+        return $this->json->response(200, ['user' => $result->user?->id()]);
     }
 }

@@ -9,9 +9,13 @@ use Liminal\Lib\Database\DeferredConnection;
 use Liminal\Lib\Database\Scope\CompanyContext;
 use Liminal\Lib\Security\Authentication\AuthenticationMiddleware;
 use Liminal\Lib\Security\Authentication\CurrentUser;
+use Liminal\Lib\Security\Authentication\NullAuthEventLog;
+use Liminal\Lib\Security\Authentication\NullLoginThrottle;
 use Liminal\Lib\Security\Authentication\NullUserProvider;
 use Liminal\Lib\Security\Authorization\DenyAllResolver;
 use Liminal\Lib\Security\Console\SessionGcCommand;
+use Liminal\Lib\Security\Contract\AuthEventLog;
+use Liminal\Lib\Security\Contract\LoginThrottle;
 use Liminal\Lib\Security\Contract\PermissionResolver;
 use Liminal\Lib\Security\Contract\UserProvider;
 use Liminal\Lib\Security\Csrf\CsrfMiddleware;
@@ -101,6 +105,14 @@ final class SecurityContributor implements Contributor, DefinitionProvider
             PermissionResolver::class => static fn(): PermissionResolver => new DenyAllResolver(),
 
             UserProvider::class => static fn(): UserProvider => new NullUserProvider(),
+
+            // The one default that is NOT fail-closed, deliberately: refusing
+            // every login until a module ships storage would make a fresh
+            // installation unusable. The posture returns the moment the
+            // authentication module binds its own implementation.
+            LoginThrottle::class => static fn(): LoginThrottle => new NullLoginThrottle(),
+
+            AuthEventLog::class => static fn(): AuthEventLog => new NullAuthEventLog(),
         ];
     }
 }

@@ -6,6 +6,7 @@ namespace Liminal\Lib\Security\Authentication;
 
 use Liminal\Lib\Security\Contract\AuthenticatedUser;
 use Liminal\Lib\Security\Contract\UserProvider;
+use SensitiveParameter;
 
 /**
  * The default binding until the authentication module (phase 5) overrides it:
@@ -23,4 +24,6 @@ final readonly class NullUserProvider implements UserProvider
     {
         return null;
     }
+
+    public function rehash(int $id, #[SensitiveParameter] string $hash): void {}
 }
