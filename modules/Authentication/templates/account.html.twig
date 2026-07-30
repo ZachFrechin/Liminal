@@ -1,0 +1,24 @@
+{% extends '@liminal/layout.html.twig' %}
+
+{% block title %}{{ 'authentication.account.title'|trans }}{% endblock %}
+
+{% block content %}
+    <h1>{{ 'authentication.account.title'|trans }}</h1>
+
+    <p>{{ 'authentication.account.signed_in_as'|trans({'name': user.displayName, 'email': user.email}) }}</p>
+
+    <h2>{{ 'authentication.account.companies'|trans }}</h2>
+    <ul>
+        {% for company in companies %}
+            <li>
+                {{ company }}
+                {%- if company == currentCompany %} — {{ 'authentication.account.current'|trans }}{% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+
+    <form method="post" action="{{ url('authentication.logout') }}">
+        {{ csrf_field() }}
+        <button type="submit">{{ 'authentication.account.sign_out'|trans }}</button>
+    </form>
+{% endblock %}

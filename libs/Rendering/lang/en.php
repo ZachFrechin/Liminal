@@ -6,5 +6,5 @@ declare(strict_types=1);
 // contribute their own files, and later contributions override these.
 return [
     'error.title' => 'Something went wrong',
-    'error.back' => 'Back to the start',
+    'error.sign_in' => 'Go to the sign-in page',
 ];

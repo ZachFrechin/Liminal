@@ -1,0 +1,28 @@
+{% extends '@liminal/layout.html.twig' %}
+
+{% block title %}{{ 'authentication.users.title'|trans }}{% endblock %}
+
+{% block content %}
+    <h1>{{ 'authentication.users.title'|trans }}</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>{{ 'authentication.users.email'|trans }}</th>
+                <th>{{ 'authentication.users.name'|trans }}</th>
+                <th>{{ 'authentication.users.roles'|trans }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in users %}
+                <tr>
+                    <td>{{ entry.email }}</td>
+                    <td>{{ entry.displayName }}</td>
+                    {# An empty cell is the visible symptom of a user who cannot
+                       log in at all: no role anywhere means no accessible company. #}
+                    <td>{{ entry.roles }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

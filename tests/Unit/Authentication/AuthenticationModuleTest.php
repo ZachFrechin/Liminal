@@ -7,8 +7,13 @@ namespace Liminal\Tests\Unit\Authentication;
 use Liminal\Config\ConfigurationLoader;
 use Liminal\Module\Authentication\AuthenticationModule;
 use Liminal\Registry\EntityRegistry;
+use Liminal\Registry\MenuRegistry;
 use Liminal\Registry\MigrationRegistry;
+use Liminal\Registry\PermissionRegistry;
 use Liminal\Registry\RegistryCollection;
+use Liminal\Registry\RouteRegistry;
+use Liminal\Registry\TemplateRegistry;
+use Liminal\Registry\TranslationRegistry;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
@@ -33,6 +38,25 @@ final class AuthenticationModuleTest extends TestCase
     }
 
     /**
+     * The boot enforces this, but a unit test says which route broke without
+     * standing up a kernel first.
+     */
+    public function testEveryContributedRouteCarriesTheModulePrefix(): void
+    {
+        $module = new AuthenticationModule();
+        $routes = new RouteRegistry();
+
+        $module->contribute($this->registriesWith(new MigrationRegistry(), $routes));
+
+        self::assertNotSame([], $routes->all());
+
+        foreach ($routes->all() as $route) {
+            self::assertIsString($route->name);
+            self::assertStringStartsWith($module->name() . '.', $route->name);
+        }
+    }
+
+    /**
      * The security lib redirects a browser 401 to a configured route name. If
      * the two ever drift, every login redirect silently falls back to a
      * rendered 401 page — so pin them together.
@@ -47,8 +71,16 @@ final class AuthenticationModuleTest extends TestCase
         );
     }
 
-    private function registriesWith(MigrationRegistry $migrations): RegistryCollection
+    private function registriesWith(MigrationRegistry $migrations, ?RouteRegistry $routes = null): RegistryCollection
     {
-        return new RegistryCollection([$migrations, new EntityRegistry()]);
+        return new RegistryCollection([
+            $migrations,
+            $routes ?? new RouteRegistry(),
+            new EntityRegistry(),
+            new TemplateRegistry(),
+            new TranslationRegistry(),
+            new PermissionRegistry(),
+            new MenuRegistry(),
+        ]);
     }
 }

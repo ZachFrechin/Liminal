@@ -7,5 +7,5 @@
 {% block content %}
     <h1>{{ status }}</h1>
     <p>{{ message }}</p>
-    <p><a href="/">{{ 'error.back'|trans }}</a></p>
+    {% if loginUrl %}<p><a href="{{ loginUrl }}">{{ 'error.sign_in'|trans }}</a></p>{% endif %}
 {% endblock %}

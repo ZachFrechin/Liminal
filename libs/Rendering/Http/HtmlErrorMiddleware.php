@@ -63,11 +63,27 @@ final readonly class HtmlErrorMiddleware implements MiddlewareInterface
 
             return $this->html->respond(
                 '@liminal/error.html.twig',
-                ['status' => $exception->statusCode(), 'message' => $exception->getMessage()],
+                [
+                    'status' => $exception->statusCode(),
+                    'message' => $exception->getMessage(),
+                    // The only escape hatch an error page can honestly offer:
+                    // "/" is whatever the installation routes there, and on a
+                    // default install that is a JSON endpoint. The login page is
+                    // a page, and this middleware already knows whether it
+                    // exists.
+                    'loginUrl' => $this->loginUrl(),
+                ],
                 $exception->statusCode(),
                 $exception->headers(),
             );
         }
+    }
+
+    private function loginUrl(): ?string
+    {
+        return $this->routes->named($this->loginRoute) === null
+            ? null
+            : $this->urls->generate($this->loginRoute);
     }
 
     private function redirectToLogin(ServerRequestInterface $request): ResponseInterface
