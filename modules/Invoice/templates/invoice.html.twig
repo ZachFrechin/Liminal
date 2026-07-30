@@ -121,6 +121,15 @@
     </section>
 
     {% if canManage and invoice.draft %}
+        <section class="panel">
+            <h2>{{ 'invoice.detail.validate'|trans }}</h2>
+            <p class="field-hint">{{ 'invoice.detail.validate_hint'|trans }}</p>
+            <form method="post" action="{{ url('invoice.validate', {'id': invoice.id}) }}">
+                {{ csrf_field() }}
+                <button type="submit" class="primary">{{ 'invoice.detail.validate'|trans }}</button>
+            </form>
+        </section>
+
         <section class="danger-zone">
             <h2>{{ 'invoice.detail.danger'|trans }}</h2>
             <form method="post" action="{{ url('invoice.delete', {'id': invoice.id}) }}">

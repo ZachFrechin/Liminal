@@ -46,6 +46,8 @@ return [
 
     'invoice.detail.edit' => 'Edit',
     'invoice.detail.save' => 'Save',
+    'invoice.detail.validate' => 'Validate',
+    'invoice.detail.validate_hint' => 'Validation assigns the number, sets the issue date to today, and freezes the invoice for good.',
     'invoice.detail.danger' => 'Danger zone',
     'invoice.detail.delete' => 'Delete this draft',
 
@@ -66,6 +68,8 @@ return [
     'invoice.form.unit_price_invalid' => 'The unit price must be a number up to 99999999.99.',
     'invoice.form.vat_rate_invalid' => 'The VAT rate must be between 0 and 100.',
     'invoice.form.immutable' => 'A validated invoice is immutable.',
+    'invoice.form.needs_lines' => 'An invoice needs at least one line before validation.',
+    'invoice.form.validated' => 'Invoice validated.',
     'invoice.form.created' => 'Draft invoice created.',
     'invoice.form.updated' => 'Invoice updated.',
     'invoice.form.line_added' => 'Line added.',

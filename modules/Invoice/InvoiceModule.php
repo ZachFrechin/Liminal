@@ -13,6 +13,7 @@ use Liminal\Module\Invoice\Http\InvoiceLineAddHandler;
 use Liminal\Module\Invoice\Http\InvoiceLineRemoveHandler;
 use Liminal\Module\Invoice\Http\InvoiceListHandler;
 use Liminal\Module\Invoice\Http\InvoiceUpdateHandler;
+use Liminal\Module\Invoice\Http\InvoiceValidateHandler;
 use Liminal\Registry\Contract\DefinitionProvider;
 use Liminal\Registry\Contract\Module;
 use Liminal\Registry\EntityRegistry;
@@ -97,6 +98,7 @@ final class InvoiceModule implements Module, DefinitionProvider
         $routes->post('/invoices/{id:\d+}', InvoiceUpdateHandler::class, 'invoice.update');
         $routes->post('/invoices/{id:\d+}/lines', InvoiceLineAddHandler::class, 'invoice.line_add');
         $routes->post('/invoices/{id:\d+}/lines/{line:\d+}/remove', InvoiceLineRemoveHandler::class, 'invoice.line_remove');
+        $routes->post('/invoices/{id:\d+}/validate', InvoiceValidateHandler::class, 'invoice.validate');
         $routes->post('/invoices/{id:\d+}/delete', InvoiceDeleteHandler::class, 'invoice.delete');
 
         $registries->get(MenuRegistry::class)->add(new MenuItem(
