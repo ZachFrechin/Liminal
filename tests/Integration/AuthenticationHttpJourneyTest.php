@@ -291,6 +291,11 @@ final class AuthenticationHttpJourneyTest extends IntegrationTestCase
         // The account entry is permissionless: both see it.
         self::assertStringContainsString('href="/account"', $ada);
         self::assertStringContainsString('href="/account"', $bob);
+
+        // Labels reach the screen translated, not as raw catalogue keys.
+        self::assertStringContainsString('>Users</a>', $ada);
+        self::assertStringContainsString('>Account</a>', $bob);
+        self::assertStringNotContainsString('authentication.menu.', $ada);
     }
 
     /**
