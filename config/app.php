@@ -28,6 +28,7 @@ return [
     // route or permission will be an explicit API, not a silent collision.
     'libs' => [
         Liminal\Lib\Database\DatabaseContributor::class,
+        Liminal\Lib\Hook\HookContributor::class,
         Liminal\Lib\Security\SecurityContributor::class,
         Liminal\Lib\Module\ModuleContributor::class,
         Liminal\Lib\Rendering\RenderingContributor::class,
