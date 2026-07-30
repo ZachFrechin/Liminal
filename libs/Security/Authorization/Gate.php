@@ -16,8 +16,8 @@ use Liminal\Registry\PermissionRegistry;
  *
  * Deliberately read-only: there is no authorize() that throws an
  * HttpException. Baking the render path into a lib service would make the Gate
- * unusable from the console, and phase 4 will add the throwing helper at the
- * controller layer where HTTP identity belongs.
+ * unusable from the console, so the throwing helper waits for the controller
+ * layer that would host it — the business modules of phase 5.
  */
 final readonly class Gate
 {

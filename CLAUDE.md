@@ -33,13 +33,20 @@ app.modules, name every route `<module>.…` (the boot enforces it — that pref
 is the gate's key). Shape always boots; installed/enabled is database state
 that boot never consults, and the module gate enforces it per request.
 
-Security: routes are protected unless `public: true`. Middleware order is
-session (−900) → auth (100) → CSRF (200) → company switch (300) → module gate
-(400). Two rules with teeth: **a failed login must return a response, never
-throw** (the error handler is outermost, so an exception unwinds past the
-session middleware and persists nothing), and **hydrated sessions persist by
-UPDATE, never upsert** — a blind upsert resurrects sessions killed by logout,
-regeneration or GC.
+Security: routes are protected unless `public: true`. Middleware order is HTML
+errors (−950) → session (−900) → view context (−850) → auth (100) → CSRF (200)
+→ company switch (300) → module gate (400). Two rules with teeth: **a failed
+login must return a response, never throw** (the error handler is outermost, so
+an exception unwinds past the session middleware and persists nothing), and
+**hydrated sessions persist by UPDATE, never upsert** — a blind upsert
+resurrects sessions killed by logout, regeneration or GC.
+
+Rendering: templates and translations are registry contributions (Twig resolves
+a namespace first-hit-wins, so the registry serves latest-first — a module
+shadows a lib). `strict_variables` on, no `|raw` anywhere. Content degrades
+(absent flash, missing translation key), wiring fails loud (no session for a
+CSRF token, malformed catalogue). **Error templates carry no form**: they render
+on the unwind path where the session is never persisted.
 
 Every commit: `type(scope): imperative subject`, body explains why,
 `composer check` green. Integration tests skip without a reachable DSN — run

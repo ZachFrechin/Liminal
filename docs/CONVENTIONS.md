@@ -100,11 +100,27 @@ docs. No exceptions.
   company, and boot never consults the database. Route names carry the
   module-name prefix (`<module>.…`) — the module gate's key, enforced at boot.
 
+## Rendering
+
+- Templates and translations are contributions: register a namespace or a
+  catalogue file, never scan a directory at boot. Twig resolves a namespace
+  first-hit-wins, so the registry serves latest-contribution-first — a module
+  shadows a lib.
+- `strict_variables` stays on, and no template uses `|raw`.
+- View helpers split failures by class: content degrades (absent flash → null,
+  missing translation key → the key), wiring fails loud (no session for a CSRF
+  token, malformed catalogue, orphaned menu parent).
+- An error page renders on the unwind path, where the session is never
+  persisted: **error templates must never carry a form**, because a token
+  minted there would reach the HTML and never the store.
+- Rendering's sanctioned lib edges: → Security, → Module, → Database. Nothing
+  consumes Rendering.
+
 ## Request security
 
-- Routes are protected unless declared `public: true`. Middleware bands:
-  session (−900), authentication (100), CSRF (200), company switch (300),
-  module gate (400).
+- Routes are protected unless declared `public: true`. Middleware bands: HTML
+  errors (−950), session (−900), view context (−850), authentication (100),
+  CSRF (200), company switch (300), module gate (400).
 - **A failed login returns a response; it never throws.** The error handler is
   the outermost middleware, so an exception unwinds past the session
   middleware and nothing is persisted — deliberate for error traffic, fatal
@@ -120,6 +136,14 @@ docs. No exceptions.
 - A module migration may touch a lib's table in exactly one sanctioned case:
   the authentication module adding the `core_session.user_id` foreign key,
   which cannot exist before `core_user` does.
+
+## Known gaps (recorded, not forgotten)
+
+- `Cache-Control: no-store` is emitted on cookie-issuing responses only. A
+  policy for authenticated pages in general is a phase-5 rendering decision.
+- `ResponseEmitter` does not strip bodies from HEAD responses — a pre-existing
+  kernel gap; the fix is to pass the request method into `emit()`.
+- `Gate::authorize()` (the throwing helper) waits for real controllers, phase 5.
 
 ## Console commands
 

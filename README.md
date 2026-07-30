@@ -134,7 +134,8 @@ tests/{Unit,Integration}
 | 2a | Kernel plumbing: contributable middleware pipeline, named-route URLs, `migrate`/`install`, settings values | ✅ |
 | 2b | `lib/module`: Module contract, `app.modules`, install/enable lifecycle per company | ✅ |
 | 3 | `lib/security`: database sessions, deny-by-default routes, CSRF, per-request company scope, module gating | ✅ |
-| 4 → 8 | `lib/rendering`, `lib/api`, builder, business modules | upcoming |
+| 4 | `lib/rendering`: Twig, contributable templates, view helpers, menu, translations, HTML error pages | ✅ |
+| 5 → 8 | `lib/api`, builder, business modules | upcoming |
 
 ## Security
 
@@ -166,6 +167,36 @@ module gate (400).
 The `UserProvider` and `PermissionResolver` defaults are deliberately inert
 (no users, no grants): the phase-5 authentication module replaces them through
 the same definition layering any module gets.
+
+## Rendering
+
+Pages are Twig, and templates are contributions like everything else: a lib or
+module registers a namespace in the `TemplateRegistry` (`@liminal`,
+`@<module>`), and because Twig resolves a namespace's paths first-hit-wins, the
+registry serves them latest-contribution-first — so a module can shadow a lib's
+template. Translations work the same way through the `TranslationRegistry`:
+plain PHP catalogues merged in contribution order, last one winning.
+
+`strict_variables` is on everywhere: a missing variable is a wiring bug, not a
+blank cell. Nothing uses `|raw` — autoescaping is the XSS story.
+
+The view helpers are `url()`, `csrf_token()`, `csrf_field()`, `flash()`,
+`current_user()`, `menu()` and the `trans` filter. Two of them fail in opposite
+directions on purpose: `flash()` tolerates a missing session (an absent flash
+is the normal case — content), while `csrf_token()` refuses one (a form without
+a real token means every later POST fails 403 — wiring). A missing translation
+key renders as the key itself; a malformed catalogue file fails loud.
+
+The menu finally consumes the `MenuRegistry`: anonymous requests get an empty
+menu before any database work (public pages must render with no DSN in reach),
+then items of modules disabled for the current company disappear, then
+permission-gated items the `Gate` denies. A hidden parent takes its whole
+subtree with it.
+
+Browsers get HTML refusals: a 404 renders an error page, a 401 redirects to the
+configured login route carrying the intended path as `?redirect=` — never in
+the session, since the unwind path must not mint one row per probe. JSON
+clients keep the exact JSON contract they had before rendering existed.
 
 ## Multi-company
 
