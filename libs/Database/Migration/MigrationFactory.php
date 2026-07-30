@@ -8,6 +8,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\Migrations\Configuration\Connection\ExistingConnection;
 use Doctrine\Migrations\Configuration\Migration\ConfigurationArray;
 use Doctrine\Migrations\DependencyFactory;
+use Doctrine\Migrations\Version\Comparator;
 use Doctrine\Migrations\Version\MigrationPlanCalculator;
 use Doctrine\Migrations\Version\SortedMigrationPlanCalculator;
 use Liminal\Registry\MigrationRegistry;
@@ -42,6 +43,14 @@ final readonly class MigrationFactory
                 'transactional' => false,
             ]),
             new ExistingConnection($connection),
+        );
+
+        // Without this, ordering across namespaces is alphabetical on class
+        // names — an accident of spelling that a third-party module would break.
+        $migrations = $this->migrations;
+        $factory->setDefinition(
+            Comparator::class,
+            static fn(): Comparator => new ContributionOrderComparator($migrations),
         );
 
         if ($namespace !== null) {
