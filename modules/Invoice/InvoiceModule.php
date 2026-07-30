@@ -5,8 +5,14 @@ declare(strict_types=1);
 namespace Liminal\Module\Invoice;
 
 use Liminal\Config\Configuration;
+use Liminal\Module\Invoice\Http\InvoiceCreatePageHandler;
+use Liminal\Module\Invoice\Http\InvoiceCreateSubmitHandler;
+use Liminal\Module\Invoice\Http\InvoiceDeleteHandler;
 use Liminal\Module\Invoice\Http\InvoiceDetailHandler;
+use Liminal\Module\Invoice\Http\InvoiceLineAddHandler;
+use Liminal\Module\Invoice\Http\InvoiceLineRemoveHandler;
 use Liminal\Module\Invoice\Http\InvoiceListHandler;
+use Liminal\Module\Invoice\Http\InvoiceUpdateHandler;
 use Liminal\Registry\Contract\DefinitionProvider;
 use Liminal\Registry\Contract\Module;
 use Liminal\Registry\EntityRegistry;
@@ -85,7 +91,13 @@ final class InvoiceModule implements Module, DefinitionProvider
         // Statics before dynamics, and {id:\d+} is load-bearing.
         $routes = $registries->get(RouteRegistry::class);
         $routes->get('/invoices', InvoiceListHandler::class, 'invoice.list');
+        $routes->get('/invoices/create', InvoiceCreatePageHandler::class, 'invoice.create');
+        $routes->post('/invoices/create', InvoiceCreateSubmitHandler::class, 'invoice.create_submit');
         $routes->get('/invoices/{id:\d+}', InvoiceDetailHandler::class, 'invoice.detail');
+        $routes->post('/invoices/{id:\d+}', InvoiceUpdateHandler::class, 'invoice.update');
+        $routes->post('/invoices/{id:\d+}/lines', InvoiceLineAddHandler::class, 'invoice.line_add');
+        $routes->post('/invoices/{id:\d+}/lines/{line:\d+}/remove', InvoiceLineRemoveHandler::class, 'invoice.line_remove');
+        $routes->post('/invoices/{id:\d+}/delete', InvoiceDeleteHandler::class, 'invoice.delete');
 
         $registries->get(MenuRegistry::class)->add(new MenuItem(
             'invoice.menu.invoices',

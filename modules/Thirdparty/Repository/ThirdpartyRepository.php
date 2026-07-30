@@ -112,6 +112,27 @@ final readonly class ThirdpartyRepository
     }
 
     /**
+     * The current company's active thirdparties, for a document's party
+     * select. Unbounded on purpose for now: the day a company holds more
+     * parties than a select can carry, the picker becomes a search — the
+     * recorded gap, not a hidden LIMIT.
+     *
+     * @return list<Thirdparty>
+     */
+    public function activeForSelect(): array
+    {
+        /** @var list<Thirdparty> $items */
+        $items = $this->entityManager->createQuery(
+            'SELECT t FROM ' . Thirdparty::class
+            . ' t WHERE t.companyId = :company AND t.active = true ORDER BY t.name, t.id',
+        )
+            ->setParameter('company', $this->context->currentId())
+            ->getResult();
+
+        return $items;
+    }
+
+    /**
      * The UX pre-check; the composite unique constraint remains the judge,
      * and callers still catch the race at flush.
      */

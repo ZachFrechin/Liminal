@@ -19,6 +19,36 @@
         </p>
     </header>
 
+    {% if canManage and invoice.draft %}
+        <section class="panel">
+            <h2>{{ 'invoice.detail.edit'|trans }}</h2>
+            <form method="post" action="{{ url('invoice.update', {'id': invoice.id}) }}">
+                {{ csrf_field() }}
+                <p class="field">
+                    <label for="thirdparty_id">{{ 'invoice.create.thirdparty'|trans }}</label>
+                    <select id="thirdparty_id" name="thirdparty_id" required>
+                        {% for thirdparty in thirdparties %}
+                            <option value="{{ thirdparty.id }}" {% if thirdparty.id == invoice.thirdpartyId %}selected{% endif %}>{{ thirdparty.name }} ({{ thirdparty.code }})</option>
+                        {% endfor %}
+                    </select>
+                </p>
+                <div class="field-row">
+                    <p class="field">
+                        <label for="issued_on">{{ 'invoice.create.issued_on'|trans }}</label>
+                        <input type="date" id="issued_on" name="issued_on" value="{{ invoice.issuedOn|date('Y-m-d') }}" required>
+                    </p>
+                    <p class="field">
+                        <label for="due_on">{{ 'invoice.create.due_on'|trans }}</label>
+                        <input type="date" id="due_on" name="due_on" value="{{ invoice.dueOn ? invoice.dueOn|date('Y-m-d') : '' }}">
+                    </p>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="primary">{{ 'invoice.detail.save'|trans }}</button>
+                </div>
+            </form>
+        </section>
+    {% endif %}
+
     <section class="panel">
         <h2>{{ 'invoice.detail.lines'|trans }}</h2>
         <table>
@@ -29,6 +59,7 @@
                     <th>{{ 'invoice.line.unit_price'|trans }}</th>
                     <th>{{ 'invoice.line.vat_rate'|trans }}</th>
                     <th>{{ 'invoice.line.total'|trans }}</th>
+                    {% if canManage and invoice.draft %}<th></th>{% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -39,12 +70,43 @@
                         <td class="numeric">{{ line.unitPrice }}</td>
                         <td class="numeric">{{ line.vatRate }}&nbsp;%</td>
                         <td class="numeric">{{ lineTotals[line.id]|default('—') }}</td>
+                        {% if canManage and invoice.draft %}
+                            <td>
+                                <form method="post" action="{{ url('invoice.line_remove', {'id': invoice.id, 'line': line.id}) }}">
+                                    {{ csrf_field() }}
+                                    <button type="submit">{{ 'invoice.line.remove'|trans }}</button>
+                                </form>
+                            </td>
+                        {% endif %}
                     </tr>
                 {% else %}
-                    <tr><td colspan="5">{{ 'invoice.detail.no_lines'|trans }}</td></tr>
+                    <tr><td colspan="{{ canManage and invoice.draft ? 6 : 5 }}">{{ 'invoice.detail.no_lines'|trans }}</td></tr>
                 {% endfor %}
             </tbody>
         </table>
+
+        {% if canManage and invoice.draft %}
+            <form method="post" action="{{ url('invoice.line_add', {'id': invoice.id}) }}" class="form-inline">
+                {{ csrf_field() }}
+                <p class="field">
+                    <label for="line-label">{{ 'invoice.line.label'|trans }}</label>
+                    <input type="text" id="line-label" name="label" maxlength="255" required>
+                </p>
+                <p class="field">
+                    <label for="line-quantity">{{ 'invoice.line.quantity'|trans }}</label>
+                    <input type="text" id="line-quantity" name="quantity" value="1" required>
+                </p>
+                <p class="field">
+                    <label for="line-unit-price">{{ 'invoice.line.unit_price'|trans }}</label>
+                    <input type="text" id="line-unit-price" name="unit_price" required>
+                </p>
+                <p class="field">
+                    <label for="line-vat-rate">{{ 'invoice.line.vat_rate'|trans }}</label>
+                    <input type="text" id="line-vat-rate" name="vat_rate" value="20.00" required>
+                </p>
+                <button type="submit">{{ 'invoice.line.add'|trans }}</button>
+            </form>
+        {% endif %}
     </section>
 
     <section class="panel">
@@ -57,6 +119,16 @@
             <dt>{{ 'invoice.detail.total_incl'|trans }}</dt><dd class="numeric">{{ invoice.totalIncl }}</dd>
         </dl>
     </section>
+
+    {% if canManage and invoice.draft %}
+        <section class="danger-zone">
+            <h2>{{ 'invoice.detail.danger'|trans }}</h2>
+            <form method="post" action="{{ url('invoice.delete', {'id': invoice.id}) }}">
+                {{ csrf_field() }}
+                <button type="submit" class="danger">{{ 'invoice.detail.delete'|trans }}</button>
+            </form>
+        </section>
+    {% endif %}
 
     <p><a href="{{ url('invoice.list') }}">{{ 'invoice.detail.back'|trans }}</a></p>
 {% endblock %}

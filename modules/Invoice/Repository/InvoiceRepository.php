@@ -116,6 +116,24 @@ final readonly class InvoiceRepository
     }
 
     /**
+     * One line, provably of this invoice AND this company — a line id from
+     * another document 404s like any cross-scope URL.
+     */
+    public function lineOf(Invoice $invoice, int $lineId): ?InvoiceLine
+    {
+        $result = $this->entityManager->createQuery(
+            'SELECT l FROM ' . InvoiceLine::class
+            . ' l WHERE l.id = :id AND l.invoiceId = :invoice AND l.companyId = :company',
+        )
+            ->setParameter('id', $lineId)
+            ->setParameter('invoice', $invoice->getId())
+            ->setParameter('company', $this->context->currentId())
+            ->getOneOrNullResult();
+
+        return $result instanceof InvoiceLine ? $result : null;
+    }
+
+    /**
      * MAX+1 — one person edits one draft; a concurrent add at worst shares a
      * position and the id tiebreaker keeps the order stable.
      */

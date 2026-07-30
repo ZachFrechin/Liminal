@@ -13,6 +13,7 @@ use Liminal\Module\Invoice\InvoiceModule;
 use Liminal\Module\Invoice\Money\Cents;
 use Liminal\Module\Invoice\Repository\InvoiceRepository;
 use Liminal\Module\Invoice\Totals\InvoiceTotalsService;
+use Liminal\Module\Thirdparty\Repository\ThirdpartyRepository;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -35,6 +36,7 @@ final readonly class InvoiceDetailHandler implements RequestHandlerInterface
         private Gate $allows,
         private InvoiceRepository $invoices,
         private InvoiceTotalsService $totals,
+        private ThirdpartyRepository $thirdparties,
     ) {}
 
     /**
@@ -60,6 +62,8 @@ final readonly class InvoiceDetailHandler implements RequestHandlerInterface
             $ventilation[] = ['rate' => $rate, 'amount' => Cents::toDecimal($cents)];
         }
 
+        $canManage = $this->allows->allows(InvoiceModule::MANAGE);
+
         return $this->html->respond(
             '@invoice/invoice.html.twig',
             [
@@ -68,7 +72,9 @@ final readonly class InvoiceDetailHandler implements RequestHandlerInterface
                 'lineTotals' => $this->lineTotals($lines),
                 'thirdpartyName' => $this->invoices->thirdpartyNamesFor([$invoice->getThirdpartyId()])[$invoice->getThirdpartyId()] ?? null,
                 'ventilation' => $ventilation,
-                'canManage' => $this->allows->allows(InvoiceModule::MANAGE),
+                'canManage' => $canManage,
+                // The header-edit select, only where the form renders.
+                'thirdparties' => $canManage && $invoice->isDraft() ? $this->thirdparties->activeForSelect() : [],
             ],
             200,
             ['Cache-Control' => 'no-store'],
