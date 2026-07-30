@@ -23,6 +23,13 @@ final class IconSetTest extends TestCase
         self::assertStringEndsWith('</svg>', $svg);
     }
 
+    public function testTheInvoiceGlyphIsVendored(): void
+    {
+        // The invoice module's menu entry names it; an absent glyph would
+        // throw at every menu render for anyone holding invoice.read.
+        self::assertStringContainsString('<path d="M14 8H8"/>', new IconSet()->svg('receipt-text'));
+    }
+
     public function testAnUnknownNameIsWiringAndThrows(): void
     {
         $this->expectException(RenderingException::class);
