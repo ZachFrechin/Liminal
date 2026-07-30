@@ -31,6 +31,8 @@ use Liminal\Registry\RegistryCollection;
 use Liminal\Registry\Route;
 use Liminal\Registry\RouteRegistry;
 use Liminal\Registry\SettingsRegistry;
+use Liminal\Registry\TemplateRegistry;
+use Liminal\Registry\TranslationRegistry;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -204,6 +206,8 @@ final class Kernel
             new MigrationRegistry(),
             new SettingsRegistry(),
             new CommandRegistry(),
+            new TemplateRegistry(),
+            new TranslationRegistry(),
             new ModuleRegistry($modules),
         ]);
     }

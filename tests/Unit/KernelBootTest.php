@@ -8,6 +8,8 @@ use Liminal\Exception\KernelException;
 use Liminal\Kernel;
 use Liminal\Registry\ModuleRegistry;
 use Liminal\Registry\RouteRegistry;
+use Liminal\Registry\TemplateRegistry;
+use Liminal\Registry\TranslationRegistry;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -145,5 +147,24 @@ final class KernelBootTest extends TestCase
         $this->expectExceptionMessageMatches('/never registered it in the MigrationRegistry/');
 
         $kernel->boot();
+    }
+
+    /**
+     * The registry loops in definitions()/mergeDefinitions() cover every
+     * registry mechanically — including the rendering-phase newcomers: bound
+     * as the same frozen instances, and reserved against redefinition.
+     */
+    public function testTheRenderingRegistriesAreAutoBound(): void
+    {
+        $kernel = new Kernel(self::FIXTURES . '/providing');
+
+        self::assertSame(
+            $kernel->registries()->get(TemplateRegistry::class),
+            $kernel->container()->get(TemplateRegistry::class),
+        );
+        self::assertSame(
+            $kernel->registries()->get(TranslationRegistry::class),
+            $kernel->container()->get(TranslationRegistry::class),
+        );
     }
 }
