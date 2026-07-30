@@ -17,5 +17,6 @@
 }
 .badge-inactive { background: var(--warning-50); border-color: var(--warning-200); color: var(--warning-700); }
 .badge-no-access { background: var(--danger-50); border-color: var(--danger-200); color: var(--danger-700); }
+.badge-validated { background: var(--success-50); border-color: var(--success-200); color: var(--success-700); }
 
 .pagination { display: flex; align-items: center; gap: var(--sp-4); font: var(--text-meta); color: var(--text-tertiary); }

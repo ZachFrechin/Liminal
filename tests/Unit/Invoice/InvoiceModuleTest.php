@@ -38,6 +38,25 @@ final class InvoiceModuleTest extends TestCase
         self::assertMatchesRegularExpression('/^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/', new InvoiceModule()->name());
     }
 
+    /**
+     * The boot enforces this, but a unit test says which route broke without
+     * standing up a kernel first.
+     */
+    public function testEveryContributedRouteCarriesTheModulePrefix(): void
+    {
+        $module = new InvoiceModule();
+        $routes = new RouteRegistry();
+
+        $module->contribute($this->registriesWith(new MigrationRegistry(), $routes));
+
+        self::assertNotSame([], $routes->all());
+
+        foreach ($routes->all() as $route) {
+            self::assertIsString($route->name);
+            self::assertStringStartsWith($module->name() . '.', $route->name);
+        }
+    }
+
     public function testTheProductionHookAndTheTriggersAreDeclared(): void
     {
         $hooks = new HookRegistry();

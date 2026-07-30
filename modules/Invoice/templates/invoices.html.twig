@@ -1,0 +1,56 @@
+{% extends '@liminal/layout.html.twig' %}
+{% import '@liminal/components.html.twig' as ui %}
+
+{% block title %}{{ 'invoice.list.title'|trans }}{% endblock %}
+
+{% block content %}
+    <h1>{{ 'invoice.list.title'|trans }}</h1>
+
+    <form method="get" action="{{ url('invoice.list') }}">
+        <input type="search" name="q" value="{{ query }}" placeholder="{{ 'invoice.list.search'|trans }}">
+        <button type="submit">{{ 'invoice.list.search'|trans }}</button>
+    </form>
+
+    {% if page.total == 0 %}
+        {{ ui.empty_state('receipt-text', 'invoice.list.empty'|trans) }}
+    {% else %}
+        <table>
+            <thead>
+                <tr>
+                    <th>{{ 'invoice.list.number'|trans }}</th>
+                    <th>{{ 'invoice.list.party'|trans }}</th>
+                    <th>{{ 'invoice.list.issued'|trans }}</th>
+                    <th>{{ 'invoice.list.status'|trans }}</th>
+                    <th>{{ 'invoice.list.total'|trans }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for invoice in page.items %}
+                    <tr>
+                        <td>
+                            <a href="{{ url('invoice.detail', {'id': invoice.id}) }}">
+                                {%- if invoice.number %}{{ invoice.number }}{% else %}{{ 'invoice.status.draft'|trans }}{% endif -%}
+                            </a>
+                        </td>
+                        <td>{{ thirdpartyNames[invoice.thirdpartyId]|default('—') }}</td>
+                        <td>{{ invoice.issuedOn|date('Y-m-d') }}</td>
+                        <td>
+                            {% if invoice.draft %}
+                                <span class="badge">{{ 'invoice.status.draft'|trans }}</span>
+                            {% else %}
+                                <span class="badge badge-validated">{{ 'invoice.status.validated'|trans }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="numeric">{{ invoice.totalIncl }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <p class="pagination">
+            {{ 'invoice.list.page_of'|trans({'page': page.page, 'pages': page.pages, 'total': page.total}) }}
+            {% if page.hasPrevious %}<a href="{{ url('invoice.list') }}?page={{ page.page - 1 }}{% if query %}&q={{ query|url_encode }}{% endif %}">&larr;</a>{% endif %}
+            {% if page.hasNext %}<a href="{{ url('invoice.list') }}?page={{ page.page + 1 }}{% if query %}&q={{ query|url_encode }}{% endif %}">&rarr;</a>{% endif %}
+        </p>
+    {% endif %}
+{% endblock %}
