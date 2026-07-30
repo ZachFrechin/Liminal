@@ -40,5 +40,6 @@ return [
     'modules' => [
         Liminal\Module\Authentication\AuthenticationModule::class,
         Liminal\Module\Companies\CompaniesModule::class,
+        Liminal\Module\Thirdparty\ThirdpartyModule::class,
     ],
 ];
