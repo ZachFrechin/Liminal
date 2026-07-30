@@ -39,7 +39,8 @@
     "autoload": {
         "psr-4": {
             "Liminal\\": "src/",
-            "Liminal\\Lib\\": "libs/"
+            "Liminal\\Lib\\": "libs/",
+            "Liminal\\Module\\": "modules/"
         }
     },
     "autoload-dev": {

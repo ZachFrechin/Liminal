@@ -37,5 +37,7 @@ return [
     // Business modules, contributed after every lib. Declared here means
     // "part of this installation": their shape (routes, entities, migrations)
     // always boots; whether they are ENABLED is per company, in the database.
-    'modules' => [],
+    'modules' => [
+        Liminal\Module\Authentication\AuthenticationModule::class,
+    ],
 ];
