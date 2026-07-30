@@ -3,60 +3,71 @@
 {% block title %}{{ thirdparty.name }} — {{ 'thirdparty.detail.title'|trans }}{% endblock %}
 
 {% block content %}
-    <h1>
-        {{ thirdparty.name }} <code>{{ thirdparty.code }}</code>
-        {% if not thirdparty.active %}<span class="badge badge-inactive">{{ 'thirdparty.list.inactive'|trans }}</span>{% endif %}
-    </h1>
+    <header class="page-header">
+        <h1>
+            {{ thirdparty.name }} <code class="entity-code">{{ thirdparty.code }}</code>
+            {% if not thirdparty.active %}<span class="badge badge-inactive">{{ 'thirdparty.list.inactive'|trans }}</span>{% endif %}
+        </h1>
+        <p class="page-header-meta">
+            {% if thirdparty.customer %}<span class="badge">{{ 'thirdparty.kind.customer'|trans }}</span>{% endif %}
+            {% if thirdparty.supplier %}<span class="badge">{{ 'thirdparty.kind.supplier'|trans }}</span>{% endif %}
+            {% if not thirdparty.customer and not thirdparty.supplier %}<span class="badge">{{ 'thirdparty.kind.prospect'|trans }}</span>{% endif %}
+            {% if thirdparty.alias %}<em>{{ thirdparty.alias }}</em>{% endif %}
+        </p>
+    </header>
 
-    <p>
-        {% if thirdparty.customer %}<span class="badge">{{ 'thirdparty.kind.customer'|trans }}</span>{% endif %}
-        {% if thirdparty.supplier %}<span class="badge">{{ 'thirdparty.kind.supplier'|trans }}</span>{% endif %}
-        {% if not thirdparty.customer and not thirdparty.supplier %}{{ 'thirdparty.kind.prospect'|trans }}{% endif %}
-        {% if thirdparty.alias %} — <em>{{ thirdparty.alias }}</em>{% endif %}
-    </p>
-
-    <dl>
-        {% if thirdparty.email %}<dt>{{ 'thirdparty.field.email'|trans }}</dt><dd>{{ thirdparty.email }}</dd>{% endif %}
-        {% if thirdparty.phone %}<dt>{{ 'thirdparty.field.phone'|trans }}</dt><dd>{{ thirdparty.phone }}</dd>{% endif %}
-        {% if thirdparty.address or thirdparty.zip or thirdparty.town %}
-            <dt>{{ 'thirdparty.field.address'|trans }}</dt>
-            <dd>{{ thirdparty.address }}{% if thirdparty.zip or thirdparty.town %}, {{ thirdparty.zip }} {{ thirdparty.town }}{% endif %}{% if thirdparty.countryCode %} ({{ thirdparty.countryCode }}){% endif %}</dd>
-        {% endif %}
-        {% if thirdparty.vatNumber %}<dt>{{ 'thirdparty.field.vat'|trans }}</dt><dd>{{ thirdparty.vatNumber }}</dd>{% endif %}
-        {% if thirdparty.notes %}<dt>{{ 'thirdparty.field.notes'|trans }}</dt><dd>{{ thirdparty.notes|nl2br }}</dd>{% endif %}
-    </dl>
+    {% if thirdparty.email or thirdparty.phone or thirdparty.address or thirdparty.zip or thirdparty.town or thirdparty.vatNumber or thirdparty.notes %}
+        <section class="panel">
+            <dl class="kv">
+                {% if thirdparty.email %}<dt>{{ 'thirdparty.field.email'|trans }}</dt><dd>{{ thirdparty.email }}</dd>{% endif %}
+                {% if thirdparty.phone %}<dt>{{ 'thirdparty.field.phone'|trans }}</dt><dd>{{ thirdparty.phone }}</dd>{% endif %}
+                {% if thirdparty.address or thirdparty.zip or thirdparty.town %}
+                    <dt>{{ 'thirdparty.field.address'|trans }}</dt>
+                    <dd>{{ thirdparty.address }}{% if thirdparty.zip or thirdparty.town %}, {{ thirdparty.zip }} {{ thirdparty.town }}{% endif %}{% if thirdparty.countryCode %} ({{ thirdparty.countryCode }}){% endif %}</dd>
+                {% endif %}
+                {% if thirdparty.vatNumber %}<dt>{{ 'thirdparty.field.vat'|trans }}</dt><dd>{{ thirdparty.vatNumber }}</dd>{% endif %}
+                {% if thirdparty.notes %}<dt>{{ 'thirdparty.field.notes'|trans }}</dt><dd>{{ thirdparty.notes|nl2br }}</dd>{% endif %}
+            </dl>
+        </section>
+    {% endif %}
 
     {% if canManage %}
-        <h2>{{ 'thirdparty.detail.edit'|trans }}</h2>
-        <form method="post" action="{{ url('thirdparty.update', {'id': thirdparty.id}) }}">
-            {{ csrf_field() }}
-            {% include '@thirdparty/_fields.html.twig' with {'values': {
-                'code': thirdparty.code,
-                'name': thirdparty.name,
-                'alias': thirdparty.alias,
-                'customer': thirdparty.customer,
-                'supplier': thirdparty.supplier,
-                'email': thirdparty.email,
-                'phone': thirdparty.phone,
-                'address': thirdparty.address,
-                'zip': thirdparty.zip,
-                'town': thirdparty.town,
-                'countryCode': thirdparty.countryCode,
-                'vatNumber': thirdparty.vatNumber,
-                'notes': thirdparty.notes,
-            }} only %}
-            <p>
-                <input type="hidden" name="active" value="0">
-                <label><input type="checkbox" name="active" value="1" {% if thirdparty.active %}checked{% endif %}> {{ 'thirdparty.field.active'|trans }}</label>
-            </p>
-            <button type="submit">{{ 'thirdparty.detail.save'|trans }}</button>
-        </form>
+        <section class="panel">
+            <h2>{{ 'thirdparty.detail.edit'|trans }}</h2>
+            <form method="post" action="{{ url('thirdparty.update', {'id': thirdparty.id}) }}">
+                {{ csrf_field() }}
+                {% include '@thirdparty/_fields.html.twig' with {'values': {
+                    'code': thirdparty.code,
+                    'name': thirdparty.name,
+                    'alias': thirdparty.alias,
+                    'customer': thirdparty.customer,
+                    'supplier': thirdparty.supplier,
+                    'email': thirdparty.email,
+                    'phone': thirdparty.phone,
+                    'address': thirdparty.address,
+                    'zip': thirdparty.zip,
+                    'town': thirdparty.town,
+                    'countryCode': thirdparty.countryCode,
+                    'vatNumber': thirdparty.vatNumber,
+                    'notes': thirdparty.notes,
+                }} only %}
+                <div class="choices">
+                    <input type="hidden" name="active" value="0">
+                    <label class="choice"><input type="checkbox" name="active" value="1" {% if thirdparty.active %}checked{% endif %}> {{ 'thirdparty.field.active'|trans }}</label>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="primary">{{ 'thirdparty.detail.save'|trans }}</button>
+                </div>
+            </form>
+        </section>
 
-        <h2>{{ 'thirdparty.detail.danger'|trans }}</h2>
-        <form method="post" action="{{ url('thirdparty.delete', {'id': thirdparty.id}) }}">
-            {{ csrf_field() }}
-            <button type="submit">{{ 'thirdparty.detail.delete'|trans }}</button>
-        </form>
+        <section class="danger-zone">
+            <h2>{{ 'thirdparty.detail.danger'|trans }}</h2>
+            <form method="post" action="{{ url('thirdparty.delete', {'id': thirdparty.id}) }}">
+                {{ csrf_field() }}
+                <button type="submit" class="danger">{{ 'thirdparty.detail.delete'|trans }}</button>
+            </form>
+        </section>
     {% endif %}
 
     <p><a href="{{ url('thirdparty.list') }}">{{ 'thirdparty.detail.back'|trans }}</a></p>

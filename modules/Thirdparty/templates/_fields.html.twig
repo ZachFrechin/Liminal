@@ -1,41 +1,62 @@
 {# The shared field set — create passes an empty `values` map, edit passes the
-   entity's current state; |default keeps strict_variables honest. #}
-<p>
-    <label for="code">{{ 'thirdparty.field.code'|trans }}</label><br>
-    <input type="text" id="code" name="code" maxlength="32" required value="{{ values.code|default('') }}">
-</p>
-<p>
-    <label for="name">{{ 'thirdparty.field.name'|trans }}</label><br>
-    <input type="text" id="name" name="name" maxlength="191" required value="{{ values.name|default('') }}">
-</p>
-<p>
-    <label for="alias">{{ 'thirdparty.field.alias'|trans }}</label><br>
-    <input type="text" id="alias" name="alias" maxlength="191" value="{{ values.alias|default('') }}">
-</p>
-<p>
-    <label><input type="checkbox" name="customer" value="1" {% if values.customer|default(false) %}checked{% endif %}> {{ 'thirdparty.kind.customer'|trans }}</label>
-    <label><input type="checkbox" name="supplier" value="1" {% if values.supplier|default(false) %}checked{% endif %}> {{ 'thirdparty.kind.supplier'|trans }}</label>
-</p>
-<p>
-    <label for="email">{{ 'thirdparty.field.email'|trans }}</label><br>
-    <input type="email" id="email" name="email" maxlength="191" value="{{ values.email|default('') }}">
-</p>
-<p>
-    <label for="phone">{{ 'thirdparty.field.phone'|trans }}</label><br>
-    <input type="text" id="phone" name="phone" maxlength="32" value="{{ values.phone|default('') }}">
-</p>
-<p>
-    <label for="address">{{ 'thirdparty.field.address'|trans }}</label><br>
-    <input type="text" id="address" name="address" maxlength="255" value="{{ values.address|default('') }}">
-    <input type="text" id="zip" name="zip" maxlength="16" placeholder="{{ 'thirdparty.field.zip'|trans }}" value="{{ values.zip|default('') }}">
-    <input type="text" id="town" name="town" maxlength="128" placeholder="{{ 'thirdparty.field.town'|trans }}" value="{{ values.town|default('') }}">
-    <input type="text" id="country_code" name="country_code" maxlength="2" placeholder="{{ 'thirdparty.field.country'|trans }}" value="{{ values.countryCode|default('') }}">
-</p>
-<p>
-    <label for="vat_number">{{ 'thirdparty.field.vat'|trans }}</label><br>
-    <input type="text" id="vat_number" name="vat_number" maxlength="32" value="{{ values.vatNumber|default('') }}">
-</p>
-<p>
-    <label for="notes">{{ 'thirdparty.field.notes'|trans }}</label><br>
-    <textarea id="notes" name="notes" rows="4">{{ values.notes|default('') }}</textarea>
-</p>
+   entity's current state; |default keeps strict_variables honest. Grouped the
+   way the eye reads a third party: who it is, how to reach it, the numbers. #}
+<fieldset>
+    <legend>{{ 'thirdparty.form.identity'|trans }}</legend>
+    <p class="field">
+        <label for="code">{{ 'thirdparty.field.code'|trans }}</label>
+        <input type="text" id="code" name="code" maxlength="32" required value="{{ values.code|default('') }}">
+    </p>
+    <p class="field">
+        <label for="name">{{ 'thirdparty.field.name'|trans }}</label>
+        <input type="text" id="name" name="name" maxlength="191" required value="{{ values.name|default('') }}">
+    </p>
+    <p class="field">
+        <label for="alias">{{ 'thirdparty.field.alias'|trans }}</label>
+        <input type="text" id="alias" name="alias" maxlength="191" value="{{ values.alias|default('') }}">
+    </p>
+    <div class="choices">
+        <label class="choice"><input type="checkbox" name="customer" value="1" {% if values.customer|default(false) %}checked{% endif %}> {{ 'thirdparty.kind.customer'|trans }}</label>
+        <label class="choice"><input type="checkbox" name="supplier" value="1" {% if values.supplier|default(false) %}checked{% endif %}> {{ 'thirdparty.kind.supplier'|trans }}</label>
+    </div>
+</fieldset>
+<fieldset>
+    <legend>{{ 'thirdparty.form.contact'|trans }}</legend>
+    <p class="field">
+        <label for="email">{{ 'thirdparty.field.email'|trans }}</label>
+        <input type="email" id="email" name="email" maxlength="191" value="{{ values.email|default('') }}">
+    </p>
+    <p class="field">
+        <label for="phone">{{ 'thirdparty.field.phone'|trans }}</label>
+        <input type="text" id="phone" name="phone" maxlength="32" value="{{ values.phone|default('') }}">
+    </p>
+    <p class="field">
+        <label for="address">{{ 'thirdparty.field.address'|trans }}</label>
+        <input type="text" id="address" name="address" maxlength="255" value="{{ values.address|default('') }}">
+    </p>
+    <div class="field-row">
+        <p class="field field-narrow">
+            <label for="zip">{{ 'thirdparty.field.zip'|trans }}</label>
+            <input type="text" id="zip" name="zip" maxlength="16" value="{{ values.zip|default('') }}">
+        </p>
+        <p class="field">
+            <label for="town">{{ 'thirdparty.field.town'|trans }}</label>
+            <input type="text" id="town" name="town" maxlength="128" value="{{ values.town|default('') }}">
+        </p>
+        <p class="field field-narrow">
+            <label for="country_code">{{ 'thirdparty.field.country'|trans }}</label>
+            <input type="text" id="country_code" name="country_code" maxlength="2" value="{{ values.countryCode|default('') }}">
+        </p>
+    </div>
+</fieldset>
+<fieldset>
+    <legend>{{ 'thirdparty.form.accounting'|trans }}</legend>
+    <p class="field">
+        <label for="vat_number">{{ 'thirdparty.field.vat'|trans }}</label>
+        <input type="text" id="vat_number" name="vat_number" maxlength="32" value="{{ values.vatNumber|default('') }}">
+    </p>
+    <p class="field">
+        <label for="notes">{{ 'thirdparty.field.notes'|trans }}</label>
+        <textarea id="notes" name="notes" rows="4">{{ values.notes|default('') }}</textarea>
+    </p>
+</fieldset>

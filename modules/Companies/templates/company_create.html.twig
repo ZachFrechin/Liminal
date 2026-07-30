@@ -5,20 +5,22 @@
 {% block content %}
     <h1>{{ 'companies.create.title'|trans }}</h1>
 
-    <form method="post" action="{{ url('companies.create_submit') }}">
+    <form method="post" action="{{ url('companies.create_submit') }}" class="form-card">
         {{ csrf_field() }}
 
-        <p>
-            <label for="code">{{ 'companies.create.code'|trans }}</label><br>
+        <p class="field">
+            <label for="code">{{ 'companies.create.code'|trans }}</label>
             <input type="text" id="code" name="code" required pattern="[A-Za-z][A-Za-z0-9_]*"
                    style="text-transform: uppercase">
-            <em>{{ 'companies.create.code_hint'|trans }}</em>
+            <span class="field-hint">{{ 'companies.create.code_hint'|trans }}</span>
         </p>
-        <p>
-            <label for="name">{{ 'companies.create.name'|trans }}</label><br>
+        <p class="field">
+            <label for="name">{{ 'companies.create.name'|trans }}</label>
             <input type="text" id="name" name="name" required>
         </p>
 
-        <button type="submit">{{ 'companies.create.submit'|trans }}</button>
+        <div class="form-actions">
+            <button type="submit" class="primary">{{ 'companies.create.submit'|trans }}</button>
+        </div>
     </form>
 {% endblock %}

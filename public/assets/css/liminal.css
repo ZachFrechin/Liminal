@@ -12,4 +12,5 @@
 @import "tokens/base.css";
 @import "components/shell.css";
 @import "components/feedback.css";
+@import "components/forms.css";
 @import "components/badges.css";

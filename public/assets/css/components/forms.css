@@ -1,0 +1,113 @@
+/* The forms family: field blocks, grouped fieldsets, choice rows, the form
+   card, button variants, and the detail-page vocabulary (page header, code
+   chip, key-value list, panels, danger zone). The reference's Field pattern —
+   label above, control, hint below — with the write surface constrained to a
+   readable width instead of the full page. */
+
+/* ── Fields ────────────────────────────────────────────────────────── */
+.field { margin: 0; display: grid; gap: var(--sp-2); justify-items: stretch; }
+.field > label { font: var(--text-label); color: var(--text-secondary); }
+.field-hint { font: var(--text-meta); color: var(--text-tertiary); font-style: normal; }
+
+/* Side-by-side subfields (zip / town / country). */
+.field-row { display: flex; gap: var(--sp-4); align-items: end; }
+.field-row > .field { flex: 1; }
+.field-row > .field-narrow { flex: 0 0 96px; }
+
+/* Checkbox and radio rows. */
+.choices { display: flex; gap: var(--sp-7); align-items: center; flex-wrap: wrap; }
+.choice { display: inline-flex; align-items: center; gap: var(--sp-3); font: var(--text-body-sm); color: var(--text-primary); }
+.choice-list { display: grid; gap: var(--sp-3); justify-items: start; }
+
+/* ── Grouping ──────────────────────────────────────────────────────── */
+fieldset { margin: 0; padding: 0; border: 0; min-width: 0; display: grid; gap: var(--sp-6); }
+legend {
+  padding: 0 0 var(--sp-2);
+  font: var(--text-overline);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+/* ── The write surface ─────────────────────────────────────────────── */
+.form-card {
+  max-width: 640px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--sp-8);
+  display: grid;
+  gap: var(--sp-8);
+  justify-self: start;
+  width: 100%;
+}
+.form-actions { display: flex; gap: var(--sp-4); align-items: center; padding-top: var(--sp-2); }
+
+/* Label-led inline forms (the grant-add row). */
+.form-inline { display: flex; gap: var(--sp-4); align-items: end; flex-wrap: wrap; }
+.form-inline .field { flex: 1; min-width: 180px; }
+.form-inline button { flex: none; }
+
+/* ── Button variants ───────────────────────────────────────────────── */
+button.primary { background: var(--action-primary-bg); color: var(--action-primary-fg); border-color: transparent; }
+button.primary:hover { background: var(--action-primary-bg-hover); }
+button.danger { background: transparent; color: var(--danger-700); border-color: var(--danger-200); box-shadow: none; }
+button.danger:hover { background: var(--danger-50); }
+
+/* ── Detail-page vocabulary ────────────────────────────────────────── */
+.page-header { display: grid; gap: var(--sp-3); }
+.page-header h1 { display: flex; align-items: baseline; gap: var(--sp-4); flex-wrap: wrap; }
+.page-header-meta { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; font: var(--text-body-sm); color: var(--text-secondary); }
+
+.entity-code {
+  font: var(--fw-medium) var(--fs-12)/1.4 var(--font-mono);
+  color: var(--text-secondary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+
+/* A generic bordered surface for a page section. */
+.panel {
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--sp-7);
+  display: grid;
+  gap: var(--sp-6);
+}
+.panel > h2 { font: var(--text-ui); font-size: var(--fs-14); }
+
+/* Key-value list on detail pages. */
+dl.kv { margin: 0; display: grid; grid-template-columns: max-content 1fr; column-gap: var(--sp-9); row-gap: var(--sp-4); }
+dl.kv dt { font: var(--text-label); color: var(--text-tertiary); }
+dl.kv dd { margin: 0; font: var(--text-body-sm); }
+
+/* Destructive actions live apart, named and bordered. */
+.danger-zone {
+  border: 1px solid var(--danger-200);
+  border-radius: var(--radius-md);
+  padding: var(--sp-6) var(--sp-7);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-6);
+  flex-wrap: wrap;
+}
+.danger-zone h2 { font: var(--text-ui); font-size: var(--fs-14); color: var(--danger-700); }
+.danger-zone p { font: var(--text-meta); color: var(--text-secondary); max-width: 60ch; }
+.danger-zone form { margin-left: auto; }
+
+/* The one-time secret: the only copy that will ever exist in the clear. */
+code.one-time-password {
+  display: inline-block;
+  font: var(--fw-medium) var(--fs-18)/1.4 var(--font-mono);
+  letter-spacing: 0.08em;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-4) var(--sp-6);
+  user-select: all;
+}

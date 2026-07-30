@@ -5,30 +5,36 @@
 {% block content %}
     <h1>{{ 'authentication.role.create_title'|trans }}</h1>
 
-    <form method="post" action="{{ url('authentication.role_create_submit') }}">
+    <form method="post" action="{{ url('authentication.role_create_submit') }}" class="form-card">
         {{ csrf_field() }}
 
-        <p>
-            <label for="code">{{ 'authentication.role.code'|trans }}</label><br>
+        <p class="field">
+            <label for="code">{{ 'authentication.role.code'|trans }}</label>
             <input type="text" id="code" name="code" required pattern="[a-z][a-z0-9_]*">
-            <em>{{ 'authentication.role.code_hint'|trans }}</em>
+            <span class="field-hint">{{ 'authentication.role.code_hint'|trans }}</span>
         </p>
-        <p>
-            <label for="label">{{ 'authentication.role.label'|trans }}</label><br>
+        <p class="field">
+            <label for="label">{{ 'authentication.role.label'|trans }}</label>
             <input type="text" id="label" name="label" required>
         </p>
 
         <h2>{{ 'authentication.role.permissions'|trans }}</h2>
         {% for group, permissions in groups %}
-            <h3>{{ group }}</h3>
-            {% for permission in permissions %}
-                <label>
-                    <input type="checkbox" name="permissions[]" value="{{ permission.code }}">
-                    {{ permission.label|trans }} <code>{{ permission.code }}</code>
-                </label><br>
-            {% endfor %}
+            <fieldset>
+                <legend>{{ group }}</legend>
+                <div class="choice-list">
+                    {% for permission in permissions %}
+                        <label class="choice">
+                            <input type="checkbox" name="permissions[]" value="{{ permission.code }}">
+                            {{ permission.label|trans }} <code>{{ permission.code }}</code>
+                        </label>
+                    {% endfor %}
+                </div>
+            </fieldset>
         {% endfor %}
 
-        <button type="submit">{{ 'authentication.role.create_submit'|trans }}</button>
+        <div class="form-actions">
+            <button type="submit" class="primary">{{ 'authentication.role.create_submit'|trans }}</button>
+        </div>
     </form>
 {% endblock %}

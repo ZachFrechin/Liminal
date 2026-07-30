@@ -7,18 +7,20 @@
 
     {# No password field, ever: the server generates the secret and the next
        page shows it exactly once. #}
-    <form method="post" action="{{ url('authentication.user_create_submit') }}">
+    <form method="post" action="{{ url('authentication.user_create_submit') }}" class="form-card">
         {{ csrf_field() }}
 
-        <p>
-            <label for="email">{{ 'authentication.user.email'|trans }}</label><br>
+        <p class="field">
+            <label for="email">{{ 'authentication.user.email'|trans }}</label>
             <input type="email" id="email" name="email" required>
         </p>
-        <p>
-            <label for="display_name">{{ 'authentication.user.display_name'|trans }}</label><br>
+        <p class="field">
+            <label for="display_name">{{ 'authentication.user.display_name'|trans }}</label>
             <input type="text" id="display_name" name="display_name">
         </p>
 
-        <button type="submit">{{ 'authentication.user.create_submit'|trans }}</button>
+        <div class="form-actions">
+            <button type="submit" class="primary">{{ 'authentication.user.create_submit'|trans }}</button>
+        </div>
     </form>
 {% endblock %}

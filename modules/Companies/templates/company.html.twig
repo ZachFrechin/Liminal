@@ -4,44 +4,52 @@
 
 {% block content %}
     {# The code is on display, never in a field: it never moves. #}
-    <h1>{{ company.name }} <code>{{ company.code }}</code></h1>
+    <header class="page-header">
+        <h1>{{ company.name }} <code class="entity-code">{{ company.code }}</code></h1>
+    </header>
 
-    <form method="post" action="{{ url('companies.company_rename', {'id': company.id}) }}">
-        {{ csrf_field() }}
+    <section class="panel">
+        <form method="post" action="{{ url('companies.company_rename', {'id': company.id}) }}">
+            {{ csrf_field() }}
 
-        <p>
-            <label for="name">{{ 'companies.company.name'|trans }}</label><br>
-            <input type="text" id="name" name="name" value="{{ company.name }}" required>
-        </p>
+            <p class="field">
+                <label for="name">{{ 'companies.company.name'|trans }}</label>
+                <input type="text" id="name" name="name" value="{{ company.name }}" required>
+            </p>
 
-        <button type="submit">{{ 'companies.company.save'|trans }}</button>
-    </form>
+            <div class="form-actions">
+                <button type="submit" class="primary">{{ 'companies.company.save'|trans }}</button>
+            </div>
+        </form>
+    </section>
 
-    <h2>{{ 'companies.company.modules'|trans }}</h2>
-    {# Standing information, not a one-shot flash: a "not installed" row is
-       the durable version of the creation warning, remedy included. #}
-    <table>
-        <thead>
-            <tr>
-                <th>{{ 'companies.company.module'|trans }}</th>
-                <th>{{ 'companies.company.module_state'|trans }}</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for module in modules %}
+    <section class="panel">
+        <h2>{{ 'companies.company.modules'|trans }}</h2>
+        {# Standing information, not a one-shot flash: a "not installed" row is
+           the durable version of the creation warning, remedy included. #}
+        <table>
+            <thead>
                 <tr>
-                    <td>{{ module.name }}</td>
-                    <td>
-                        {% if not module.installed %}
-                            {{ 'companies.company.module_not_installed'|trans }}
-                        {% elseif module.enabled %}
-                            {{ 'companies.company.module_enabled'|trans }}
-                        {% else %}
-                            {{ 'companies.company.module_disabled'|trans }}
-                        {% endif %}
-                    </td>
+                    <th>{{ 'companies.company.module'|trans }}</th>
+                    <th>{{ 'companies.company.module_state'|trans }}</th>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                {% for module in modules %}
+                    <tr>
+                        <td>{{ module.name }}</td>
+                        <td>
+                            {% if not module.installed %}
+                                {{ 'companies.company.module_not_installed'|trans }}
+                            {% elseif module.enabled %}
+                                {{ 'companies.company.module_enabled'|trans }}
+                            {% else %}
+                                {{ 'companies.company.module_disabled'|trans }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
 {% endblock %}

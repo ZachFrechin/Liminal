@@ -3,96 +3,112 @@
 {% block title %}{{ account.displayName }} — {{ 'authentication.user.title'|trans }}{% endblock %}
 
 {% block content %}
-    <h1>{{ account.displayName }} <small>({{ account.email }})</small></h1>
+    <header class="page-header">
+        <h1>{{ account.displayName }} <code class="entity-code">{{ account.email }}</code></h1>
+    </header>
 
-    <form method="post" action="{{ url('authentication.user_update', {'id': account.id}) }}">
-        {{ csrf_field() }}
+    <section class="panel">
+        <form method="post" action="{{ url('authentication.user_update', {'id': account.id}) }}">
+            {{ csrf_field() }}
 
-        <p>
-            <label for="display_name">{{ 'authentication.user.display_name'|trans }}</label><br>
-            <input type="text" id="display_name" name="display_name" value="{{ account.displayName }}" required>
-        </p>
-        <p>
-            {# The checkbox posts nothing when unchecked, so a hidden 0 rides
-               along and the checked box overrides it. #}
-            <input type="hidden" name="active" value="0">
-            <label>
-                <input type="checkbox" name="active" value="1"
-                    {%- if account.active %} checked{% endif %}
-                    {%- if isSelf %} disabled{% endif %}>
-                {{ 'authentication.user.active'|trans }}
-            </label>
-            {% if isSelf %}
-                {# Disabled is honesty, not the guard: the POST handler refuses
-                   self-deactivation regardless of what the form sends. #}
-                <input type="hidden" name="active" value="1">
-                <em>{{ 'authentication.user.self_note'|trans }}</em>
-            {% endif %}
-        </p>
+            <p class="field">
+                <label for="display_name">{{ 'authentication.user.display_name'|trans }}</label>
+                <input type="text" id="display_name" name="display_name" value="{{ account.displayName }}" required>
+            </p>
+            <div class="choices">
+                {# The checkbox posts nothing when unchecked, so a hidden 0 rides
+                   along and the checked box overrides it. #}
+                <input type="hidden" name="active" value="0">
+                <label class="choice">
+                    <input type="checkbox" name="active" value="1"
+                        {%- if account.active %} checked{% endif %}
+                        {%- if isSelf %} disabled{% endif %}>
+                    {{ 'authentication.user.active'|trans }}
+                </label>
+                {% if isSelf %}
+                    {# Disabled is honesty, not the guard: the POST handler refuses
+                       self-deactivation regardless of what the form sends. #}
+                    <input type="hidden" name="active" value="1">
+                    <span class="field-hint">{{ 'authentication.user.self_note'|trans }}</span>
+                {% endif %}
+            </div>
 
-        <button type="submit">{{ 'authentication.user.save'|trans }}</button>
-    </form>
+            <div class="form-actions">
+                <button type="submit" class="primary">{{ 'authentication.user.save'|trans }}</button>
+            </div>
+        </form>
+    </section>
 
-    <h2>{{ 'authentication.user.grants'|trans }}</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>{{ 'authentication.user.grant_company'|trans }}</th>
-                <th>{{ 'authentication.user.grant_role'|trans }}</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for grant in grants %}
+    <section class="panel">
+        <h2>{{ 'authentication.user.grants'|trans }}</h2>
+        <table>
+            <thead>
                 <tr>
-                    <td>{{ grant.companyName }} ({{ grant.companyCode }})</td>
-                    <td>{{ grant.roleLabel }} ({{ grant.roleCode }})</td>
-                    <td>
-                        <form method="post" action="{{ url('authentication.user_revoke', {'id': account.id}) }}">
-                            {{ csrf_field() }}
-                            <input type="hidden" name="company" value="{{ grant.companyId }}">
-                            <input type="hidden" name="role" value="{{ grant.roleId }}">
-                            <button type="submit">{{ 'authentication.user.revoke'|trans }}</button>
-                        </form>
-                    </td>
+                    <th>{{ 'authentication.user.grant_company'|trans }}</th>
+                    <th>{{ 'authentication.user.grant_role'|trans }}</th>
+                    <th></th>
                 </tr>
-            {% else %}
-                {# Zero rows here IS the "cannot sign in anywhere" state. #}
-                <tr><td colspan="3">{{ 'authentication.user.no_grants'|trans }}</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                {% for grant in grants %}
+                    <tr>
+                        <td>{{ grant.companyName }} ({{ grant.companyCode }})</td>
+                        <td>{{ grant.roleLabel }} ({{ grant.roleCode }})</td>
+                        <td>
+                            <form method="post" action="{{ url('authentication.user_revoke', {'id': account.id}) }}">
+                                {{ csrf_field() }}
+                                <input type="hidden" name="company" value="{{ grant.companyId }}">
+                                <input type="hidden" name="role" value="{{ grant.roleId }}">
+                                <button type="submit">{{ 'authentication.user.revoke'|trans }}</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    {# Zero rows here IS the "cannot sign in anywhere" state. #}
+                    <tr><td colspan="3">{{ 'authentication.user.no_grants'|trans }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
 
-    <form method="post" action="{{ url('authentication.user_grant', {'id': account.id}) }}">
-        {{ csrf_field() }}
-        <label for="grant-company">{{ 'authentication.user.grant_company'|trans }}</label>
-        <select id="grant-company" name="company">
-            {% for company in companies %}
-                <option value="{{ company.id }}">{{ company.name }} ({{ company.code }})</option>
-            {% endfor %}
-        </select>
-        <label for="grant-role">{{ 'authentication.user.grant_role'|trans }}</label>
-        <select id="grant-role" name="role">
-            {% for role in roles %}
-                <option value="{{ role.id }}">{{ role.label }} ({{ role.code }})</option>
-            {% endfor %}
-        </select>
-        <button type="submit">{{ 'authentication.user.add_grant'|trans }}</button>
-    </form>
+        <form method="post" action="{{ url('authentication.user_grant', {'id': account.id}) }}" class="form-inline">
+            {{ csrf_field() }}
+            <p class="field">
+                <label for="grant-company">{{ 'authentication.user.grant_company'|trans }}</label>
+                <select id="grant-company" name="company">
+                    {% for company in companies %}
+                        <option value="{{ company.id }}">{{ company.name }} ({{ company.code }})</option>
+                    {% endfor %}
+                </select>
+            </p>
+            <p class="field">
+                <label for="grant-role">{{ 'authentication.user.grant_role'|trans }}</label>
+                <select id="grant-role" name="role">
+                    {% for role in roles %}
+                        <option value="{{ role.id }}">{{ role.label }} ({{ role.code }})</option>
+                    {% endfor %}
+                </select>
+            </p>
+            <button type="submit">{{ 'authentication.user.add_grant'|trans }}</button>
+        </form>
+    </section>
 
-    <h2>{{ 'authentication.user.password'|trans }}</h2>
-    <form method="post" action="{{ url('authentication.user_password', {'id': account.id}) }}">
-        {{ csrf_field() }}
-        {# Generates a fresh secret shown once, and ends the user's OTHER
-           sessions — a credential change must not leave old sessions alive. #}
-        <button type="submit">{{ 'authentication.user.reset_password'|trans }}</button>
-    </form>
+    <section class="panel">
+        <h2>{{ 'authentication.user.password'|trans }}</h2>
+        <form method="post" action="{{ url('authentication.user_password', {'id': account.id}) }}">
+            {{ csrf_field() }}
+            {# Generates a fresh secret shown once, and ends the user's OTHER
+               sessions — a credential change must not leave old sessions alive. #}
+            <button type="submit">{{ 'authentication.user.reset_password'|trans }}</button>
+        </form>
+    </section>
 
     {% if not isSelf %}
-        <h2>{{ 'authentication.user.danger'|trans }}</h2>
-        <form method="post" action="{{ url('authentication.user_delete', {'id': account.id}) }}">
-            {{ csrf_field() }}
-            <button type="submit">{{ 'authentication.user.delete'|trans }}</button>
-        </form>
+        <section class="danger-zone">
+            <h2>{{ 'authentication.user.danger'|trans }}</h2>
+            <form method="post" action="{{ url('authentication.user_delete', {'id': account.id}) }}">
+                {{ csrf_field() }}
+                <button type="submit" class="danger">{{ 'authentication.user.delete'|trans }}</button>
+            </form>
+        </section>
     {% endif %}
 {% endblock %}

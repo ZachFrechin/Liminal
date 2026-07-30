@@ -44,6 +44,9 @@ return [
     'thirdparty.field.notes' => 'Notes',
     'thirdparty.field.active' => 'Active',
 
+    'thirdparty.form.identity' => 'Identity',
+    'thirdparty.form.contact' => 'Contact',
+    'thirdparty.form.accounting' => 'Accounting',
     'thirdparty.form.code_invalid' => 'The code is required, 32 characters at most.',
     'thirdparty.form.name_required' => 'The name is required.',
     'thirdparty.form.email_invalid' => 'That email address is not valid.',

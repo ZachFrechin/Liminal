@@ -5,9 +5,11 @@
 {% block content %}
     <h1>{{ 'thirdparty.create.title'|trans }}</h1>
 
-    <form method="post" action="{{ url('thirdparty.create_submit') }}">
+    <form method="post" action="{{ url('thirdparty.create_submit') }}" class="form-card">
         {{ csrf_field() }}
         {% include '@thirdparty/_fields.html.twig' with {'values': {}} only %}
-        <button type="submit">{{ 'thirdparty.create.submit'|trans }}</button>
+        <div class="form-actions">
+            <button type="submit" class="primary">{{ 'thirdparty.create.submit'|trans }}</button>
+        </div>
     </form>
 {% endblock %}
