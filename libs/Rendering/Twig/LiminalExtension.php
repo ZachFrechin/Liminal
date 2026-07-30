@@ -6,6 +6,7 @@ namespace Liminal\Lib\Rendering\Twig;
 
 use Liminal\Http\UrlGenerator;
 use Liminal\Lib\Rendering\Exception\RenderingException;
+use Liminal\Lib\Rendering\Icon\IconSet;
 use Liminal\Lib\Rendering\Menu\MenuBuilder;
 use Liminal\Lib\Rendering\Translator;
 use Liminal\Lib\Rendering\View\ViewContext;
@@ -36,6 +37,7 @@ final class LiminalExtension extends AbstractExtension
         private readonly CurrentUser $currentUser,
         private readonly MenuBuilder $menu,
         private readonly Translator $translator,
+        private readonly IconSet $icons,
     ) {}
 
     /**
@@ -51,6 +53,8 @@ final class LiminalExtension extends AbstractExtension
             new TwigFunction('flash', $this->flash(...)),
             new TwigFunction('current_user', $this->currentUser->get(...)),
             new TwigFunction('menu', $this->menu->build(...)),
+            // Safe like csrf_field: the markup is a code constant, never data.
+            new TwigFunction('icon', $this->icons->svg(...), ['is_safe' => ['html']]),
         ];
     }
 

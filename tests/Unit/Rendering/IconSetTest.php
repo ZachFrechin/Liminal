@@ -1,0 +1,33 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Liminal\Tests\Unit\Rendering;
+
+use Liminal\Lib\Rendering\Exception\RenderingException;
+use Liminal\Lib\Rendering\Icon\IconSet;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+
+#[CoversClass(IconSet::class)]
+final class IconSetTest extends TestCase
+{
+    public function testAGlyphRendersAsAnInlineSvgAtTheRequestedSize(): void
+    {
+        $svg = new IconSet()->svg('check', 14);
+
+        self::assertStringStartsWith('<svg class="lucide" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">', $svg);
+        self::assertStringContainsString('<path d="M20 6 9 17l-5-5"/>', $svg);
+        // The menu pins '>Label</a>' with the icon right before the label:
+        // the markup must end exactly at the closing tag, no trailing space.
+        self::assertStringEndsWith('</svg>', $svg);
+    }
+
+    public function testAnUnknownNameIsWiringAndThrows(): void
+    {
+        $this->expectException(RenderingException::class);
+        $this->expectExceptionMessage('No icon named "sparkles"');
+
+        new IconSet()->svg('sparkles');
+    }
+}

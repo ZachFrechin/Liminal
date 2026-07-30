@@ -30,6 +30,14 @@ final class RenderingException extends LogicException implements LiminalExceptio
         ));
     }
 
+    public static function unknownIcon(string $name): self
+    {
+        return new self(sprintf(
+            'No icon named "%s" in the vendored set: a template naming a glyph that was never vendored is wiring, not content.',
+            $name,
+        ));
+    }
+
     public static function orphanedMenuParent(string $label, string $parent): self
     {
         return new self(sprintf(
