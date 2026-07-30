@@ -12,6 +12,8 @@ use Liminal\Lib\Security\Contract\LoginThrottle;
 use Liminal\Lib\Security\Contract\PermissionResolver;
 use Liminal\Lib\Security\Contract\UserProvider;
 use Liminal\Module\Authentication\Administration\UserAdministration;
+use Liminal\Module\Authentication\Console\RoleGrantCommand;
+use Liminal\Module\Authentication\Console\UserCreateCommand;
 use Liminal\Module\Authentication\Http\AccountHandler;
 use Liminal\Module\Authentication\Http\LoginPageHandler;
 use Liminal\Module\Authentication\Http\LoginSubmitHandler;
@@ -21,6 +23,7 @@ use Liminal\Module\Authentication\Security\DbalAuthEventLog;
 use Liminal\Module\Authentication\Security\DbalLoginThrottle;
 use Liminal\Module\Authentication\Security\DbalPermissionResolver;
 use Liminal\Module\Authentication\Security\DbalUserProvider;
+use Liminal\Registry\CommandRegistry;
 use Liminal\Registry\Contract\DefinitionProvider;
 use Liminal\Registry\Contract\Module;
 use Liminal\Registry\EntityRegistry;
@@ -93,6 +96,12 @@ final class AuthenticationModule implements Module, DefinitionProvider
 
         $registries->get(PermissionRegistry::class)
             ->add(new Permission(UserListHandler::PERMISSION, 'authentication.permission.user.manage', self::NAME));
+
+        // Bootstrap commands. Their constructors inject only deferred-connection
+        // services: the console resolves every registered command eagerly.
+        $commands = $registries->get(CommandRegistry::class);
+        $commands->add(UserCreateCommand::class);
+        $commands->add(RoleGrantCommand::class);
 
         $menu = $registries->get(MenuRegistry::class);
         $menu->add(new MenuItem('authentication.menu.account', 'authentication.account', priority: 900));

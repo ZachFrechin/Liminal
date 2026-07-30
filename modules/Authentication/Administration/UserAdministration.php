@@ -115,15 +115,19 @@ final readonly class UserAdministration
     /**
      * Idempotent: granting a role someone already holds in that company is a
      * no-op rather than an error.
+     *
+     * @return bool true when the grant is new, false when it was already held
      */
-    public function grant(int $userId, int $companyId, int $roleId): void
+    public function grant(int $userId, int $companyId, int $roleId): bool
     {
-        ($this->connection)()->executeStatement(
+        $affected = ($this->connection)()->executeStatement(
             'INSERT INTO core_user_company_role (user_id, company_id, role_id)
              VALUES (?, ?, ?)
              ON DUPLICATE KEY UPDATE user_id = user_id',
             [$userId, $companyId, $roleId],
         );
+
+        return (int) $affected > 0;
     }
 
     /**

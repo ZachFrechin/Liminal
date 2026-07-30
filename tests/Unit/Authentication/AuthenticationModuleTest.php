@@ -6,6 +6,7 @@ namespace Liminal\Tests\Unit\Authentication;
 
 use Liminal\Config\ConfigurationLoader;
 use Liminal\Module\Authentication\AuthenticationModule;
+use Liminal\Registry\CommandRegistry;
 use Liminal\Registry\EntityRegistry;
 use Liminal\Registry\MenuRegistry;
 use Liminal\Registry\MigrationRegistry;
@@ -76,6 +77,7 @@ final class AuthenticationModuleTest extends TestCase
         return new RegistryCollection([
             $migrations,
             $routes ?? new RouteRegistry(),
+            new CommandRegistry(),
             new EntityRegistry(),
             new TemplateRegistry(),
             new TranslationRegistry(),
