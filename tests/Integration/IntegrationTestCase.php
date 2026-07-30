@@ -47,4 +47,36 @@ abstract class IntegrationTestCase extends TestCase
 
         return $connection;
     }
+
+    /**
+     * Empties the test database by introspection.
+     *
+     * Hand-maintained drop lists do not survive a schema that grows foreign
+     * keys: the moment one test creates a table referencing core_company, every
+     * OTHER test's "DROP TABLE core_company" fails — including tests that never
+     * knew about the referencing table. Dropping everything with the checks off
+     * removes that whole class of cross-test breakage, and each test then
+     * migrates exactly what it needs.
+     */
+    protected function dropAllTables(Connection $connection): void
+    {
+        $tables = $connection->createSchemaManager()->listTableNames();
+
+        if ($tables === []) {
+            return;
+        }
+
+        $connection->executeStatement('SET FOREIGN_KEY_CHECKS = 0');
+
+        try {
+            foreach ($tables as $table) {
+                $connection->executeStatement(sprintf('DROP TABLE IF EXISTS %s', $table));
+            }
+        } finally {
+            // Restore even if a drop failed: the connection is reused by the
+            // very test that just failed, and leaving the checks off would
+            // silently mask referential bugs in its assertions.
+            $connection->executeStatement('SET FOREIGN_KEY_CHECKS = 1');
+        }
+    }
 }

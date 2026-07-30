@@ -34,9 +34,7 @@ final class MigrationCommandsTest extends IntegrationTestCase
 
         $connection = $this->connection();
 
-        foreach (['core_session', 'core_setting', 'core_module_company', 'core_module', 'core_company', 'core_migration_version'] as $table) {
-            $connection->executeStatement(sprintf('DROP TABLE IF EXISTS %s', $table));
-        }
+        $this->dropAllTables($connection);
 
         $this->previousDsn = Env::nullableString('LIMINAL_DSN');
         putenv('LIMINAL_DSN=' . $dsn);

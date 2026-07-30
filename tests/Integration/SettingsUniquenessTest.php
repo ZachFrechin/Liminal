@@ -29,9 +29,7 @@ final class SettingsUniquenessTest extends IntegrationTestCase
     {
         $this->connection = $this->connection();
 
-        foreach (['core_session', 'core_setting', 'core_module_company', 'core_module', 'core_company', 'core_migration_version'] as $table) {
-            $this->connection->executeStatement(sprintf('DROP TABLE IF EXISTS %s', $table));
-        }
+        $this->dropAllTables($this->connection);
 
         $registry = new MigrationRegistry();
         $registry->add(DatabaseContributor::MIGRATION_NAMESPACE, dirname(__DIR__, 2) . '/libs/Database/Migrations');

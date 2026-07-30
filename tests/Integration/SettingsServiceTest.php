@@ -37,9 +37,7 @@ final class SettingsServiceTest extends IntegrationTestCase
     {
         $this->dbal = $this->connection();
 
-        foreach (['core_session', 'core_setting', 'core_module_company', 'core_module', 'core_company', 'core_migration_version'] as $table) {
-            $this->dbal->executeStatement(sprintf('DROP TABLE IF EXISTS %s', $table));
-        }
+        $this->dropAllTables($this->dbal);
 
         $migrations = new MigrationRegistry();
         $migrations->add(DatabaseContributor::MIGRATION_NAMESPACE, dirname(__DIR__, 2) . '/libs/Database/Migrations');

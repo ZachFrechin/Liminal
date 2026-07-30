@@ -28,9 +28,7 @@ final class MigrationRunnerTest extends IntegrationTestCase
     {
         $this->connection = $this->connection();
 
-        foreach (['test_alpha', 'test_beta', 'core_migration_version'] as $table) {
-            $this->connection->executeStatement(sprintf('DROP TABLE IF EXISTS %s', $table));
-        }
+        $this->dropAllTables($this->connection);
 
         $registry = new MigrationRegistry();
         $registry->add(self::ALPHA, __DIR__ . '/Fixtures/MigrationsAlpha');
