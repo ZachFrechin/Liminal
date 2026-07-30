@@ -87,7 +87,7 @@ final class CompanyAdministrationTest extends IntegrationTestCase
     {
         $creation = $this->admin->create('ACME', 'Acme Corp');
 
-        self::assertSame(['authentication', 'companies', 'thirdparty'], $creation->enabledModules);
+        self::assertSame(['authentication', 'companies', 'thirdparty', 'invoice'], $creation->enabledModules);
         self::assertSame([], $creation->notInstalled);
 
         // The row and its enablements landed together.
@@ -95,7 +95,7 @@ final class CompanyAdministrationTest extends IntegrationTestCase
             'SELECT name FROM core_company WHERE id = ?',
             [$creation->companyId],
         ));
-        self::assertEquals(3, $this->dbal->fetchOne(
+        self::assertEquals(4, $this->dbal->fetchOne(
             'SELECT COUNT(*) FROM core_module_company WHERE company_id = ? AND enabled = 1',
             [$creation->companyId],
         ));
@@ -110,10 +110,10 @@ final class CompanyAdministrationTest extends IntegrationTestCase
 
         $creation = $this->admin->create('ACME', 'Acme Corp');
 
-        self::assertSame(['authentication', 'thirdparty'], $creation->enabledModules);
+        self::assertSame(['authentication', 'thirdparty', 'invoice'], $creation->enabledModules);
         self::assertSame(['companies'], $creation->notInstalled);
 
-        self::assertEquals(2, $this->dbal->fetchOne(
+        self::assertEquals(3, $this->dbal->fetchOne(
             'SELECT COUNT(*) FROM core_module_company WHERE company_id = ?',
             [$creation->companyId],
         ));
@@ -129,7 +129,7 @@ final class CompanyAdministrationTest extends IntegrationTestCase
         }
 
         self::assertEquals(1, $this->dbal->fetchOne('SELECT COUNT(*) FROM core_company'));
-        self::assertEquals(3, $this->dbal->fetchOne('SELECT COUNT(*) FROM core_module_company'));
+        self::assertEquals(4, $this->dbal->fetchOne('SELECT COUNT(*) FROM core_module_company'));
     }
 
     public function testRenameMovesTheNameAndOnlyTheName(): void

@@ -80,6 +80,7 @@ final class RoleAdministrationHttpTest extends IntegrationTestCase
         // permission, other modules' included — none may leak as a raw key.
         self::assertStringNotContainsString('thirdparty.permission.', (string) $detail->getBody());
         self::assertStringNotContainsString('companies.permission.', (string) $detail->getBody());
+        self::assertStringNotContainsString('invoice.permission.', (string) $detail->getBody());
 
         $update = $kernel->handle($this->post(
             '/roles/' . $memberId,

@@ -42,5 +42,7 @@ return [
         Liminal\Module\Authentication\AuthenticationModule::class,
         Liminal\Module\Companies\CompaniesModule::class,
         Liminal\Module\Thirdparty\ThirdpartyModule::class,
+        // After thirdparty on purpose: invoice depends on it, one direction.
+        Liminal\Module\Invoice\InvoiceModule::class,
     ],
 ];
