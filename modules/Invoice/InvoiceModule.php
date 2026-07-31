@@ -6,6 +6,8 @@ namespace Liminal\Module\Invoice;
 
 use Liminal\Config\Configuration;
 use Liminal\Module\Invoice\Hook\InvoiceThirdpartyVetoListener;
+use Liminal\Module\Invoice\Http\Api\InvoiceApiDetailHandler;
+use Liminal\Module\Invoice\Http\Api\InvoiceApiListHandler;
 use Liminal\Module\Invoice\Http\InvoiceCreatePageHandler;
 use Liminal\Module\Invoice\Http\InvoiceCreateSubmitHandler;
 use Liminal\Module\Invoice\Http\InvoiceDeleteHandler;
@@ -101,6 +103,11 @@ final class InvoiceModule implements Module, DefinitionProvider
         $routes->post('/invoices/{id:\d+}/lines/{line:\d+}/remove', InvoiceLineRemoveHandler::class, 'invoice.line_remove');
         $routes->post('/invoices/{id:\d+}/validate', InvoiceValidateHandler::class, 'invoice.validate');
         $routes->post('/invoices/{id:\d+}/delete', InvoiceDeleteHandler::class, 'invoice.delete');
+
+        // The JSON face — module-prefixed names: the api routes disable with
+        // the module, /api is a path, not an owner.
+        $routes->get('/api/v1/invoices', InvoiceApiListHandler::class, 'invoice.api.list');
+        $routes->get('/api/v1/invoices/{id:\d+}', InvoiceApiDetailHandler::class, 'invoice.api.detail');
 
         $registries->get(MenuRegistry::class)->add(new MenuItem(
             'invoice.menu.invoices',
