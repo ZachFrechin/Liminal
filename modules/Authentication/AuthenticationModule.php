@@ -10,7 +10,9 @@ use Liminal\Lib\Database\Scope\CompanyContext;
 use Liminal\Lib\Security\Contract\AuthEventLog;
 use Liminal\Lib\Security\Contract\LoginThrottle;
 use Liminal\Lib\Security\Contract\PermissionResolver;
+use Liminal\Lib\Security\Contract\TokenProvider;
 use Liminal\Lib\Security\Contract\UserProvider;
+use Liminal\Module\Authentication\Administration\TokenAdministration;
 use Liminal\Module\Authentication\Administration\UserAdministration;
 use Liminal\Module\Authentication\Console\RoleGrantCommand;
 use Liminal\Module\Authentication\Console\UserCreateCommand;
@@ -37,6 +39,7 @@ use Liminal\Module\Authentication\Http\UserUpdateHandler;
 use Liminal\Module\Authentication\Security\DbalAuthEventLog;
 use Liminal\Module\Authentication\Security\DbalLoginThrottle;
 use Liminal\Module\Authentication\Security\DbalPermissionResolver;
+use Liminal\Module\Authentication\Security\DbalTokenProvider;
 use Liminal\Module\Authentication\Security\DbalUserProvider;
 use Liminal\Registry\CommandRegistry;
 use Liminal\Registry\Contract\DefinitionProvider;
@@ -183,6 +186,11 @@ final class AuthenticationModule implements Module, DefinitionProvider
             UserProvider::class => static fn(ContainerInterface $container): UserProvider
                 => new DbalUserProvider(DeferredConnection::resolver($container)),
 
+            // The bearer credential storage behind the security lib's
+            // contract — the same last-wins override as UserProvider.
+            TokenProvider::class => static fn(ContainerInterface $container): TokenProvider
+                => new DbalTokenProvider(DeferredConnection::resolver($container)),
+
             PermissionResolver::class => static fn(
                 ContainerInterface $container,
                 CompanyContext $context,
@@ -210,6 +218,9 @@ final class AuthenticationModule implements Module, DefinitionProvider
             // resolves every command eagerly.
             UserAdministration::class => static fn(ContainerInterface $container): UserAdministration
                 => new UserAdministration(DeferredConnection::resolver($container)),
+
+            TokenAdministration::class => static fn(ContainerInterface $container): TokenAdministration
+                => new TokenAdministration(DeferredConnection::resolver($container)),
         ];
     }
 }
