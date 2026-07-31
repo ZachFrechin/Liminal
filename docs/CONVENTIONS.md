@@ -232,6 +232,37 @@ what it proves.
 - Company and role codes are immutable after creation and follow a grammar
   (`[A-Z][A-Z0-9_]{0,31}` for companies — a policy, not an inherited
   constraint; `[a-z][a-z0-9_]{0,63}` for roles, mirroring module slugs).
+- **One credential model per request.** A presented `Authorization: Bearer`
+  header authenticates or answers 401 — it never falls back to the session
+  cookie's identity, because downstream exemptions key on the bearer path
+  and a cookie-borne identity must never ride them. A presented-but-invalid
+  credential is never silently ignored either (a typo'd token must read as
+  exactly that, not as a permission bug three screens later).
+- **A pre-authenticated identity travels IN THE REQUEST** (the
+  `PreAuthentication` attribute — per-request, immutable), never through
+  holder state: `CurrentUser` is a process-wide singleton whose
+  unconditional per-request assignment is the worker-mode safety invariant,
+  and "respect it if already set" would turn one request's leftover
+  identity into the next request's credential. Holders keep exactly one
+  writer per request; no middleware reads a holder to decide whether to
+  write it.
+- **The CSRF exemption keys on the VALIDATED bearer credential and on
+  nothing else.** Keying on `Accept` (CORS-safelisted) or on a path prefix
+  would hand cookie-bearing cross-origin requests a bypass. An
+  `Authorization` header cannot be forged cross-origin: forms cannot set
+  headers, and a non-safelisted header forces a preflight this server never
+  grants.
+- **An explicitly requested company is never silently replaced**: the
+  `X-Liminal-Company` header outside the accessible set is a 403, where the
+  session's stored preference falls back — stored residue is untrusted, a
+  header is a live assertion. The stateless branch neither reads nor writes
+  the session (writing the preference would cost one `core_session` INSERT
+  plus a Set-Cookie per API call).
+- API tokens are stored hash-only (sha256, the session posture), shown once
+  at minting (the one-time-secret rendering deviation), and the raw value
+  carries the `liminal_` prefix so leaked tokens are findable by secret
+  scanners. `last_used_at` touches at most once a minute — the row itself
+  is the throttle state.
 
 ## Hooks and triggers
 
@@ -407,6 +438,19 @@ what it proves.
   means deleting the born invoice while it is still a draft… which the veto
   refuses precisely because the order points at it; the escape is a future
   administrative flow, not a loophole).
+- API gaps, recorded: the v1 surface is read-only — writes are a phase of
+  their own because JSON refusals need the per-module deletion/veto logic
+  extracted from the HTML handlers into services both faces consume; no
+  rate limiting (the LoginThrottle shape is the precedent when wanted); no
+  default token expiry (the column exists, nothing sets it); no
+  admin-manages-others'-tokens surface (self-service plus console only);
+  and generated modules do not (yet) receive an api read surface.
+- Builder gaps, recorded: the `--icon` option travels verbatim — validating
+  it would import the rendering lib into the module lib against the
+  declared lib order (rendering already consumes this lib for its menu), so
+  an unknown glyph throws at first render instead of at generation. The
+  generated migration is proven by PHPStan and the boot, not executed
+  against a live database by the proof test.
 - The per-company uniqueness of thirdparty codes rides the server's
   case-insensitive collation (stock MariaDB utf8mb4 *_ci) — the same
   assumption `uniq_core_company_code` already makes.

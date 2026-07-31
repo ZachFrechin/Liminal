@@ -102,9 +102,9 @@ lib subscribes `AuditTrailListener` to *everything* at an anchor priority
 process): one append-only `core_audit_event` row per fired trigger — name,
 JSON payload, actor, company, timestamp — with **zero foreign keys**, on
 purpose: an audit stores historical facts, not live references, and a
-deleted user's id stays readable verbatim. Twenty-three triggers fire today
-(USER_*, GRANT_*, ROLE_*, COMPANY_*, THIRDPARTY_*, INVOICE_*, ORDER_*); a
-module added next year is audited with zero wiring on its part.
+deleted user's id stays readable verbatim. Twenty-five triggers fire today
+(USER_*, GRANT_*, ROLE_*, TOKEN_*, COMPANY_*, THIRDPARTY_*, INVOICE_*,
+ORDER_*); a module added next year is audited with zero wiring on its part.
 
 Four production **hooks** are declared today: two totals pipelines
 (`invoice.total.compute`, `order.total.compute` — each dispatch site
@@ -186,7 +186,8 @@ tests/{Unit,Integration}
 | 8 | Design system: tokens as served assets, vendored fonts and icons, the application shell, the feedback family | ✅ |
 | 9 | `module/invoice`: customer invoices — drafts, gap-free per-company-per-year numbering, per-rate VAT, the first production hook and the thirdparty deletion veto | ✅ |
 | 10 | `module/order`: customer orders — the money layer hoisted to the lib, a three-state lifecycle, the order→invoice conversion in one transaction, the symmetric deletion veto | ✅ |
-| 11 → | `lib/api`, builder | upcoming |
+| 11 | `lib/api` + the module builder: bearer tokens, the read-only JSON API on all three verticals, `module:create` generating a full CRUD module that passes the toolchain verbatim | ✅ |
+| 12 → | the recorded-gaps ledger: API writes (the deletion-service extraction), PDF documents, payments | upcoming |
 
 ## Security
 
@@ -507,3 +508,50 @@ lets a converted order protect the invoice that realises it — the polite
 layer over the `RESTRICT` foreign key that backs it. Deleting a company
 still cascades every document; deleting one referenced record politely
 refuses.
+
+## The JSON API
+
+Read-only in v1, authenticated by bearer tokens. A token is minted from the
+account page or `authentication:token:create` — the raw value (prefixed
+`liminal_`, findable by secret scanners) is shown exactly once; only its
+sha256 is stored, the session posture. A validated `Authorization: Bearer`
+header becomes a request attribute the security middlewares key on: the
+session cookie is never consulted (one credential model per request), CSRF
+does not apply (no cookie, nothing to forge cross-origin), and the working
+company comes from the optional `X-Liminal-Company` header — refused with
+403 when it names a company outside the user's reach, because an explicitly
+requested company is never silently replaced.
+
+```bash
+curl -H "Authorization: Bearer liminal_…" localhost:8080/api/v1/thirdparties
+curl -H "Authorization: Bearer liminal_…" -H "X-Liminal-Company: 2" localhost:8080/api/v1/orders/1
+```
+
+Success is `{"data": …}` for an item, `{"data": […], "meta": {page, pages,
+total, perPage}}` for a collection; errors keep the kernel's
+`{"error": {status, message}}` envelope that predates the API. Endpoints:
+`/api/v1/thirdparties`, `/api/v1/invoices`, `/api/v1/orders` (list with
+`page` + `q`, detail with lines). The routes belong to the MODULES — named
+`thirdparty.api.list` and so on, so the module gate disables them with the
+module and `/api` stays a path, never an owner. Money travels as the
+DECIMAL strings the entities hold; a foreign company's row answers the same
+404 as a missing one. Writes, rate limiting and token expiry policies are
+recorded gaps.
+
+## The module builder
+
+```bash
+php bin/liminal module:create bookshelf
+```
+
+The promise the front of this README makes — a module never touches the
+core, it only fills registries — is what makes this command possible: it
+renders a COMPLETE CRUD module (manifest with permissions, deletion veto
+and triggers; scoped migration; CompanyScoped entity with an immutable
+code; repository with the two-layer company narrowing; six handlers
+including a veto-dispatching delete; templates; catalogue) from the
+thirdparty pattern. The generated code passes `composer check` verbatim —
+an integration test runs the tree's own PHPStan and php-cs-fixer on the
+generated output to hold that line. The builder never edits config:
+declaring the module in `config/app.php` is the operator's gesture, printed
+at the end with the migrate/enable steps.

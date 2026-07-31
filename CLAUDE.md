@@ -131,6 +131,28 @@ freeze validates at every boot. Four production hooks:
 invoice.total.compute, order.total.compute, thirdparty.deletion.veto
 (2 responders), invoice.deletion.veto.
 
+API & builder (11): bearer auth = Security's (TokenProvider contract +
+Null default, 5th instance; `core_api_token` hash-only côté Authentication,
+surrogate id + token_hash UNIQUE). **L'identité pré-authentifiée voyage
+DANS LA REQUÊTE** (attribut PreAuthentication) — jamais « respecter un
+holder déjà posé » (identité résiduelle worker-mode) ; un seul modèle de
+credential par requête (Bearer présent ⇒ token ou 401, jamais de repli
+cookie) ; exemption CSRF clé sur la credential VALIDÉE (jamais Accept ni
+chemin) ; X-Liminal-Company hors accessible = 403, jamais remplacée ; la
+branche stateless ne lit/n'écrit JAMAIS la session (sinon un INSERT
+core_session + Set-Cookie par appel). BearerTokenMiddleware à 50 (après le
+router : un 404 ne coûte pas de lookup). Routes API = AUX MODULES
+(`thirdparty.api.list` → gate `thirdparty` ; /api est un chemin, pas un
+propriétaire) ; lib Api = ApiResponder seul ({data}/{data,meta}) ; erreurs
+= l'enveloppe kernel existante ; PAS de section config api (aucun lecteur).
+Builder : `module:create <slug>` (lib Module, filesystem pur), stubs =
+patron thirdparty CRUD entier, slug validé par Module::NAME_PATTERN (LA
+constante du boot, hoistée), n'écrase jamais, ne touche JAMAIS config ;
+preuve = ModuleBuilderTest (boot temp root + exec phpstan/cs-fixer du repo
+sur le généré ; pièges épinglés : --autoload-file pour l'extension
+doctrine, realpath du temp dir macOS /var→/private/var sinon 48 erreurs
+fantômes). 25 triggers (TOKEN_CREATED/REVOKED).
+
 Hooks & triggers (7): declare-then-listen (dispatcher declares the name,
 consumers subscribe by service id, freeze validates targets). Hook =
 sync, value travels, exceptions PROPAGATE, `module.noun.verb`. Trigger =
