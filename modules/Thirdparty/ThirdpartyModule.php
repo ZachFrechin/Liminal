@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Liminal\Module\Thirdparty;
 
 use Liminal\Config\Configuration;
+use Liminal\Module\Thirdparty\Http\Api\ThirdpartyApiDetailHandler;
+use Liminal\Module\Thirdparty\Http\Api\ThirdpartyApiListHandler;
 use Liminal\Module\Thirdparty\Http\ThirdpartyCreatePageHandler;
 use Liminal\Module\Thirdparty\Http\ThirdpartyCreateSubmitHandler;
 use Liminal\Module\Thirdparty\Http\ThirdpartyDeleteHandler;
@@ -85,6 +87,12 @@ final class ThirdpartyModule implements Module, DefinitionProvider
         $routes->get('/thirdparties/{id:\d+}', ThirdpartyDetailHandler::class, 'thirdparty.detail');
         $routes->post('/thirdparties/{id:\d+}', ThirdpartyUpdateHandler::class, 'thirdparty.update');
         $routes->post('/thirdparties/{id:\d+}/delete', ThirdpartyDeleteHandler::class, 'thirdparty.delete');
+
+        // The JSON face, named under THIS module's prefix on purpose: the
+        // module gate keys on the segment before the first dot, so the api
+        // routes disable with the module — /api is a path, not an owner.
+        $routes->get('/api/v1/thirdparties', ThirdpartyApiListHandler::class, 'thirdparty.api.list');
+        $routes->get('/api/v1/thirdparties/{id:\d+}', ThirdpartyApiDetailHandler::class, 'thirdparty.api.detail');
 
         // The first read/write split: read opens the pages, manage the writes,
         // and manage presumes read (every handler authorizes read first).
