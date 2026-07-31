@@ -31,6 +31,27 @@ class Company
     #[ORM\Column(type: Types::STRING, length: 255)]
     private string $name;
 
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    private ?string $address = null;
+
+    #[ORM\Column(type: Types::STRING, length: 16, nullable: true)]
+    private ?string $zip = null;
+
+    #[ORM\Column(type: Types::STRING, length: 128, nullable: true)]
+    private ?string $town = null;
+
+    #[ORM\Column(name: 'country_code', type: Types::STRING, length: 2, nullable: true, options: ['fixed' => true])]
+    private ?string $countryCode = null;
+
+    #[ORM\Column(name: 'vat_number', type: Types::STRING, length: 32, nullable: true)]
+    private ?string $vatNumber = null;
+
+    #[ORM\Column(type: Types::STRING, length: 64, nullable: true)]
+    private ?string $registration = null;
+
+    #[ORM\Column(name: 'legal_mentions', type: Types::TEXT, nullable: true)]
+    private ?string $legalMentions = null;
+
     #[ORM\Column(name: 'created_at', type: Types::DATETIME_IMMUTABLE)]
     private DateTimeImmutable $createdAt;
 
@@ -73,6 +94,63 @@ class Company
     public function rename(string $name): void
     {
         $this->name = $name;
+    }
+
+    /**
+     * The one "edit the identity" gesture — what a legal document says about
+     * its issuer. The name stays rename()'s: two mutations, two audit facts.
+     */
+    public function updateIdentity(
+        ?string $address,
+        ?string $zip,
+        ?string $town,
+        ?string $countryCode,
+        ?string $vatNumber,
+        ?string $registration,
+        ?string $legalMentions,
+    ): void {
+        $this->address = $address;
+        $this->zip = $zip;
+        $this->town = $town;
+        $this->countryCode = $countryCode;
+        $this->vatNumber = $vatNumber;
+        $this->registration = $registration;
+        $this->legalMentions = $legalMentions;
+    }
+
+    public function getAddress(): ?string
+    {
+        return $this->address;
+    }
+
+    public function getZip(): ?string
+    {
+        return $this->zip;
+    }
+
+    public function getTown(): ?string
+    {
+        return $this->town;
+    }
+
+    public function getCountryCode(): ?string
+    {
+        return $this->countryCode;
+    }
+
+    public function getVatNumber(): ?string
+    {
+        return $this->vatNumber;
+    }
+
+    public function getRegistration(): ?string
+    {
+        return $this->registration;
+    }
+
+    public function getLegalMentions(): ?string
+    {
+        return $this->legalMentions;
     }
 
     #[ORM\PreUpdate]

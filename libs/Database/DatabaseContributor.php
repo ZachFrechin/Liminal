@@ -15,6 +15,7 @@ use Liminal\Lib\Database\Migration\MigrationFactory;
 use Liminal\Lib\Database\Migration\MigrationRunner;
 use Liminal\Lib\Database\Scope\CompanyContext;
 use Liminal\Lib\Database\Scope\CompanyDirectory;
+use Liminal\Lib\Database\Scope\CompanyIdentity;
 use Liminal\Registry\CommandRegistry;
 use Liminal\Registry\Contract\Contributor;
 use Liminal\Registry\Contract\DefinitionProvider;
@@ -96,6 +97,12 @@ final class DatabaseContributor implements Contributor, DefinitionProvider
             // and templates render on DSN-less checkouts (public pages).
             CompanyDirectory::class => static fn(ContainerInterface $container): CompanyDirectory
                 => new CompanyDirectory(DeferredConnection::resolver($container)),
+
+            // The issuer block of legal documents — a dedicated reader, not
+            // a widening of the directory: the switcher keeps its bounded
+            // vocabulary, the table stays this lib's own.
+            CompanyIdentity::class => static fn(ContainerInterface $container): CompanyIdentity
+                => new CompanyIdentity(DeferredConnection::resolver($container)),
         ];
     }
 
