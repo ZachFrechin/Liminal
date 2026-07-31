@@ -22,4 +22,12 @@ final class DatabaseException extends RuntimeException implements LiminalExcepti
     {
         return new self('Container returned an unexpected type for the database connection.');
     }
+
+    public static function unsafeSequenceTable(string $table): self
+    {
+        return new self(sprintf(
+            'Sequence table name "%s" is not a bare lowercase identifier — table names come from module constants, never from input.',
+            $table,
+        ));
+    }
 }

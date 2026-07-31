@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Liminal\Tests\Unit\Invoice;
+namespace Liminal\Tests\Unit\Database\Money;
 
 use InvalidArgumentException;
-use Liminal\Module\Invoice\Money\Cents;
+use Liminal\Lib\Database\Money\Cents;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 

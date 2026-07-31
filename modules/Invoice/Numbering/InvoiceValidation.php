@@ -7,6 +7,7 @@ namespace Liminal\Module\Invoice\Numbering;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Liminal\Lib\Database\Scope\CompanyContext;
+use Liminal\Lib\Database\Sequence\YearlySequence;
 use Liminal\Module\Invoice\Entity\Invoice;
 use Liminal\Module\Invoice\Repository\InvoiceRepository;
 use Liminal\Module\Invoice\Totals\InvoiceTotalsService;
@@ -56,22 +57,14 @@ final readonly class InvoiceValidation
 
         return $this->entityManager->wrapInTransaction(
             function () use ($invoice, $totals, $issuedOn, $year, $companyId): string {
-                $connection = $this->entityManager->getConnection();
-
-                // The throttle precedent: an atomic increment, never a
-                // read-modify-write. MariaDB's VALUES() on purpose.
-                $connection->executeStatement(
-                    'INSERT INTO invoice_sequence (company_id, year, counter) VALUES (?, ?, 1)'
-                    . ' ON DUPLICATE KEY UPDATE counter = counter + 1',
-                    [$companyId, $year],
+                // One exemplar of the concurrency-bearing claim, shared with
+                // every document sequence; the lock rides OUR transaction.
+                $counter = YearlySequence::claim(
+                    $this->entityManager->getConnection(),
+                    'invoice_sequence',
+                    $companyId,
+                    $year,
                 );
-
-                // Reads its own locked write; race-safe under the held lock.
-                $raw = $connection->fetchOne(
-                    'SELECT counter FROM invoice_sequence WHERE company_id = ? AND year = ?',
-                    [$companyId, $year],
-                );
-                $counter = is_numeric($raw) ? (int) $raw : 1;
 
                 $number = sprintf('INV-%d-%04d', $year, $counter);
                 $invoice->validate($number, $totals, $issuedOn);

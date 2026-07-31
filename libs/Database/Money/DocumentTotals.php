@@ -2,19 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Liminal\Module\Invoice\Totals;
-
-use Liminal\Module\Invoice\Exception\InvoiceModuleException;
-use Liminal\Module\Invoice\Money\Cents;
+namespace Liminal\Lib\Database\Money;
 
 /**
- * What an invoice adds up to, in integer cents: the value that travels
- * through invoice.total.compute. Listeners receive one and return one; the
- * dispatch site validates the instance, this constructor validates the
- * range — DECIMAL(14,2) is the storage ceiling, and the form caps keep
- * legitimate values far below it, so an overflow here is a listener bug.
+ * What a document adds up to, in integer cents: the value that travels
+ * through every <module>.total.compute hook. Listeners receive one and
+ * return one; each dispatch site validates the instance, this constructor
+ * validates the range — DECIMAL(14,2) is the storage ceiling, and the form
+ * caps keep legitimate values far below it, so an overflow here is a
+ * listener bug.
+ *
+ * Born as InvoiceTotals in the invoice module and hoisted the day the order
+ * module became the second document — the Page<T> precedent.
  */
-final readonly class InvoiceTotals
+final readonly class DocumentTotals
 {
     /** 999 999 999 999.99 — what DECIMAL(14,2) can hold. */
     private const int MAX_CENTS = 99_999_999_999_999;
@@ -22,7 +23,7 @@ final readonly class InvoiceTotals
     /**
      * @param array<string, int> $vatByRate cents of VAT per 2-decimal rate string, e.g. '20.00' => 350
      *
-     * @throws InvoiceModuleException when a total exceeds the storage ceiling
+     * @throws MoneyException when a total exceeds the storage ceiling
      */
     public function __construct(
         public int $totalExcl,
@@ -31,7 +32,7 @@ final readonly class InvoiceTotals
     ) {
         foreach (['excluding-tax' => $totalExcl, 'including-tax' => $totalIncl, 'tax' => $this->totalTax()] as $which => $cents) {
             if ($cents < 0 || $cents > self::MAX_CENTS) {
-                throw InvoiceModuleException::totalsOutOfRange($which, $cents);
+                throw MoneyException::totalsOutOfRange($which, $cents);
             }
         }
     }

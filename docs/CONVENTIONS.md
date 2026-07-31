@@ -173,7 +173,9 @@ what it proves.
   happens in integer cents; form value objects cap each field so no product
   can leave int64 (a shared wide regex is how cents get fabricated through
   float promotion); VAT rounds **per rate group** so the printed ventilation
-  agrees with the totals. `modules/Invoice/Money/Cents.php` is the reference.
+  agrees with the totals. `libs/Database/Money/Cents.php` is the reference, and the rounding
+  rules live once, in the lib's `TotalsCalculator` over the `DocumentLine`
+  contract.
 - Cascade semantics are MEASURED, not assumed: MariaDB resolves the
   company-delete diamond (documents, lines and thirdparties cascade in one
   statement — the RESTRICT never fires when the referencing row dies in the

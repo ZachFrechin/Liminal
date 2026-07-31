@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Liminal\Module\Invoice\Http;
 
 use Liminal\Http\Exception\HttpException;
+use Liminal\Lib\Database\Money\Cents;
 use Liminal\Lib\Rendering\HtmlRenderer;
 use Liminal\Lib\Security\Authorization\Gate;
 use Liminal\Lib\Security\Authorization\RequestGate;
 use Liminal\Module\Invoice\Entity\InvoiceLine;
 use Liminal\Module\Invoice\InvoiceModule;
-use Liminal\Module\Invoice\Money\Cents;
 use Liminal\Module\Invoice\Repository\InvoiceRepository;
 use Liminal\Module\Invoice\Totals\InvoiceTotalsService;
 use Liminal\Module\Thirdparty\Repository\ThirdpartyRepository;

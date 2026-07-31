@@ -29,19 +29,11 @@ final class InvoiceModuleException extends LogicException implements LiminalExce
     public static function foreignTotals(string $type): self
     {
         return new self(sprintf(
-            'An invoice.total.compute listener returned %s instead of InvoiceTotals — the declarer validates the shape, and this one is wiring.',
+            'An invoice.total.compute listener returned %s instead of DocumentTotals — the declarer validates the shape, and this one is wiring.',
             $type,
         ));
     }
 
-    public static function totalsOutOfRange(string $which, int $cents): self
-    {
-        return new self(sprintf(
-            'The %s total (%d cents) exceeds what DECIMAL(14,2) stores: the form caps should have made this unreachable.',
-            $which,
-            $cents,
-        ));
-    }
 
     public static function unpersistedInvoice(): self
     {

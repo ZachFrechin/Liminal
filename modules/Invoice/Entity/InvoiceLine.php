@@ -7,6 +7,7 @@ namespace Liminal\Module\Invoice\Entity;
 use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Liminal\Lib\Database\Money\Contract\DocumentLine;
 use Liminal\Lib\Database\Scope\CompanyScoped;
 use Liminal\Lib\Database\Scope\CompanyScopedTrait;
 
@@ -23,7 +24,7 @@ use Liminal\Lib\Database\Scope\CompanyScopedTrait;
 #[ORM\Table(name: 'invoice_invoice_line')]
 #[ORM\Index(name: 'idx_invoice_line_company_invoice', columns: ['company_id', 'invoice_id', 'position'])]
 #[ORM\HasLifecycleCallbacks]
-class InvoiceLine implements CompanyScoped
+class InvoiceLine implements CompanyScoped, DocumentLine
 {
     use CompanyScopedTrait;
 

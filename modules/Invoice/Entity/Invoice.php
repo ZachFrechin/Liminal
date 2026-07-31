@@ -7,10 +7,10 @@ namespace Liminal\Module\Invoice\Entity;
 use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Liminal\Lib\Database\Money\DocumentTotals;
 use Liminal\Lib\Database\Scope\CompanyScoped;
 use Liminal\Lib\Database\Scope\CompanyScopedTrait;
 use Liminal\Module\Invoice\Exception\InvoiceModuleException;
-use Liminal\Module\Invoice\Totals\InvoiceTotals;
 
 /**
  * A customer invoice: a draft until validated, a legal record after.
@@ -104,7 +104,7 @@ class Invoice implements CompanyScoped
      *
      * @throws InvoiceModuleException when the invoice is validated
      */
-    public function refreshTotals(InvoiceTotals $totals): void
+    public function refreshTotals(DocumentTotals $totals): void
     {
         $this->assertDraft();
 
@@ -118,7 +118,7 @@ class Invoice implements CompanyScoped
      *
      * @throws InvoiceModuleException when the invoice is validated already
      */
-    public function validate(string $number, InvoiceTotals $totals, DateTimeImmutable $issuedOn): void
+    public function validate(string $number, DocumentTotals $totals, DateTimeImmutable $issuedOn): void
     {
         $this->assertDraft();
 
@@ -184,7 +184,7 @@ class Invoice implements CompanyScoped
         $this->updatedAt = new DateTimeImmutable();
     }
 
-    private function storeTotals(InvoiceTotals $totals): void
+    private function storeTotals(DocumentTotals $totals): void
     {
         $this->totalExcl = $totals->totalExclAsDecimal();
         $this->totalTax = $totals->totalTaxAsDecimal();

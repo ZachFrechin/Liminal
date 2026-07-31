@@ -2,17 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Liminal\Tests\Unit\Invoice;
+namespace Liminal\Tests\Unit\Database\Money;
 
-use Liminal\Module\Invoice\Entity\InvoiceLine;
-use Liminal\Module\Invoice\Exception\InvoiceModuleException;
-use Liminal\Module\Invoice\Totals\InvoiceTotals;
-use Liminal\Module\Invoice\Totals\TotalsCalculator;
+use Liminal\Lib\Database\Money\Contract\DocumentLine;
+use Liminal\Lib\Database\Money\DocumentTotals;
+use Liminal\Lib\Database\Money\MoneyException;
+use Liminal\Lib\Database\Money\TotalsCalculator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * The rounding rules of the whole tree, in one place: a lib test on a bare
+ * DocumentLine double — no module entity anywhere near it.
+ */
 #[CoversClass(TotalsCalculator::class)]
-#[CoversClass(InvoiceTotals::class)]
+#[CoversClass(DocumentTotals::class)]
 final class TotalsCalculatorTest extends TestCase
 {
     private TotalsCalculator $calculator;
@@ -78,7 +82,7 @@ final class TotalsCalculatorTest extends TestCase
         self::assertSame(['20.00' => 1000], $totals->vatByRate);
     }
 
-    public function testAnEmptyInvoiceIsAllZeros(): void
+    public function testAnEmptyDocumentIsAllZeros(): void
     {
         $totals = $this->calculator->compute([]);
 
@@ -91,14 +95,35 @@ final class TotalsCalculatorTest extends TestCase
     public function testTotalsBeyondTheStorageCeilingThrow(): void
     {
         // A listener bug, not a form value: the caps keep real input far away.
-        $this->expectException(InvoiceModuleException::class);
+        $this->expectException(MoneyException::class);
         $this->expectExceptionMessage('DECIMAL(14,2)');
 
-        new InvoiceTotals(99_999_999_999_999 + 1, [], 0);
+        new DocumentTotals(99_999_999_999_999 + 1, [], 0);
     }
 
-    private function line(string $quantity, string $unitPrice, string $vatRate): InvoiceLine
+    private function line(string $quantity, string $unitPrice, string $vatRate): DocumentLine
     {
-        return new InvoiceLine(1, 1, 'A line', $quantity, $unitPrice, $vatRate);
+        return new readonly class ($quantity, $unitPrice, $vatRate) implements DocumentLine {
+            public function __construct(
+                private string $quantity,
+                private string $unitPrice,
+                private string $vatRate,
+            ) {}
+
+            public function getQuantity(): string
+            {
+                return $this->quantity;
+            }
+
+            public function getUnitPrice(): string
+            {
+                return $this->unitPrice;
+            }
+
+            public function getVatRate(): string
+            {
+                return $this->vatRate;
+            }
+        };
     }
 }

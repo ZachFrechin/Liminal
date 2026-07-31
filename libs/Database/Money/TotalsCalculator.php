@@ -2,29 +2,29 @@
 
 declare(strict_types=1);
 
-namespace Liminal\Module\Invoice\Totals;
+namespace Liminal\Lib\Database\Money;
 
-use Liminal\Module\Invoice\Entity\InvoiceLine;
-use Liminal\Module\Invoice\Money\Cents;
+use Liminal\Lib\Database\Money\Contract\DocumentLine;
 
 /**
- * Adds an invoice up, in integer cents.
+ * Adds a document up, in integer cents.
  *
  * Line total = round-half-up(quantity × unit price). VAT is rounded PER RATE
  * GROUP, not per line: sum the taxable base of each rate, then round its tax
- * once — that is the ventilation the invoice displays, and rounding anywhere
+ * once — that is the ventilation the document displays, and rounding anywhere
  * else would make the printed breakdown disagree with the total.
  *
  * Bounds: the form caps quantity at 6 integer digits and unit price at 8, so
  * the worst product of hundredths stays near 10^18 — inside int64 with a
- * ninefold margin. No float touches an amount at any step.
+ * ninefold margin. No float touches an amount at any step. These rounding
+ * rules exist exactly ONCE, here — that is the whole point of the hoist.
  */
 final readonly class TotalsCalculator
 {
     /**
-     * @param list<InvoiceLine> $lines
+     * @param list<DocumentLine> $lines
      */
-    public function compute(array $lines): InvoiceTotals
+    public function compute(array $lines): DocumentTotals
     {
         $baseByRate = [];
 
@@ -50,6 +50,6 @@ final readonly class TotalsCalculator
             $vatByRate[$rate] = intdiv($base * Cents::fromDecimal($rate) + 5_000, 10_000);
         }
 
-        return new InvoiceTotals($totalExcl, $vatByRate, $totalExcl + array_sum($vatByRate));
+        return new DocumentTotals($totalExcl, $vatByRate, $totalExcl + array_sum($vatByRate));
     }
 }

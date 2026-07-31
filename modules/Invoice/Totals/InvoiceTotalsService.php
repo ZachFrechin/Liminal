@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Liminal\Module\Invoice\Totals;
 
+use Liminal\Lib\Database\Money\DocumentTotals;
+use Liminal\Lib\Database\Money\TotalsCalculator;
 use Liminal\Lib\Database\Scope\CompanyContext;
 use Liminal\Lib\Hook\Hooks;
 use Liminal\Module\Invoice\Entity\Invoice;
@@ -31,7 +33,7 @@ final readonly class InvoiceTotalsService
      *
      * @throws InvoiceModuleException when the invoice was never flushed, or a listener returned a foreign shape
      */
-    public function totalsFor(Invoice $invoice, array $lines): InvoiceTotals
+    public function totalsFor(Invoice $invoice, array $lines): DocumentTotals
     {
         $id = $invoice->getId() ?? throw InvoiceModuleException::unpersistedInvoice();
 
@@ -40,7 +42,7 @@ final readonly class InvoiceTotalsService
             'company_id' => $this->context->currentId(),
         ]);
 
-        return $totals instanceof InvoiceTotals
+        return $totals instanceof DocumentTotals
             ? $totals
             : throw InvoiceModuleException::foreignTotals(get_debug_type($totals));
     }

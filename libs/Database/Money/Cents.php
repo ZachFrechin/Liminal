@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Liminal\Module\Invoice\Money;
+namespace Liminal\Lib\Database\Money;
 
 use InvalidArgumentException;
 

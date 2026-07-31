@@ -108,7 +108,7 @@ bare-flush rule; émission IS validation, number from the validation day's
 year). Company-delete cascade carries documents (measured); targeted
 thirdparty delete refused by RESTRICT + answered politely by
 `thirdparty.deletion.veto`. Production hooks: `invoice.total.compute`
-(dispatch validates the returned InvoiceTotals) + the veto listener.
+(dispatch validates the returned DocumentTotals) + the veto listener.
 
 Hooks & triggers (7): declare-then-listen (dispatcher declares the name,
 consumers subscribe by service id, freeze validates targets). Hook =
