@@ -34,7 +34,7 @@
     {% if canManage %}
         <section class="panel">
             <h2>{{ 'thirdparty.detail.edit'|trans }}</h2>
-            <form method="post" action="{{ url('thirdparty.update', {'id': thirdparty.id}) }}">
+            <form class="form-stack" method="post" action="{{ url('thirdparty.update', {'id': thirdparty.id}) }}">
                 {{ csrf_field() }}
                 {% include '@thirdparty/_fields.html.twig' with {'values': {
                     'code': thirdparty.code,

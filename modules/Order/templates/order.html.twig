@@ -30,7 +30,7 @@
     {% if canManage and order.draft %}
         <section class="panel">
             <h2>{{ 'order.detail.edit'|trans }}</h2>
-            <form method="post" action="{{ url('order.update', {'id': order.id}) }}">
+            <form class="form-stack" method="post" action="{{ url('order.update', {'id': order.id}) }}">
                 {{ csrf_field() }}
                 <p class="field">
                     <label for="thirdparty_id">{{ 'order.create.thirdparty'|trans }}</label>

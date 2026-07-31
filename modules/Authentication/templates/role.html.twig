@@ -10,7 +10,7 @@
     </header>
 
     <section class="panel">
-        <form method="post" action="{{ url('authentication.role_update', {'id': role.id}) }}">
+        <form class="form-stack" method="post" action="{{ url('authentication.role_update', {'id': role.id}) }}">
             {{ csrf_field() }}
 
             <p class="field">

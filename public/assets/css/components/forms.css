@@ -43,6 +43,14 @@ legend {
 }
 .form-actions { display: flex; gap: var(--sp-4); align-items: center; padding-top: var(--sp-2); }
 
+/* The edit form inside a panel. A form is a plain block and every margin in
+   this system is zeroed, so an unclassed form collapsed its fields to no
+   spacing at all — the reason a create screen read well and its edit twin
+   read as a draft. Explicitly a class, never `.panel form`: that descendant
+   would outrank .form-inline, capture the one-button forms living in table
+   cells, and stretch lone buttons across the panel. */
+.form-stack { display: grid; gap: var(--sp-6); justify-items: stretch; }
+
 /* Label-led inline forms (the grant-add row). */
 .form-inline { display: flex; gap: var(--sp-4); align-items: end; flex-wrap: wrap; }
 .form-inline .field { flex: 1; min-width: 180px; }
@@ -78,7 +86,10 @@ button.danger:hover { background: var(--danger-50); }
   display: grid;
   gap: var(--sp-6);
 }
-.panel > h2 { font: var(--text-ui); font-size: var(--fs-14); }
+/* Descendant, not child: a section title nested inside the panel's form is
+   still that section's title, and the child combinator left it rendering at
+   heading-1 scale — three different h2 regimes across six screens. */
+.panel h2 { font: var(--text-ui); font-size: var(--fs-14); }
 
 /* Key-value list on detail pages. */
 dl.kv { margin: 0; display: grid; grid-template-columns: max-content 1fr; column-gap: var(--sp-9); row-gap: var(--sp-4); }
@@ -86,19 +97,19 @@ dl.kv dt { font: var(--text-label); color: var(--text-tertiary); }
 dl.kv dd { margin: 0; font: var(--text-body-sm); }
 
 /* Destructive actions live apart, named and bordered. */
+/* Same grammar as a panel — title, then prose, then the action — because a
+   section that reads differently from every other section reads as an
+   accident. Only the border says this one is dangerous. */
 .danger-zone {
   border: 1px solid var(--danger-200);
   border-radius: var(--radius-md);
-  padding: var(--sp-6) var(--sp-7);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-6);
-  flex-wrap: wrap;
+  padding: var(--sp-7);
+  display: grid;
+  gap: var(--sp-4);
 }
+.danger-zone form { justify-self: start; }
 .danger-zone h2 { font: var(--text-ui); font-size: var(--fs-14); color: var(--danger-700); }
 .danger-zone p { font: var(--text-meta); color: var(--text-secondary); max-width: 60ch; }
-.danger-zone form { margin-left: auto; }
 
 /* The one-time secret: the only copy that will ever exist in the clear. */
 code.one-time-password {

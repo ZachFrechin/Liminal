@@ -9,7 +9,7 @@
     </header>
 
     <section class="panel">
-        <form method="post" action="{{ url('companies.company_rename', {'id': company.id}) }}">
+        <form class="form-stack" method="post" action="{{ url('companies.company_rename', {'id': company.id}) }}">
             {{ csrf_field() }}
 
             <p class="field">
@@ -26,7 +26,7 @@
     <section class="panel">
         <h2>{{ 'companies.company.identity'|trans }}</h2>
         <p class="field-hint">{{ 'companies.company.identity_hint'|trans }}</p>
-        <form method="post" action="{{ url('companies.company_identity', {'id': company.id}) }}">
+        <form class="form-stack" method="post" action="{{ url('companies.company_identity', {'id': company.id}) }}">
             {{ csrf_field() }}
 
             <p class="field">
