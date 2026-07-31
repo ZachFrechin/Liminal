@@ -11,15 +11,18 @@ use Liminal\Lib\Hook\Contract\TriggerScope;
 use Liminal\Lib\Security\Audit\AuditTrailListener;
 use Liminal\Lib\Security\Audit\AuthenticatedTriggerScope;
 use Liminal\Lib\Security\Authentication\AuthenticationMiddleware;
+use Liminal\Lib\Security\Authentication\BearerTokenMiddleware;
 use Liminal\Lib\Security\Authentication\CurrentUser;
 use Liminal\Lib\Security\Authentication\NullAuthEventLog;
 use Liminal\Lib\Security\Authentication\NullLoginThrottle;
+use Liminal\Lib\Security\Authentication\NullTokenProvider;
 use Liminal\Lib\Security\Authentication\NullUserProvider;
 use Liminal\Lib\Security\Authorization\DenyAllResolver;
 use Liminal\Lib\Security\Console\SessionGcCommand;
 use Liminal\Lib\Security\Contract\AuthEventLog;
 use Liminal\Lib\Security\Contract\LoginThrottle;
 use Liminal\Lib\Security\Contract\PermissionResolver;
+use Liminal\Lib\Security\Contract\TokenProvider;
 use Liminal\Lib\Security\Contract\UserProvider;
 use Liminal\Lib\Security\Csrf\CsrfMiddleware;
 use Liminal\Lib\Security\Scope\CompanySwitchMiddleware;
@@ -47,6 +50,12 @@ final class SecurityContributor implements Contributor, DefinitionProvider
     /** Sessions load before anything else in the request can want them. */
     public const int SESSION_PRIORITY = -900;
 
+    /**
+     * After the router (an unknown path 404s before any token lookup), before
+     * the session-based authentication it pre-empts.
+     */
+    public const int BEARER_PRIORITY = 50;
+
     /** After the router (needs the matched route's public flag). */
     public const int AUTHENTICATION_PRIORITY = 100;
 
@@ -70,6 +79,7 @@ final class SecurityContributor implements Contributor, DefinitionProvider
 
         $middleware = $registries->get(MiddlewareRegistry::class);
         $middleware->add(SessionMiddleware::class, self::SESSION_PRIORITY);
+        $middleware->add(BearerTokenMiddleware::class, self::BEARER_PRIORITY);
         $middleware->add(AuthenticationMiddleware::class, self::AUTHENTICATION_PRIORITY);
         $middleware->add(CsrfMiddleware::class, self::CSRF_PRIORITY);
         $middleware->add(CompanySwitchMiddleware::class, self::COMPANY_SWITCH_PRIORITY);
@@ -121,6 +131,11 @@ final class SecurityContributor implements Contributor, DefinitionProvider
             PermissionResolver::class => static fn(): PermissionResolver => new DenyAllResolver(),
 
             UserProvider::class => static fn(): UserProvider => new NullUserProvider(),
+
+            // Same fail-closed shape for bearer credentials: no token exists
+            // until the authentication module brings storage, so every
+            // presented Authorization header refuses.
+            TokenProvider::class => static fn(): TokenProvider => new NullTokenProvider(),
 
             // The one default that is NOT fail-closed, deliberately: refusing
             // every login until a module ships storage would make a fresh

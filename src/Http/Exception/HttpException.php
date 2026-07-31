@@ -52,6 +52,21 @@ final class HttpException extends RuntimeException implements LiminalException
     }
 
     /**
+     * The bearer counterpart of unauthorized(): here the client DID present a
+     * credential, so RFC 6750 applies in full and the WWW-Authenticate header
+     * says why. Kept separate from unauthorized() because cookie flows omit
+     * the header deliberately.
+     */
+    public static function invalidBearerToken(): self
+    {
+        return new self(
+            401,
+            'The bearer token is invalid or expired.',
+            ['WWW-Authenticate' => 'Bearer error="invalid_token"'],
+        );
+    }
+
+    /**
      * 403, not the non-standard 419: the error handler renders the code
      * verbatim and standard codes are the norm. The message is distinct from a
      * permission 403 so the two are told apart client-side.

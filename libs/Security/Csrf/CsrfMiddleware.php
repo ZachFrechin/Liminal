@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Liminal\Lib\Security\Csrf;
 
 use Liminal\Http\Exception\HttpException;
+use Liminal\Lib\Security\Authentication\PreAuthentication;
 use Liminal\Lib\Security\Exception\AuthenticationException;
 use Liminal\Lib\Security\Session\Session;
 use Liminal\Lib\Security\Session\SessionMiddleware;
@@ -18,6 +19,13 @@ use Psr\Http\Server\RequestHandlerInterface;
  * post-routing but needs only the session and the method — which is exactly
  * why the login POST on a public route is covered too: the anonymous
  * session's token protects the login form itself.
+ *
+ * Requests carrying a PreAuthentication attribute are exempt: the credential
+ * was a validated Authorization header, which no cross-origin page can forge
+ * (forms cannot set headers, and a non-safelisted header forces a CORS
+ * preflight this server never grants). The exemption keys on the VALIDATED
+ * credential and on nothing else — keying on Accept or on a path prefix
+ * would hand cookie-bearing cross-origin requests a CSRF bypass.
  */
 final readonly class CsrfMiddleware implements MiddlewareInterface
 {
@@ -37,6 +45,10 @@ final readonly class CsrfMiddleware implements MiddlewareInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         if (!in_array($request->getMethod(), self::UNSAFE_METHODS, true)) {
+            return $handler->handle($request);
+        }
+
+        if ($request->getAttribute(PreAuthentication::ATTRIBUTE) instanceof PreAuthentication) {
             return $handler->handle($request);
         }
 

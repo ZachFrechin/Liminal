@@ -26,6 +26,11 @@ use Psr\Http\Server\RequestHandlerInterface;
  * are data states. The CurrentUser holder is assigned UNCONDITIONALLY, set or
  * cleared, so no identity ever leaks into the next request of a worker-mode
  * runtime.
+ *
+ * A PreAuthentication attribute (a bearer credential validated upstream)
+ * takes precedence over the session: the identity travels in the request —
+ * per-request, immutable — and the session is not consulted at all. The
+ * holder is still assigned on every request; only the source changes.
  */
 final readonly class AuthenticationMiddleware implements MiddlewareInterface
 {
@@ -50,6 +55,14 @@ final readonly class AuthenticationMiddleware implements MiddlewareInterface
 
         if (!$match instanceof RouteMatch || $match->route === null) {
             throw AuthenticationException::routeMissing(self::class);
+        }
+
+        $pre = $request->getAttribute(PreAuthentication::ATTRIBUTE);
+
+        if ($pre instanceof PreAuthentication) {
+            $this->currentUser->set($pre->user);
+
+            return $handler->handle($request);
         }
 
         $user = null;
