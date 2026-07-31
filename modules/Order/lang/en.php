@@ -57,6 +57,8 @@ return [
     'order.detail.save' => 'Save',
     'order.detail.validate' => 'Validate',
     'order.detail.validate_hint' => 'Validation freezes the order and mints its definitive number.',
+    'order.detail.invoice' => 'Invoice this order',
+    'order.detail.invoice_hint' => 'Creates a draft invoice carrying these lines — definitive once done.',
     'order.detail.danger' => 'Danger zone',
     'order.detail.delete' => 'Delete this draft',
 
@@ -72,6 +74,12 @@ return [
     'order.form.immutable' => 'This order left the draft state — it can no longer change.',
     'order.form.needs_lines' => 'An order needs at least one line before validation.',
     'order.form.validated' => 'Order validated.',
+    'order.form.not_validated' => 'Only a validated order can be invoiced.',
+    'order.form.already_invoiced' => 'This order has already been invoiced — the conversion is definitive.',
+    'order.form.invoiced' => 'Draft invoice created from the order.',
+
+    'order.veto.referenced' => 'This third party still has orders in this company — delete or reassign them first.',
+    'order.veto.invoice_referenced' => 'This invoice realises a validated order — it cannot be deleted.',
     'order.form.created' => 'Draft order created.',
     'order.form.updated' => 'Order updated.',
     'order.form.line_added' => 'Line added.',

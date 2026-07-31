@@ -50,6 +50,12 @@ final class OrderModuleTest extends TestCase
             ['ORDER_CREATED', 'ORDER_UPDATED', 'ORDER_VALIDATED', 'ORDER_INVOICED', 'ORDER_DELETED'],
             $triggers->names(),
         );
+
+        // Both return edges as listeners: the thirdparty veto (second
+        // responder in production — this registry is blank, so one here)
+        // and the invoice veto a converted order answers.
+        self::assertCount(1, $hooks->listenersFor('thirdparty.deletion.veto'));
+        self::assertCount(1, $hooks->listenersFor('invoice.deletion.veto'));
     }
 
     private function registriesWith(

@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Liminal\Module\Order;
 
 use Liminal\Config\Configuration;
+use Liminal\Module\Order\Hook\OrderInvoiceVetoListener;
+use Liminal\Module\Order\Hook\OrderThirdpartyVetoListener;
 use Liminal\Module\Order\Http\OrderCreatePageHandler;
 use Liminal\Module\Order\Http\OrderCreateSubmitHandler;
 use Liminal\Module\Order\Http\OrderDeleteHandler;
 use Liminal\Module\Order\Http\OrderDetailHandler;
+use Liminal\Module\Order\Http\OrderInvoiceHandler;
 use Liminal\Module\Order\Http\OrderLineAddHandler;
 use Liminal\Module\Order\Http\OrderLineRemoveHandler;
 use Liminal\Module\Order\Http\OrderListHandler;
@@ -100,6 +103,7 @@ final class OrderModule implements Module, DefinitionProvider
         $routes->post('/orders/{id:\d+}/lines', OrderLineAddHandler::class, 'order.line_add');
         $routes->post('/orders/{id:\d+}/lines/{line:\d+}/remove', OrderLineRemoveHandler::class, 'order.line_remove');
         $routes->post('/orders/{id:\d+}/validate', OrderValidateHandler::class, 'order.validate');
+        $routes->post('/orders/{id:\d+}/invoice', OrderInvoiceHandler::class, 'order.invoice');
         $routes->post('/orders/{id:\d+}/delete', OrderDeleteHandler::class, 'order.delete');
 
         // Between thirdparty (930) and invoice (940): the menu reads the
@@ -116,10 +120,16 @@ final class OrderModule implements Module, DefinitionProvider
         $permissions->add(new Permission(self::READ, 'order.permission.read', self::NAME));
         $permissions->add(new Permission(self::MANAGE, 'order.permission.manage', self::NAME));
 
-        // The order's own totals hook; the veto SUBSCRIPTIONS arrive with
-        // their listeners once invoice.deletion.veto is declared — a listen()
-        // on an undeclared name breaks every boot at freeze.
-        $registries->get(HookRegistry::class)->declare('order.total.compute');
+        // The order's own totals hook — and the two return edges, as
+        // listeners: this module answers the thirdparty veto (second
+        // responder after invoice's — appending to a shared reason list is
+        // the hook working as designed) and the invoice veto (a converted
+        // order speaks for the invoice it became). Neither module ever
+        // imports this one.
+        $hooks = $registries->get(HookRegistry::class);
+        $hooks->declare('order.total.compute');
+        $hooks->listen('thirdparty.deletion.veto', OrderThirdpartyVetoListener::class);
+        $hooks->listen('invoice.deletion.veto', OrderInvoiceVetoListener::class);
 
         $triggers = $registries->get(TriggerRegistry::class);
         $triggers->declare('ORDER_CREATED');

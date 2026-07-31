@@ -125,6 +125,17 @@
         </dl>
     </section>
 
+    {% if canInvoice and order.validated %}
+        <section class="panel">
+            <h2>{{ 'order.detail.invoice'|trans }}</h2>
+            <p class="field-hint">{{ 'order.detail.invoice_hint'|trans }}</p>
+            <form method="post" action="{{ url('order.invoice', {'id': order.id}) }}">
+                {{ csrf_field() }}
+                <button type="submit" class="primary">{{ 'order.detail.invoice'|trans }}</button>
+            </form>
+        </section>
+    {% endif %}
+
     {% if canManage and order.draft %}
         <section class="panel">
             <h2>{{ 'order.detail.validate'|trans }}</h2>
