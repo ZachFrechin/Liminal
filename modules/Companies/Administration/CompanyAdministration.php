@@ -65,12 +65,16 @@ final readonly class CompanyAdministration
     }
 
     /**
-     * @return array{id: int, code: string, name: string}|null
+     * @return array{id: int, code: string, name: string, address: ?string,
+     *               zip: ?string, town: ?string, country_code: ?string,
+     *               vat_number: ?string, registration: ?string,
+     *               legal_mentions: ?string}|null
      */
     public function companyById(int $id): ?array
     {
         $row = ($this->connection)()->fetchAssociative(
-            'SELECT id, code, name FROM core_company WHERE id = ?',
+            'SELECT id, code, name, address, zip, town, country_code, vat_number, registration, legal_mentions
+             FROM core_company WHERE id = ?',
             [$id],
         );
 
@@ -82,7 +86,43 @@ final readonly class CompanyAdministration
             'id' => is_numeric($row['id'] ?? null) ? (int) $row['id'] : 0,
             'code' => is_string($row['code'] ?? null) ? $row['code'] : '',
             'name' => is_string($row['name'] ?? null) ? $row['name'] : '',
+            'address' => is_string($row['address'] ?? null) ? $row['address'] : null,
+            'zip' => is_string($row['zip'] ?? null) ? $row['zip'] : null,
+            'town' => is_string($row['town'] ?? null) ? $row['town'] : null,
+            'country_code' => is_string($row['country_code'] ?? null) ? $row['country_code'] : null,
+            'vat_number' => is_string($row['vat_number'] ?? null) ? $row['vat_number'] : null,
+            'registration' => is_string($row['registration'] ?? null) ? $row['registration'] : null,
+            'legal_mentions' => is_string($row['legal_mentions'] ?? null) ? $row['legal_mentions'] : null,
         ];
+    }
+
+    /**
+     * The identity a legal document prints for this company. Every field is
+     * optional; empty arrives as null, never as an empty string — the PDF's
+     * "content degrades" rule starts at the write.
+     */
+    public function updateIdentity(
+        int $id,
+        ?string $address,
+        ?string $zip,
+        ?string $town,
+        ?string $countryCode,
+        ?string $vatNumber,
+        ?string $registration,
+        ?string $legalMentions,
+    ): bool {
+        $affected = ($this->connection)()->update('core_company', [
+            'address' => $address,
+            'zip' => $zip,
+            'town' => $town,
+            'country_code' => $countryCode,
+            'vat_number' => $vatNumber,
+            'registration' => $registration,
+            'legal_mentions' => $legalMentions,
+            'updated_at' => new DateTimeImmutable()->format(self::TIMESTAMP_FORMAT),
+        ], ['id' => $id]);
+
+        return $affected > 0;
     }
 
     /**

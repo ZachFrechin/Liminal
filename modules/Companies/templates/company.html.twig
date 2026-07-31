@@ -24,6 +24,52 @@
     </section>
 
     <section class="panel">
+        <h2>{{ 'companies.company.identity'|trans }}</h2>
+        <p class="field-hint">{{ 'companies.company.identity_hint'|trans }}</p>
+        <form method="post" action="{{ url('companies.company_identity', {'id': company.id}) }}">
+            {{ csrf_field() }}
+
+            <p class="field">
+                <label for="address">{{ 'companies.company.address'|trans }}</label>
+                <input type="text" id="address" name="address" value="{{ company.address ?? '' }}" maxlength="255">
+            </p>
+            <div class="field-row">
+                <p class="field">
+                    <label for="zip">{{ 'companies.company.zip'|trans }}</label>
+                    <input type="text" id="zip" name="zip" value="{{ company.zip ?? '' }}" maxlength="16">
+                </p>
+                <p class="field">
+                    <label for="town">{{ 'companies.company.town'|trans }}</label>
+                    <input type="text" id="town" name="town" value="{{ company.town ?? '' }}" maxlength="128">
+                </p>
+                <p class="field">
+                    <label for="country_code">{{ 'companies.company.country'|trans }}</label>
+                    <input type="text" id="country_code" name="country_code" value="{{ company.country_code ?? '' }}" maxlength="2" placeholder="FR">
+                </p>
+            </div>
+            <div class="field-row">
+                <p class="field">
+                    <label for="vat_number">{{ 'companies.company.vat_number'|trans }}</label>
+                    <input type="text" id="vat_number" name="vat_number" value="{{ company.vat_number ?? '' }}" maxlength="32">
+                </p>
+                <p class="field">
+                    <label for="registration">{{ 'companies.company.registration'|trans }}</label>
+                    <input type="text" id="registration" name="registration" value="{{ company.registration ?? '' }}" maxlength="64">
+                </p>
+            </div>
+            <p class="field">
+                <label for="legal_mentions">{{ 'companies.company.legal_mentions'|trans }}</label>
+                <textarea id="legal_mentions" name="legal_mentions" rows="3" maxlength="4000">{{ company.legal_mentions ?? '' }}</textarea>
+                <span class="field-hint">{{ 'companies.company.legal_mentions_hint'|trans }}</span>
+            </p>
+
+            <div class="form-actions">
+                <button type="submit" class="primary">{{ 'companies.company.save'|trans }}</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="panel">
         <h2>{{ 'companies.company.modules'|trans }}</h2>
         {# Standing information, not a one-shot flash: a "not installed" row is
            the durable version of the creation warning, remedy included. #}

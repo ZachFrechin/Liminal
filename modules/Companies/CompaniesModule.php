@@ -11,6 +11,7 @@ use Liminal\Module\Companies\Administration\CompanyAdministration;
 use Liminal\Module\Companies\Http\CompanyCreatePageHandler;
 use Liminal\Module\Companies\Http\CompanyCreateSubmitHandler;
 use Liminal\Module\Companies\Http\CompanyDetailHandler;
+use Liminal\Module\Companies\Http\CompanyIdentityHandler;
 use Liminal\Module\Companies\Http\CompanyListHandler;
 use Liminal\Module\Companies\Http\CompanyRenameHandler;
 use Liminal\Registry\Contract\DefinitionProvider;
@@ -71,6 +72,7 @@ final class CompaniesModule implements Module, DefinitionProvider
         $routes->post('/companies/create', CompanyCreateSubmitHandler::class, 'companies.create_submit');
         $routes->get('/companies/{id:\d+}', CompanyDetailHandler::class, 'companies.company');
         $routes->post('/companies/{id:\d+}', CompanyRenameHandler::class, 'companies.company_rename');
+        $routes->post('/companies/{id:\d+}/identity', CompanyIdentityHandler::class, 'companies.company_identity');
 
         $registries->get(PermissionRegistry::class)
             ->add(new Permission(CompanyListHandler::PERMISSION, 'companies.permission.company.manage', self::NAME));
@@ -78,6 +80,7 @@ final class CompaniesModule implements Module, DefinitionProvider
         $triggers = $registries->get(TriggerRegistry::class);
         $triggers->declare('COMPANY_CREATED');
         $triggers->declare('COMPANY_RENAMED');
+        $triggers->declare('COMPANY_UPDATED');
 
         $registries->get(MenuRegistry::class)->add(new MenuItem(
             'companies.menu.companies',

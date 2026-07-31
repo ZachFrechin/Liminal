@@ -187,4 +187,48 @@ final class CompaniesHttpTest extends IntegrationTestCase
 
         self::assertSame(404, $kernel->handle($this->get('/companies/999', $ada))->getStatusCode());
     }
+
+    public function testTheIdentityPanelSavesAndDegradesEmptyToNull(): void
+    {
+        $kernel = $this->kernel();
+        $ada = $this->login($kernel, 'ada@liminal.test');
+
+        $detail = (string) $kernel->handle($this->get('/companies/1', $ada))->getBody();
+        self::assertStringContainsString('Identity', $detail);
+        $token = $this->tokenFrom($detail);
+
+        $saved = $kernel->handle($this->post(
+            '/companies/1/identity',
+            [
+                'address' => '12 rue des Lilas',
+                'zip' => '75011',
+                'town' => 'Paris',
+                'country_code' => 'fr',
+                'vat_number' => 'FR12345678901',
+                'registration' => 'RCS Paris 123 456 789',
+                'legal_mentions' => 'Late penalty: 3x legal rate.',
+                '_token' => $token,
+            ],
+            $ada,
+        ));
+        self::assertSame(302, $saved->getStatusCode());
+
+        $after = (string) $kernel->handle($this->get('/companies/1', $ada))->getBody();
+        self::assertStringContainsString('Identity saved.', $after);
+        self::assertStringContainsString('12 rue des Lilas', $after);
+        // The country code is normalised to uppercase on the way in.
+        self::assertEquals('FR', $this->dbal->fetchOne('SELECT country_code FROM core_company WHERE id = 1'));
+
+        // The mutation is audited.
+        self::assertEquals(1, $this->dbal->fetchOne("SELECT COUNT(*) FROM core_audit_event WHERE event = 'COMPANY_UPDATED'"));
+
+        // Clearing a field stores NULL, never an empty string.
+        $kernel->handle($this->post(
+            '/companies/1/identity',
+            ['address' => '', 'zip' => '75011', 'town' => 'Paris', '_token' => $token],
+            $ada,
+        ));
+        self::assertNull($this->dbal->fetchOne('SELECT address FROM core_company WHERE id = 1'));
+        self::assertNull($this->dbal->fetchOne('SELECT vat_number FROM core_company WHERE id = 1'));
+    }
 }
