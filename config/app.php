@@ -44,5 +44,8 @@ return [
         Liminal\Module\Thirdparty\ThirdpartyModule::class,
         // After thirdparty on purpose: invoice depends on it, one direction.
         Liminal\Module\Invoice\InvoiceModule::class,
+        // After both of its dependencies: an order names a thirdparty, and
+        // converting one creates an invoice.
+        Liminal\Module\Order\OrderModule::class,
     ],
 ];

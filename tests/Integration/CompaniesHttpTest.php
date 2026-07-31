@@ -86,7 +86,7 @@ final class CompaniesHttpTest extends IntegrationTestCase
         $detail = (string) $kernel->handle($this->get($location, $ada))->getBody();
         self::assertStringContainsString('Company created, with every installed module enabled', $detail);
         self::assertStringContainsString('Acme Corp', $detail);
-        self::assertSame(4, preg_match_all('/>\s*enabled\s*</', $detail));
+        self::assertSame(5, preg_match_all('/>\s*enabled\s*</', $detail));
 
         // Grant Bob a role in ACME through the user screen.
         $acmeId = (int) substr($location, strlen('/companies/'));
