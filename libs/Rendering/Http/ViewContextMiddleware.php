@@ -32,6 +32,10 @@ final readonly class ViewContextMiddleware implements MiddlewareInterface
         $session = $request->getAttribute(SessionMiddleware::ATTRIBUTE);
 
         $this->viewContext->set($session instanceof Session ? $session : null);
+        // The path is primed here, before the router, precisely because the
+        // router throws on a 404: read later, a 404 page would light up the
+        // previous request's menu entry.
+        $this->viewContext->setPath($request->getUri()->getPath());
 
         return $handler->handle($request);
     }

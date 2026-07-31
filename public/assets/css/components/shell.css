@@ -115,6 +115,15 @@ button.switcher-row:hover { background: var(--action-quiet-bg-hover); }
   transition: var(--transition-control);
 }
 .sidebar-nav a:hover { background: var(--action-quiet-bg-hover); color: var(--text-secondary); }
+/* The section you are in, not merely the page you are on: a detail page
+   keeps its list lit. Weight and colour carry it — a filled block would
+   shout louder than the accent does anywhere else in the shell. */
+.sidebar-nav a.is-active {
+  background: var(--surface-selected);
+  color: var(--text-primary);
+  font-weight: var(--fw-semibold);
+}
+.sidebar-nav a.is-active > svg.lucide { opacity: 1; color: var(--text-accent); }
 .sidebar-nav a > svg.lucide { opacity: 0.8; flex: none; }
 
 .sidebar-foot { padding: var(--sp-5) var(--sp-6); border-top: 1px solid var(--border-subtle); font: var(--text-meta); color: var(--text-tertiary); }

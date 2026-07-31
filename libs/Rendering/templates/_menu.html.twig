@@ -7,8 +7,12 @@
                 {# The label is a catalogue key, translated at render time like
                    flashes are — an untranslated key on screen is its own alarm. #}
                 {# One physical line, icon before the label: tests pin '>Label</a>'
-                   and the icon markup ends exactly at </svg>. #}
-                <a href="{{ url(node.item.route) }}">{% if node.item.icon %}{{ icon(node.item.icon) }}{% endif %}{{ node.item.label|trans }}</a>
+                   and the icon markup ends exactly at </svg>. The active state
+                   is decided by PATH containment, so a detail page keeps its
+                   section lit — everything the active marker adds stays INSIDE
+                   the opening tag, where no assertion looks. #}
+                {% set _menu_href = url(node.item.route) %}
+                <a href="{{ _menu_href }}"{% if is_current(_menu_href) %} class="is-active" aria-current="page"{% endif %}>{% if node.item.icon %}{{ icon(node.item.icon) }}{% endif %}{{ node.item.label|trans }}</a>
                 {% if node.children is not empty %}
                     {% include '@liminal/_menu.html.twig' with {'nodes': node.children} only %}
                 {% endif %}

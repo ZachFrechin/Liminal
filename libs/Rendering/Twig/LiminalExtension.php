@@ -64,7 +64,34 @@ final class LiminalExtension extends AbstractExtension
             new TwigFunction('accessible_companies', $this->accessibleCompanies(...)),
             new TwigFunction('company_switching', $this->companySwitching(...)),
             new TwigFunction('route_exists', $this->urls->has(...)),
+            new TwigFunction('is_current', $this->isCurrent(...)),
         ];
+    }
+
+    /**
+     * Whether the request is at this href or below it — what marks the active
+     * menu entry. Section containment, not equality: /users/12 is under
+     * /users, and the boundary is a slash so /invoices never claims
+     * /invoices-archive. The path comes from the ViewContext, primed before
+     * the router so a 404 answers honestly instead of keeping the previous
+     * page lit.
+     */
+    private function isCurrent(string $href): bool
+    {
+        $path = $this->viewContext->path();
+
+        if ($path === null) {
+            return false;
+        }
+
+        $href = rtrim($href, '/');
+
+        if ($href === '') {
+            // A root href is a section of one: everything else is not under it.
+            return $path === '/' || $path === '';
+        }
+
+        return $path === $href || str_starts_with($path, $href . '/');
     }
 
     /**
