@@ -7,6 +7,8 @@ namespace Liminal\Module\Order;
 use Liminal\Config\Configuration;
 use Liminal\Module\Order\Hook\OrderInvoiceVetoListener;
 use Liminal\Module\Order\Hook\OrderThirdpartyVetoListener;
+use Liminal\Module\Order\Http\Api\OrderApiDetailHandler;
+use Liminal\Module\Order\Http\Api\OrderApiListHandler;
 use Liminal\Module\Order\Http\OrderCreatePageHandler;
 use Liminal\Module\Order\Http\OrderCreateSubmitHandler;
 use Liminal\Module\Order\Http\OrderDeleteHandler;
@@ -105,6 +107,11 @@ final class OrderModule implements Module, DefinitionProvider
         $routes->post('/orders/{id:\d+}/validate', OrderValidateHandler::class, 'order.validate');
         $routes->post('/orders/{id:\d+}/invoice', OrderInvoiceHandler::class, 'order.invoice');
         $routes->post('/orders/{id:\d+}/delete', OrderDeleteHandler::class, 'order.delete');
+
+        // The JSON face — module-prefixed names: the api routes disable with
+        // the module, /api is a path, not an owner.
+        $routes->get('/api/v1/orders', OrderApiListHandler::class, 'order.api.list');
+        $routes->get('/api/v1/orders/{id:\d+}', OrderApiDetailHandler::class, 'order.api.detail');
 
         // Between thirdparty (930) and invoice (940): the menu reads the
         // business flow — party, order, invoice.
