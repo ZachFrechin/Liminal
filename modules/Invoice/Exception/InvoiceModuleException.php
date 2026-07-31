@@ -34,6 +34,14 @@ final class InvoiceModuleException extends LogicException implements LiminalExce
         ));
     }
 
+    public static function malformedVeto(string $type): self
+    {
+        return new self(sprintf(
+            'An invoice.deletion.veto listener returned %s instead of a list of catalogue keys — the declarer validates the shape, and this one is wiring.',
+            $type,
+        ));
+    }
+
 
     public static function unpersistedInvoice(): self
     {

@@ -64,8 +64,10 @@ final class InvoiceModuleTest extends TestCase
 
         new InvoiceModule()->contribute($this->registriesWith(new MigrationRegistry(), hooks: $hooks, triggers: $triggers));
 
-        // The name the phase-0 table promised, verbatim.
+        // The name the phase-0 table promised, verbatim — and the symmetric
+        // veto any module holding records realised by an invoice answers.
         self::assertTrue($hooks->has('invoice.total.compute'));
+        self::assertTrue($hooks->has('invoice.deletion.veto'));
         self::assertSame(
             ['INVOICE_CREATED', 'INVOICE_UPDATED', 'INVOICE_VALIDATED', 'INVOICE_DELETED'],
             $triggers->names(),

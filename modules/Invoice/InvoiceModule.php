@@ -118,6 +118,11 @@ final class InvoiceModule implements Module, DefinitionProvider
         // listeners transform them, the declarer validates what comes back.
         $hooks = $registries->get(HookRegistry::class);
         $hooks->declare('invoice.total.compute');
+        // The symmetric veto: whoever holds records realised by an invoice
+        // (a converted order, someday a payment) answers here — this module
+        // never learns who. Only DRAFTS reach the dispatch: validated
+        // invoices are refused upstream by the immutability guard.
+        $hooks->declare('invoice.deletion.veto');
         // And the first production LISTENER: the thirdparty module declares
         // the veto, this module answers it — the edge points one way only.
         $hooks->listen('thirdparty.deletion.veto', InvoiceThirdpartyVetoListener::class);
