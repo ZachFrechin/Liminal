@@ -25,6 +25,7 @@ return [
     'companies.company.created' => 'Company created, with every installed module enabled for it.',
     'companies.company.created_with_missing' => 'Company created — but some declared modules are not installed. See the module list below; the remedy is `module:install`.',
     'companies.company.renamed' => 'Company renamed.',
+    'companies.company.back' => 'Back to companies',
     'companies.company.identity' => 'Identity',
     'companies.company.identity_hint' => 'What legal documents print about this company — every field is optional, absent lines simply do not print.',
     'companies.company.address' => 'Address',

@@ -2,10 +2,12 @@
 
 {% block title %}{{ 'authentication.roles.title'|trans }}{% endblock %}
 
+{% block page_actions %}
+    <a href="{{ url('authentication.role_create') }}">{{ 'authentication.roles.create'|trans }}</a>
+{% endblock %}
+
 {% block content %}
     <h1>{{ 'authentication.roles.title'|trans }}</h1>
-
-    <p><a href="{{ url('authentication.role_create') }}">{{ 'authentication.roles.create'|trans }}</a></p>
 
     <table>
         <thead>

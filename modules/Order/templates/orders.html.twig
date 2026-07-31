@@ -3,12 +3,12 @@
 
 {% block title %}{{ 'order.list.title'|trans }}{% endblock %}
 
+{% block page_actions %}
+    {% if canManage %}<a href="{{ url('order.create') }}">{{ 'order.list.create'|trans }}</a>{% endif %}
+{% endblock %}
+
 {% block content %}
     <h1>{{ 'order.list.title'|trans }}</h1>
-
-    {% if canManage %}
-        <p><a href="{{ url('order.create') }}">{{ 'order.list.create'|trans }}</a></p>
-    {% endif %}
 
     <form method="get" action="{{ url('order.list') }}">
         <input type="search" name="q" value="{{ query }}" placeholder="{{ 'order.list.search'|trans }}">

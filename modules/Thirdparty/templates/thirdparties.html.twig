@@ -3,12 +3,12 @@
 
 {% block title %}{{ 'thirdparty.list.title'|trans }}{% endblock %}
 
+{% block page_actions %}
+    {% if canManage %}<a href="{{ url('thirdparty.create') }}">{{ 'thirdparty.list.create'|trans }}</a>{% endif %}
+{% endblock %}
+
 {% block content %}
     <h1>{{ 'thirdparty.list.title'|trans }}</h1>
-
-    {% if canManage %}
-        <p><a href="{{ url('thirdparty.create') }}">{{ 'thirdparty.list.create'|trans }}</a></p>
-    {% endif %}
 
     <form method="get" action="{{ url('thirdparty.list') }}">
         <input type="search" name="q" value="{{ query }}" placeholder="{{ 'thirdparty.list.search'|trans }}">

@@ -81,6 +81,13 @@
                 </details>
             {% endblock %}
         </header>
+        {# Page navigation and page actions, always in the same place and never
+           scrolled away: a back link at the bottom of a long document was a
+           different place on every screen. The THIRD form region — document
+           actions live here — so the error page empties it like the other
+           two. Inside the authenticated branch: an empty band above the
+           sign-in card would be chrome with nothing to say. #}
+        <div class="subbar">{% block page_actions %}{% endblock %}</div>
     {% else %}
         <div class="anon-brand"><span class="monogram">L</span><span class="wordmark">Liminal</span></div>
     {% endif %}

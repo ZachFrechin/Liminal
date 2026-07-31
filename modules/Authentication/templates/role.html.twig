@@ -2,6 +2,10 @@
 
 {% block title %}{{ role.code }} — {{ 'authentication.role.title'|trans }}{% endblock %}
 
+{% block page_actions %}
+    <a href="{{ url('authentication.roles') }}">{{ 'authentication.role.back'|trans }}</a>
+{% endblock %}
+
 {% block content %}
     {# The code is on display, never in a field: renaming it is structurally
        impossible, which is what keeps the admin anchor safe. #}

@@ -2,6 +2,10 @@
 
 {% block title %}{{ company.code }} — {{ 'companies.company.title'|trans }}{% endblock %}
 
+{% block page_actions %}
+    <a href="{{ url('companies.list') }}">{{ 'companies.company.back'|trans }}</a>
+{% endblock %}
+
 {% block content %}
     {# The code is on display, never in a field: it never moves. #}
     <header class="page-header">

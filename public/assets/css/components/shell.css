@@ -24,6 +24,38 @@ body.shell { display: flex; height: 100%; overflow: hidden; }
 }
 .frame > footer { flex: none; padding: var(--sp-5) var(--page-pad); font: var(--text-meta); color: var(--text-tertiary); }
 
+/* ── Subbar: page navigation and page actions ──────────────────────── */
+/* One place for "back to the list", "new", and a document's own verbs, on
+   every screen, above the scroller. Empty on the pages that have nothing to
+   say — a band of chrome with no content is worse than no band. */
+.subbar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  min-height: var(--subbar-h);
+  padding: 0 var(--page-pad);
+  background: var(--surface-app);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.subbar:empty { display: none; }
+.subbar .spacer { margin-left: auto; }
+.subbar a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  height: var(--control-h-sm);
+  padding: 0 var(--sp-4);
+  border-bottom: 0;
+  border-radius: var(--radius-sm);
+  font: var(--text-ui);
+  color: var(--text-secondary);
+}
+.subbar a:hover { background: var(--action-quiet-bg-hover); color: var(--text-primary); }
+.subbar a > svg.lucide { opacity: 0.8; flex: none; }
+.subbar form { display: inline-flex; }
+.subbar button { height: var(--control-h-sm); }
+
 /* ── Native disclosure resets ──────────────────────────────────────── */
 summary { list-style: none; cursor: pointer; user-select: none; }
 summary::-webkit-details-marker { display: none; }
@@ -305,6 +337,7 @@ button:hover { background: var(--surface-hover); }
   body.shell { display: block; height: auto; overflow: visible; }
   .sidebar,
   .frame > header.topbar,
+  .subbar,
   .frame > footer { display: none; }
   .frame > main { overflow: visible; padding: 0; }
 }

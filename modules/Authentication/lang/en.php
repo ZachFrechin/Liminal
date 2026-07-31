@@ -53,6 +53,7 @@ return [
     'authentication.users.no_access' => 'no access',
 
     'authentication.user.title' => 'User',
+    'authentication.user.back' => 'Back to users',
     'authentication.user.create_title' => 'Create a user',
     'authentication.user.create_submit' => 'Create',
     'authentication.user.email' => 'Email',
@@ -100,6 +101,7 @@ return [
     'authentication.role.create_submit' => 'Create',
     'authentication.role.code' => 'Code',
     'authentication.role.code_hint' => 'Lowercase letters, digits and underscores; the code never changes afterwards.',
+    'authentication.role.back' => 'Back to roles',
     'authentication.role.label' => 'Label',
     'authentication.role.permissions' => 'Permissions',
     'authentication.role.invalid' => 'The role needs a valid code and a label.',

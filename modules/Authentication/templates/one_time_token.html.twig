@@ -5,6 +5,10 @@
 
 {% block title %}{{ 'authentication.token.created_title'|trans }}{% endblock %}
 
+{% block page_actions %}
+    <a href="{{ url('authentication.account') }}">{{ 'authentication.token.back_to_account'|trans }}</a>
+{% endblock %}
+
 {% block content %}
     <h1>{{ 'authentication.token.created_title'|trans }}</h1>
 
@@ -12,5 +16,4 @@
     <p><code class="one-time-password">{{ token }}</code></p>
     <p role="alert">{{ 'authentication.token.shown_once'|trans }}</p>
 
-    <p><a href="{{ url('authentication.account') }}">{{ 'authentication.token.back_to_account'|trans }}</a></p>
 {% endblock %}

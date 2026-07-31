@@ -3,12 +3,12 @@
 
 {% block title %}{{ 'invoice.list.title'|trans }}{% endblock %}
 
+{% block page_actions %}
+    {% if canManage %}<a href="{{ url('invoice.create') }}">{{ 'invoice.list.create'|trans }}</a>{% endif %}
+{% endblock %}
+
 {% block content %}
     <h1>{{ 'invoice.list.title'|trans }}</h1>
-
-    {% if canManage %}
-        <p><a href="{{ url('invoice.create') }}">{{ 'invoice.list.create'|trans }}</a></p>
-    {% endif %}
 
     <form method="get" action="{{ url('invoice.list') }}">
         <input type="search" name="q" value="{{ query }}" placeholder="{{ 'invoice.list.search'|trans }}">
