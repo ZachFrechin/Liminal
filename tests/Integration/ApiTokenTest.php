@@ -122,6 +122,64 @@ final class ApiTokenTest extends IntegrationTestCase
         self::assertSame(401, $revoked->getStatusCode());
     }
 
+    public function testTheAccountScreenMintsShowsOnceAndRevokesOwnTokensOnly(): void
+    {
+        $kernel = $this->kernel();
+        $ada = $this->login($kernel, 'ada@liminal.test');
+
+        $account = (string) $kernel->handle($this->get('/account', $ada))->getBody();
+        self::assertStringContainsString('API tokens', $account);
+        $token = $this->tokenFrom($account);
+
+        // Minting renders the one-time page straight from the POST.
+        $created = $kernel->handle($this->post(
+            '/account/tokens',
+            ['label' => 'laptop', '_token' => $token],
+            $ada,
+        ));
+        self::assertSame(200, $created->getStatusCode());
+        self::assertSame('no-store', $created->getHeaderLine('Cache-Control'));
+        $body = (string) $created->getBody();
+        self::assertStringContainsString('laptop', $body);
+        $raw = $this->rawTokenFrom($body);
+
+        // The list shows the label; the raw value exists nowhere anymore.
+        $reloaded = (string) $kernel->handle($this->get('/account', $ada))->getBody();
+        self::assertStringContainsString('laptop', $reloaded);
+        self::assertStringNotContainsString($raw, $reloaded);
+
+        // Bob cannot revoke Ada's token: same flash as an unknown id.
+        $bob = $this->login($kernel, 'bob@liminal.test');
+        $bobAccount = (string) $kernel->handle($this->get('/account', $bob))->getBody();
+        $foreign = $kernel->handle($this->post(
+            '/account/tokens/1/revoke',
+            ['_token' => $this->tokenFrom($bobAccount)],
+            $bob,
+        ));
+        self::assertSame(302, $foreign->getStatusCode());
+        self::assertEquals(1, $this->dbal->fetchOne('SELECT COUNT(*) FROM core_api_token'));
+        self::assertStringContainsString(
+            'No such token',
+            (string) $kernel->handle($this->get('/account', $bob))->getBody(),
+        );
+
+        // Ada revokes her own; the credential dies with the row.
+        $revoked = $kernel->handle($this->post(
+            '/account/tokens/1/revoke',
+            ['_token' => $token],
+            $ada,
+        ));
+        self::assertSame(302, $revoked->getStatusCode());
+        self::assertEquals(0, $this->dbal->fetchOne('SELECT COUNT(*) FROM core_api_token'));
+
+        $gone = $kernel->handle(
+            $this->get('/account')
+                ->withHeader('Accept', 'application/json')
+                ->withHeader('Authorization', 'Bearer ' . $raw),
+        );
+        self::assertSame(401, $gone->getStatusCode());
+    }
+
     private function mint(string $email): string
     {
         $create = $this->tester(TokenCreateCommand::class);

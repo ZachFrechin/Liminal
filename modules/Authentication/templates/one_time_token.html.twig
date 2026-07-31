@@ -1,0 +1,16 @@
+{# Rendered straight from the POST, with no-store: this response body is the
+   only copy of the raw token that will ever exist in the clear. No redirect,
+   no session, no log — leaving this page loses it, by design. #}
+{% extends '@liminal/layout.html.twig' %}
+
+{% block title %}{{ 'authentication.token.created_title'|trans }}{% endblock %}
+
+{% block content %}
+    <h1>{{ 'authentication.token.created_title'|trans }}</h1>
+
+    <p>{{ 'authentication.token.created_for'|trans({'label': label}) }}</p>
+    <p><code class="one-time-password">{{ token }}</code></p>
+    <p role="alert">{{ 'authentication.token.shown_once'|trans }}</p>
+
+    <p><a href="{{ url('authentication.account') }}">{{ 'authentication.token.back_to_account'|trans }}</a></p>
+{% endblock %}

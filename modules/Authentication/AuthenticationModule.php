@@ -30,6 +30,8 @@ use Liminal\Module\Authentication\Http\RoleDetailHandler;
 use Liminal\Module\Authentication\Http\RoleListHandler;
 use Liminal\Module\Authentication\Http\RoleUpdateHandler;
 use Liminal\Module\Authentication\Http\SwitchCompanyHandler;
+use Liminal\Module\Authentication\Http\TokenCreateSubmitHandler;
+use Liminal\Module\Authentication\Http\TokenRevokeHandler;
 use Liminal\Module\Authentication\Http\UserCreatePageHandler;
 use Liminal\Module\Authentication\Http\UserCreateSubmitHandler;
 use Liminal\Module\Authentication\Http\UserDeleteHandler;
@@ -116,6 +118,8 @@ final class AuthenticationModule implements Module, DefinitionProvider
         $routes->post('/login', LoginSubmitHandler::class, 'authentication.login_submit', public: true);
         $routes->post('/logout', LogoutHandler::class, 'authentication.logout', public: true);
         $routes->get('/account', AccountHandler::class, 'authentication.account');
+        $routes->post('/account/tokens', TokenCreateSubmitHandler::class, 'authentication.token_create');
+        $routes->post('/account/tokens/{id:\d+}/revoke', TokenRevokeHandler::class, 'authentication.token_revoke');
         $routes->post('/switch-company', SwitchCompanyHandler::class, 'authentication.switch');
 
         // User administration. Statics before dynamics, and {id:\d+} is

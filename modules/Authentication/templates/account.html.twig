@@ -8,4 +8,46 @@
     {# The company switcher and sign-out moved into the shell — visible on
        every page. This page keeps the identity, and will grow the profile. #}
     <p>{{ 'authentication.account.signed_in_as'|trans({'name': user.displayName, 'email': user.email}) }}</p>
+
+    <section class="panel">
+        <h2>{{ 'authentication.token.section'|trans }}</h2>
+        <p class="field-hint">{{ 'authentication.token.section_hint'|trans }}</p>
+
+        {% if tokens is not empty %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>{{ 'authentication.token.label'|trans }}</th>
+                        <th>{{ 'authentication.token.created'|trans }}</th>
+                        <th>{{ 'authentication.token.last_used'|trans }}</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for token in tokens %}
+                        <tr>
+                            <td>{{ token.label }}</td>
+                            <td>{{ token.created_at }}</td>
+                            <td>{{ token.last_used_at ?? 'authentication.token.never_used'|trans }}</td>
+                            <td>
+                                <form method="post" action="{{ url('authentication.token_revoke', {'id': token.id}) }}">
+                                    {{ csrf_field() }}
+                                    <button type="submit">{{ 'authentication.token.revoke'|trans }}</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+
+        <form method="post" action="{{ url('authentication.token_create') }}" class="form-inline">
+            {{ csrf_field() }}
+            <p class="field">
+                <label for="token-label">{{ 'authentication.token.label'|trans }}</label>
+                <input type="text" id="token-label" name="label" maxlength="100" placeholder="api">
+            </p>
+            <button type="submit">{{ 'authentication.token.create'|trans }}</button>
+        </form>
+    </section>
 {% endblock %}
