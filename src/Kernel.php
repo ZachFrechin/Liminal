@@ -331,7 +331,7 @@ final class Kernel
     {
         $name = $module->name();
 
-        if (preg_match('/^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/', $name) !== 1 || strlen($name) > 64) {
+        if (preg_match(Module::NAME_PATTERN, $name) !== 1 || strlen($name) > 64) {
             throw KernelException::moduleName($module::class, $name);
         }
 

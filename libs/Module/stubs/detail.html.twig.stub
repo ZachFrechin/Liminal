@@ -1,0 +1,47 @@
+{% extends '@liminal/layout.html.twig' %}
+
+{% block title %}{{ record.name }} — {{ '{{slug}}.detail.title'|trans }}{% endblock %}
+
+{% block content %}
+    <header class="page-header">
+        <h1>
+            <code class="entity-code">{{ record.code }}</code>
+            {{ record.name }}
+            {% if not record.active %}
+                <span class="badge badge-inactive">{{ '{{slug}}.status.inactive'|trans }}</span>
+            {% endif %}
+        </h1>
+    </header>
+
+    {% if canManage %}
+        <section class="panel">
+            <h2>{{ '{{slug}}.detail.edit'|trans }}</h2>
+            <form method="post" action="{{ url('{{slug}}.update', {'id': record.id}) }}">
+                {{ csrf_field() }}
+                <p class="field">
+                    <label for="name">{{ '{{slug}}.form.name'|trans }}</label>
+                    <input type="text" id="name" name="name" value="{{ record.name }}" maxlength="191" required>
+                </p>
+                <p class="field">
+                    <label class="choice">
+                        <input type="checkbox" name="active" value="1" {% if record.active %}checked{% endif %}>
+                        {{ '{{slug}}.form.active'|trans }}
+                    </label>
+                </p>
+                <div class="form-actions">
+                    <button type="submit" class="primary">{{ '{{slug}}.detail.save'|trans }}</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="danger-zone">
+            <h2>{{ '{{slug}}.detail.danger'|trans }}</h2>
+            <form method="post" action="{{ url('{{slug}}.delete', {'id': record.id}) }}">
+                {{ csrf_field() }}
+                <button type="submit" class="danger">{{ '{{slug}}.detail.delete'|trans }}</button>
+            </form>
+        </section>
+    {% endif %}
+
+    <p><a href="{{ url('{{slug}}.list') }}">{{ '{{slug}}.detail.back'|trans }}</a></p>
+{% endblock %}

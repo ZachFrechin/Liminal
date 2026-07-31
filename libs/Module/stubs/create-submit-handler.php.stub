@@ -1,0 +1,93 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Liminal\Module\{{Studly}}\Http;
+
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Liminal\Http\UrlGenerator;
+use Liminal\Lib\Hook\Triggers;
+use Liminal\Lib\Security\Authorization\RequestGate;
+use Liminal\Lib\Security\Session\Session;
+use Liminal\Lib\Security\Session\SessionMiddleware;
+use Liminal\Module\{{Studly}}\Entity\{{Studly}};
+use Liminal\Module\{{Studly}}\Exception\{{Studly}}ModuleException;
+use Liminal\Module\{{Studly}}\Repository\{{Studly}}Repository;
+use Psr\Http\Message\ResponseFactoryInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
+
+/**
+ * Creates a {{slug}} in the working company — prePersist stamps it, the
+ * composite unique keeps its code singular here and free elsewhere.
+ * codeTaken() is the polite pre-check; the constraint is the judge, and the
+ * race between the two is caught at flush.
+ */
+final readonly class {{Studly}}CreateSubmitHandler implements RequestHandlerInterface
+{
+    public function __construct(
+        private RequestGate $gate,
+        private {{Studly}}Repository $records,
+        private UrlGenerator $urls,
+        private ResponseFactoryInterface $responses,
+        private Triggers $triggers,
+    ) {}
+
+    public function handle(ServerRequestInterface $request): ResponseInterface
+    {
+        $this->gate->authorize({{Studly}}ListHandler::READ);
+        $this->gate->authorize({{Studly}}ListHandler::MANAGE);
+
+        $session = $request->getAttribute(SessionMiddleware::ATTRIBUTE);
+
+        if (!$session instanceof Session) {
+            throw {{Studly}}ModuleException::sessionMissing();
+        }
+
+        $body = $request->getParsedBody();
+        $body = is_array($body) ? $body : [];
+
+        $code = is_string($body['code'] ?? null) ? strtoupper(trim($body['code'])) : '';
+        $name = is_string($body['name'] ?? null) ? trim($body['name']) : '';
+
+        if ($code === '' || mb_strlen($code) > 32 || $name === '' || mb_strlen($name) > 191) {
+            $session->set('error', '{{slug}}.form.invalid');
+
+            return $this->redirectTo('{{slug}}.create');
+        }
+
+        if ($this->records->codeTaken($code)) {
+            $session->set('error', '{{slug}}.form.code_taken');
+
+            return $this->redirectTo('{{slug}}.create');
+        }
+
+        $record = new {{Studly}}($code, $name);
+
+        try {
+            $this->records->add($record);
+            $this->records->flush();
+        } catch (UniqueConstraintViolationException) {
+            // The race the pre-check cannot close.
+            $session->set('error', '{{slug}}.form.code_taken');
+
+            return $this->redirectTo('{{slug}}.create');
+        }
+
+        // Post-commit: getId() is only non-null past the flush.
+        $this->triggers->fire('{{SCREAMING}}_CREATED', ['{{slug}}_id' => (int) $record->getId(), 'code' => $code]);
+        $session->set('success', '{{slug}}.form.created');
+
+        return $this->redirectTo('{{slug}}.detail', ['id' => (int) $record->getId()]);
+    }
+
+    /**
+     * @param array<string, int|string> $parameters
+     */
+    private function redirectTo(string $route, array $parameters = []): ResponseInterface
+    {
+        return $this->responses->createResponse(302)
+            ->withHeader('Location', $this->urls->generate($route, $parameters));
+    }
+}

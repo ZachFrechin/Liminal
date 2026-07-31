@@ -1,0 +1,28 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Liminal\Module\{{Studly}}\Exception;
+
+use Liminal\Exception\LiminalException;
+use LogicException;
+
+/**
+ * Wiring failures inside the {{slug}} module — content problems (an invalid
+ * form value, a refused deletion) travel as flashes, never as exceptions.
+ */
+final class {{Studly}}ModuleException extends LogicException implements LiminalException
+{
+    public static function sessionMissing(): self
+    {
+        return new self('The session middleware did not run for this request.');
+    }
+
+    public static function malformedVeto(string $type): self
+    {
+        return new self(sprintf(
+            'A {{slug}}.deletion.veto listener returned %s instead of a list of catalogue keys — the declarer validates the shape, and this one is wiring.',
+            $type,
+        ));
+    }
+}

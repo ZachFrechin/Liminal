@@ -1,0 +1,55 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Liminal\Module\{{Studly}}\Http;
+
+use Liminal\Http\Exception\HttpException;
+use Liminal\Lib\Rendering\HtmlRenderer;
+use Liminal\Lib\Security\Authorization\Gate;
+use Liminal\Lib\Security\Authorization\RequestGate;
+use Liminal\Module\{{Studly}}\Repository\{{Studly}}Repository;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
+
+/**
+ * One {{slug}} of the working company. byId() narrows to the current
+ * company, so a foreign id answers the same 404 as a missing one.
+ */
+final readonly class {{Studly}}DetailHandler implements RequestHandlerInterface
+{
+    public function __construct(
+        private HtmlRenderer $html,
+        private RequestGate $gate,
+        private Gate $allows,
+        private {{Studly}}Repository $records,
+    ) {}
+
+    /**
+     * @throws HttpException as notFound() when no such {{slug}} exists here
+     */
+    public function handle(ServerRequestInterface $request): ResponseInterface
+    {
+        $this->gate->authorize({{Studly}}ListHandler::READ);
+
+        $raw = $request->getAttribute('id');
+        $id = is_numeric($raw) ? (int) $raw : 0;
+
+        $record = $this->records->byId($id);
+
+        if ($record === null) {
+            throw HttpException::notFound($request->getUri()->getPath());
+        }
+
+        return $this->html->respond(
+            '@{{slug}}/{{slug}}.html.twig',
+            [
+                'record' => $record,
+                'canManage' => $this->allows->allows({{Studly}}ListHandler::MANAGE),
+            ],
+            200,
+            ['Cache-Control' => 'no-store'],
+        );
+    }
+}

@@ -1,0 +1,132 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Liminal\Module\{{Studly}}\Repository;
+
+use Doctrine\ORM\EntityManagerInterface;
+use Liminal\Lib\Database\Pagination\Page;
+use Liminal\Lib\Database\Scope\CompanyContext;
+use Liminal\Module\{{Studly}}\Entity\{{Studly}};
+
+/**
+ * All reads and writes, through the ORM — the company fence (filter, stamp,
+ * write-once gate) lives nowhere else. Every read narrows to the CURRENT
+ * company in DQL, byId() included: a URL into another accessible company
+ * answers 404, never data.
+ */
+final readonly class {{Studly}}Repository
+{
+    public const int PER_PAGE = 25;
+
+    private const int MAX_QUERY_LENGTH = 100;
+
+    private const string SEARCH = '(t.code LIKE :needle ESCAPE \'!\' OR t.name LIKE :needle ESCAPE \'!\')';
+
+    public function __construct(
+        private EntityManagerInterface $entityManager,
+        private CompanyContext $context,
+    ) {}
+
+    /**
+     * @return Page<{{Studly}}>
+     */
+    public function page(int $page, ?string $query): Page
+    {
+        $needle = $this->needle($query);
+
+        $builder = $this->entityManager->createQueryBuilder()
+            ->select('COUNT(t.id)')
+            ->from({{Studly}}::class, 't')
+            ->where('t.companyId = :company')
+            ->setParameter('company', $this->context->currentId());
+
+        if ($needle !== null) {
+            $builder->andWhere(self::SEARCH)->setParameter('needle', $needle);
+        }
+
+        $total = (int) $builder->getQuery()->getSingleScalarResult();
+        $pages = max(1, (int) ceil($total / self::PER_PAGE));
+        $page = max(1, min($page, $pages));
+
+        $builder = $this->entityManager->createQueryBuilder()
+            ->select('t')
+            ->from({{Studly}}::class, 't')
+            ->where('t.companyId = :company')
+            ->setParameter('company', $this->context->currentId())
+            ->orderBy('t.name', 'ASC')
+            ->addOrderBy('t.id', 'ASC')
+            ->setFirstResult(($page - 1) * self::PER_PAGE)
+            ->setMaxResults(self::PER_PAGE);
+
+        if ($needle !== null) {
+            $builder->andWhere(self::SEARCH)->setParameter('needle', $needle);
+        }
+
+        /** @var list<{{Studly}}> $items */
+        $items = $builder->getQuery()->getResult();
+
+        return new Page($items, $total, $page, $pages, self::PER_PAGE);
+    }
+
+    public function byId(int $id): ?{{Studly}}
+    {
+        /** @var ?{{Studly}} */
+        return $this->entityManager->createQueryBuilder()
+            ->select('t')
+            ->from({{Studly}}::class, 't')
+            ->where('t.id = :id')
+            ->andWhere('t.companyId = :company')
+            ->setParameter('id', $id)
+            ->setParameter('company', $this->context->currentId())
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    public function codeTaken(string $code, ?int $excludeId = null): bool
+    {
+        $builder = $this->entityManager->createQueryBuilder()
+            ->select('COUNT(t.id)')
+            ->from({{Studly}}::class, 't')
+            ->where('t.code = :code')
+            ->andWhere('t.companyId = :company')
+            ->setParameter('code', $code)
+            ->setParameter('company', $this->context->currentId());
+
+        if ($excludeId !== null) {
+            $builder->andWhere('t.id != :exclude')->setParameter('exclude', $excludeId);
+        }
+
+        return (int) $builder->getQuery()->getSingleScalarResult() > 0;
+    }
+
+    public function add({{Studly}} $record): void
+    {
+        $this->entityManager->persist($record);
+    }
+
+    public function remove({{Studly}} $record): void
+    {
+        $this->entityManager->remove($record);
+    }
+
+    public function flush(): void
+    {
+        $this->entityManager->flush();
+    }
+
+    /**
+     * LIKE special characters are escaped INSIDE the bound value: bound
+     * parameters neutralize SQL, not LIKE wildcards.
+     */
+    private function needle(?string $query): ?string
+    {
+        $query = trim((string) $query);
+
+        if ($query === '' || mb_strlen($query) > self::MAX_QUERY_LENGTH) {
+            return null;
+        }
+
+        return '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $query) . '%';
+    }
+}

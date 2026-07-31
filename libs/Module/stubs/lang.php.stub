@@ -1,0 +1,44 @@
+<?php
+
+declare(strict_types=1);
+
+// Merged into the shared catalogue after the libs' files: within one key the
+// last contribution wins.
+return [
+    '{{slug}}.permission.read' => 'See {{slug}}s',
+    '{{slug}}.permission.manage' => 'Manage {{slug}}s',
+
+    '{{slug}}.menu.entries' => '{{Studly}}s',
+
+    '{{slug}}.list.title' => '{{Studly}}s',
+    '{{slug}}.list.create' => 'New {{slug}}',
+    '{{slug}}.list.search' => 'Search',
+    '{{slug}}.list.empty' => 'No {{slug}} here yet.',
+    '{{slug}}.list.code' => 'Code',
+    '{{slug}}.list.name' => 'Name',
+    '{{slug}}.list.status' => 'Status',
+    '{{slug}}.list.page_of' => 'Page %page% of %pages% (%total% total)',
+
+    '{{slug}}.status.active' => 'Active',
+    '{{slug}}.status.inactive' => 'Inactive',
+
+    '{{slug}}.detail.title' => '{{Studly}}',
+    '{{slug}}.detail.edit' => 'Edit',
+    '{{slug}}.detail.save' => 'Save',
+    '{{slug}}.detail.danger' => 'Danger zone',
+    '{{slug}}.detail.delete' => 'Delete this {{slug}}',
+    '{{slug}}.detail.back' => 'Back to the list',
+
+    '{{slug}}.create.title' => 'New {{slug}}',
+    '{{slug}}.create.submit' => 'Create',
+
+    '{{slug}}.form.code' => 'Code',
+    '{{slug}}.form.code_hint' => 'Uppercase identifier, unique in this company, immutable after creation.',
+    '{{slug}}.form.name' => 'Name',
+    '{{slug}}.form.active' => 'Active',
+    '{{slug}}.form.invalid' => 'The form needs a code (32 characters at most) and a name (191 at most).',
+    '{{slug}}.form.code_taken' => 'That code is already used in this company.',
+    '{{slug}}.form.created' => '{{Studly}} created.',
+    '{{slug}}.form.updated' => '{{Studly}} updated.',
+    '{{slug}}.form.deleted' => '{{Studly}} deleted.',
+];

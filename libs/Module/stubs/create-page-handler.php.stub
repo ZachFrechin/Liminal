@@ -1,0 +1,36 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Liminal\Module\{{Studly}}\Http;
+
+use Liminal\Lib\Rendering\HtmlRenderer;
+use Liminal\Lib\Security\Authorization\RequestGate;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
+
+/**
+ * The empty creation form. Reads authorize manage too: a manage-only actor
+ * must never create records on pages they may not see again.
+ */
+final readonly class {{Studly}}CreatePageHandler implements RequestHandlerInterface
+{
+    public function __construct(
+        private HtmlRenderer $html,
+        private RequestGate $gate,
+    ) {}
+
+    public function handle(ServerRequestInterface $request): ResponseInterface
+    {
+        $this->gate->authorize({{Studly}}ListHandler::READ);
+        $this->gate->authorize({{Studly}}ListHandler::MANAGE);
+
+        return $this->html->respond(
+            '@{{slug}}/{{slug}}_create.html.twig',
+            [],
+            200,
+            ['Cache-Control' => 'no-store'],
+        );
+    }
+}

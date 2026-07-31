@@ -1,0 +1,50 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Liminal\Module\{{Studly}}\Migrations;
+
+use Doctrine\DBAL\Schema\Schema;
+use Doctrine\DBAL\Types\Types;
+use Liminal\Lib\Database\Migration\Migration;
+
+/**
+ * The {{slug}} table: a CompanyScoped business record — the company owns
+ * its rows, the composite unique keeps codes singular per company and free
+ * across companies.
+ */
+final class Version{{stamp}} extends Migration
+{
+    public function getDescription(): string
+    {
+        return 'Create the {{slug}} table.';
+    }
+
+    public function up(Schema $schema): void
+    {
+        // module:install plans THIS namespace only — core_company may not
+        // exist on a partial run. abortIf, never skipIf.
+        $this->abortIf(
+            !$schema->hasTable('core_company'),
+            'core_company is missing: run "liminal migrate" before installing this module.',
+        );
+
+        $table = $schema->createTable('{{slug}}_{{slug}}');
+        $table->addColumn('id', Types::INTEGER, ['autoincrement' => true]);
+        $table->addColumn('company_id', Types::INTEGER);
+        $table->addColumn('code', Types::STRING, ['length' => 32]);
+        $table->addColumn('name', Types::STRING, ['length' => 191]);
+        $table->addColumn('is_active', Types::BOOLEAN, ['default' => true]);
+        $table->addColumn('created_at', Types::DATETIME_IMMUTABLE);
+        $table->addColumn('updated_at', Types::DATETIME_IMMUTABLE);
+        $table->setPrimaryKey(['id']);
+        $table->addUniqueIndex(['company_id', 'code'], 'uniq_{{slug}}_company_code');
+        $table->addIndex(['company_id', 'name'], 'idx_{{slug}}_company_name');
+        $table->addForeignKeyConstraint('core_company', ['company_id'], ['id'], ['onDelete' => 'CASCADE']);
+    }
+
+    public function down(Schema $schema): void
+    {
+        $schema->dropTable('{{slug}}_{{slug}}');
+    }
+}

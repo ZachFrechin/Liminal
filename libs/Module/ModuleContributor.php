@@ -7,11 +7,13 @@ namespace Liminal\Lib\Module;
 use Liminal\Config\Configuration;
 use Liminal\Lib\Database\DeferredConnection;
 use Liminal\Lib\Database\Migration\MigrationRunner;
+use Liminal\Lib\Module\Console\CreateCommand;
 use Liminal\Lib\Module\Console\DisableCommand;
 use Liminal\Lib\Module\Console\EnableCommand;
 use Liminal\Lib\Module\Console\InstallCommand;
 use Liminal\Lib\Module\Console\ListCommand;
 use Liminal\Lib\Module\Http\ModuleGateMiddleware;
+use Liminal\Lib\Module\Scaffold\ModuleScaffolder;
 use Liminal\Registry\CommandRegistry;
 use Liminal\Registry\Contract\Contributor;
 use Liminal\Registry\Contract\DefinitionProvider;
@@ -37,6 +39,7 @@ final class ModuleContributor implements Contributor, DefinitionProvider
         $commands->add(EnableCommand::class);
         $commands->add(DisableCommand::class);
         $commands->add(ListCommand::class);
+        $commands->add(CreateCommand::class);
 
         $registries->get(MiddlewareRegistry::class)
             ->add(ModuleGateMiddleware::class, self::GATE_PRIORITY);
@@ -56,6 +59,14 @@ final class ModuleContributor implements Contributor, DefinitionProvider
                 ContainerInterface $container,
             ): ModuleManager
                 => new ModuleManager($modules, $migrations, DeferredConnection::resolver($container)),
+
+            // The builder writes as a sibling of this lib: libs/Module is two
+            // levels below the root, modules/ sits beside libs/.
+            CreateCommand::class => static fn(
+                ModuleScaffolder $scaffolder,
+                ModuleRegistry $modules,
+            ): CreateCommand
+                => new CreateCommand($scaffolder, $modules, dirname(__DIR__, 2) . '/modules'),
         ];
     }
 }

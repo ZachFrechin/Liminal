@@ -1,0 +1,25 @@
+{% extends '@liminal/layout.html.twig' %}
+
+{% block title %}{{ '{{slug}}.create.title'|trans }}{% endblock %}
+
+{% block content %}
+    <h1>{{ '{{slug}}.create.title'|trans }}</h1>
+
+    <form method="post" action="{{ url('{{slug}}.create_submit') }}" class="form-card">
+        {{ csrf_field() }}
+
+        <p class="field">
+            <label for="code">{{ '{{slug}}.form.code'|trans }}</label>
+            <input type="text" id="code" name="code" maxlength="32" required>
+            <span class="field-hint">{{ '{{slug}}.form.code_hint'|trans }}</span>
+        </p>
+        <p class="field">
+            <label for="name">{{ '{{slug}}.form.name'|trans }}</label>
+            <input type="text" id="name" name="name" maxlength="191" required>
+        </p>
+
+        <div class="form-actions">
+            <button type="submit" class="primary">{{ '{{slug}}.create.submit'|trans }}</button>
+        </div>
+    </form>
+{% endblock %}

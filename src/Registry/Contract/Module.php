@@ -17,6 +17,13 @@ namespace Liminal\Registry\Contract;
 interface Module extends Contributor
 {
     /**
+     * THE slug grammar, in one place: the boot's assertManifest and the
+     * module builder validate against this same constant — two copies would
+     * be two grammars the day one of them drifts.
+     */
+    public const string NAME_PATTERN = '/^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/';
+
+    /**
      * Unique lowercase slug ([a-z][a-z0-9_]*, 64 characters at most),
      * e.g. 'authentication'.
      */

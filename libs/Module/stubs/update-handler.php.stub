@@ -1,0 +1,83 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Liminal\Module\{{Studly}}\Http;
+
+use Liminal\Http\Exception\HttpException;
+use Liminal\Http\UrlGenerator;
+use Liminal\Lib\Hook\Triggers;
+use Liminal\Lib\Security\Authorization\RequestGate;
+use Liminal\Lib\Security\Session\Session;
+use Liminal\Lib\Security\Session\SessionMiddleware;
+use Liminal\Module\{{Studly}}\Exception\{{Studly}}ModuleException;
+use Liminal\Module\{{Studly}}\Repository\{{Studly}}Repository;
+use Psr\Http\Message\ResponseFactoryInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
+
+/**
+ * Edits a {{slug}}: the name and the active flag. The code never changes —
+ * it is the record's identity in exports and integrations.
+ */
+final readonly class {{Studly}}UpdateHandler implements RequestHandlerInterface
+{
+    public function __construct(
+        private RequestGate $gate,
+        private {{Studly}}Repository $records,
+        private UrlGenerator $urls,
+        private ResponseFactoryInterface $responses,
+        private Triggers $triggers,
+    ) {}
+
+    /**
+     * @throws HttpException as notFound() when no such {{slug}} exists here
+     */
+    public function handle(ServerRequestInterface $request): ResponseInterface
+    {
+        $this->gate->authorize({{Studly}}ListHandler::READ);
+        $this->gate->authorize({{Studly}}ListHandler::MANAGE);
+
+        $session = $request->getAttribute(SessionMiddleware::ATTRIBUTE);
+
+        if (!$session instanceof Session) {
+            throw {{Studly}}ModuleException::sessionMissing();
+        }
+
+        $raw = $request->getAttribute('id');
+        $id = is_numeric($raw) ? (int) $raw : 0;
+
+        $record = $this->records->byId($id);
+
+        if ($record === null) {
+            throw HttpException::notFound($request->getUri()->getPath());
+        }
+
+        $body = $request->getParsedBody();
+        $body = is_array($body) ? $body : [];
+
+        $name = is_string($body['name'] ?? null) ? trim($body['name']) : '';
+        $active = ($body['active'] ?? null) === '1';
+
+        if ($name === '' || mb_strlen($name) > 191) {
+            $session->set('error', '{{slug}}.form.invalid');
+
+            return $this->redirectToDetail($id);
+        }
+
+        $record->update($name, $active);
+        $this->records->flush();
+
+        $this->triggers->fire('{{SCREAMING}}_UPDATED', ['{{slug}}_id' => $id]);
+        $session->set('success', '{{slug}}.form.updated');
+
+        return $this->redirectToDetail($id);
+    }
+
+    private function redirectToDetail(int $id): ResponseInterface
+    {
+        return $this->responses->createResponse(302)
+            ->withHeader('Location', $this->urls->generate('{{slug}}.detail', ['id' => $id]));
+    }
+}
