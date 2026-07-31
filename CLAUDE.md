@@ -105,10 +105,31 @@ cents over DECIMAL strings, per-field form caps (int64), VAT rounded per
 rate group. Validation = the tree's one `wrapInTransaction` (counter upsert
 + freeze, one commit; ANY in-wrap throw closes the EM — inverse of the
 bare-flush rule; émission IS validation, number from the validation day's
-year). Company-delete cascade carries documents (measured); targeted
-thirdparty delete refused by RESTRICT + answered politely by
-`thirdparty.deletion.veto`. Production hooks: `invoice.total.compute`
-(dispatch validates the returned DocumentTotals) + the veto listener.
+year). Cascade semantics MEASURED per diamond — they DISAGREE: company
+delete resolves the invoice diamond but trips 1451 on the order→invoice
+diamond (OrderScopeTest pins the inversion) — applicative delete,
+most-referencing first, is the only path that works on both. Targeted
+deletes of referenced rows always refused by RESTRICT + answered politely
+by the vetoes.
+
+Order (10): the second document — money machinery hoisted to
+`libs/Database/Money` (Cents, DocumentLine 3-getter contract,
+DocumentTotals, TotalsCalculator) + `libs/Database/Sequence/YearlySequence`
+(atomic claim, runtime identifier guard); each module keeps its table +
+format (`CMD-%d-%04d` / order_sequence). Three states draft→validated→
+invoiced, `isValidated()` STRICT (false once invoiced); markInvoiced sets
+status+pointer+timestamp in ONE mutation (invariant status=INVOICED ⇔
+invoice_id NOT NULL). Conversion = ONE wrapInTransaction (invoice born,
+lines copied, totals from the INVOICE's own hook — never copied —, pointer
+set; explicit inner flushes legal, assign ids mid-wrap), demands
+invoice.manage AND order.manage, definitive (unlink = recorded gap);
+post-commit fires ORDER_INVOICED + cross-module INVOICE_CREATED
+(deliberate, docblocked). Several responders per veto = normal (only exact
+(name,listener) pair refused; flash shows reasons[0], order =
+app.modules); listen() lands AFTER the commit that declares the name —
+freeze validates at every boot. Four production hooks:
+invoice.total.compute, order.total.compute, thirdparty.deletion.veto
+(2 responders), invoice.deletion.veto.
 
 Hooks & triggers (7): declare-then-listen (dispatcher declares the name,
 consumers subscribe by service id, freeze validates targets). Hook =
@@ -119,8 +140,7 @@ secret; `fire(..., companyId:)` when the point knows better than the
 working context. Trigger listeners never fire triggers. Every admin
 mutation fires; the audit catch-all (`AUDIT_PRIORITY = -1000`, anchor)
 writes `core_audit_event` — zero FKs, historical facts. Login stays on
-AuthEventLog. First production hook = invoice.total.compute, with
-documents.
+AuthEventLog.
 
 Every commit: `type(scope): imperative subject`, body explains why,
 `composer check` green. Integration tests skip without a reachable DSN — run

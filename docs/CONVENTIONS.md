@@ -164,11 +164,31 @@ what it proves.
   direction, declared.** An invoice names the party it bills; the foreign
   key materialises the dependency, and hiding the class import behind raw
   SQL would not remove it, only make it unreviewable. The manifest docblocks
-  the edge, `app.modules` orders the dependency first. The REVERSE direction
-  is never a class import: it is a hook (`thirdparty.deletion.veto` — the
-  referenced module declares and dispatches, the referencing one answers,
-  and the declarer validates the returned shape). Config sections remain
-  strictly module-private (above).
+  the edge, `app.modules` orders the dependency first (order depends on
+  BOTH thirdparty and invoice, so it boots after both). The REVERSE
+  direction is never a class import: it is a hook
+  (`thirdparty.deletion.veto`, `invoice.deletion.veto` — the referenced
+  module declares and dispatches, the referencing one answers, and the
+  declarer validates the returned shape). Config sections remain strictly
+  module-private (above).
+- **Several responders on one veto is the hook working as designed** — the
+  registry refuses only the exact (name, listener) duplicate. Responders
+  append to the shared reason list without knowing each other; the flash
+  shows `reasons[0]`, so the answer order follows `app.modules`
+  contribution order. Sequencing rule with teeth: `listen()` targets are
+  validated at EVERY boot's freeze — a listener commit must land AFTER the
+  commit that declares the name, never in the same series before it.
+- **A document conversion is ONE `wrapInTransaction`** — born record,
+  copied lines, recomputed totals, back-pointer: one commit or none.
+  Explicit inner `flush()` calls are legal inside the wrap (INSERTs join
+  the open transaction and assign ids mid-wrap); the derived document's
+  totals come from ITS OWN hook, never copied — a listener throw must
+  cancel the whole conversion. The conversion is definitive: unlinking is
+  a recorded gap, and the born invoice is protected by the veto plus a
+  RESTRICT belt. Firing ANOTHER module's trigger from the conversion site
+  (`INVOICE_CREATED`) is sanctioned when the fact truly is that module's —
+  deliberate and docblocked at the fire point, so the stream stays complete
+  for every consumer.
 - **Money never floats.** DECIMAL columns map to PHP strings; computation
   happens in integer cents; form value objects cap each field so no product
   can leave int64 (a shared wide regex is how cents get fabricated through
@@ -176,12 +196,17 @@ what it proves.
   agrees with the totals. `libs/Database/Money/Cents.php` is the reference, and the rounding
   rules live once, in the lib's `TotalsCalculator` over the `DocumentLine`
   contract.
-- Cascade semantics are MEASURED, not assumed: MariaDB resolves the
-  company-delete diamond (documents, lines and thirdparties cascade in one
-  statement — the RESTRICT never fires when the referencing row dies in the
-  same cascade), while a TARGETED delete of a referenced thirdparty is
-  refused by the schema. `InvoiceScopeTest` pins both. The future
-  company-deletion service still deletes documents first, applicatively.
+- Cascade semantics are MEASURED, not assumed — and the measurements
+  DISAGREE by diamond: MariaDB resolves the invoice diamond (company delete
+  cascades documents, lines and thirdparties in one statement,
+  `InvoiceScopeTest`), but the order→invoice diamond trips the RESTRICT
+  (error 1451) on the very same company delete — the engine's resolution
+  order is not a contract (`OrderScopeTest` pins the inversion, and proves
+  the repair: delete orders first, then the company cascade succeeds). The
+  consequence is a rule: the future company-deletion service deletes
+  documents applicatively, most-referencing first — the only path that
+  works on BOTH measured shapes. A TARGETED delete of any referenced row is
+  always refused by the schema, on every shape.
 - Validation of a document is a one-way door and **émission IS validation**:
   the issue date refreshes to the validation day and the number is minted
   from that day's year inside the same transaction that claims the
@@ -373,6 +398,15 @@ what it proves.
   first production listener of `invoice.total.compute` makes stored and
   recomputed diverge), and the party select is unbounded (it becomes a
   search past a real company's size).
+- Order gaps, recorded: no cancellation of a validated order (the same
+  counterpart philosophy as invoices — a future credit/annulation document,
+  never a status rollback), no partial invoicing or partial deliveries (the
+  conversion carries ALL lines, once; splitting needs a delivery concept),
+  no deposits/down payments (an invoice born before the order completes),
+  and no unlink (the conversion is definitive by design — reversing it
+  means deleting the born invoice while it is still a draft… which the veto
+  refuses precisely because the order points at it; the escape is a future
+  administrative flow, not a loophole).
 - The per-company uniqueness of thirdparty codes rides the server's
   case-insensitive collation (stock MariaDB utf8mb4 *_ci) — the same
   assumption `uniq_core_company_code` already makes.

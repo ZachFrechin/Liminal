@@ -102,13 +102,17 @@ lib subscribes `AuditTrailListener` to *everything* at an anchor priority
 process): one append-only `core_audit_event` row per fired trigger — name,
 JSON payload, actor, company, timestamp — with **zero foreign keys**, on
 purpose: an audit stores historical facts, not live references, and a
-deleted user's id stays readable verbatim. Fourteen triggers fire today
-(USER_*, GRANT_*, ROLE_*, COMPANY_*, THIRDPARTY_*); a module added next
-year is audited with zero wiring on its part.
+deleted user's id stays readable verbatim. Twenty-three triggers fire today
+(USER_*, GRANT_*, ROLE_*, COMPANY_*, THIRDPARTY_*, INVOICE_*, ORDER_*); a
+module added next year is audited with zero wiring on its part.
 
-The first production **hook** arrives with the documents phase
-(`invoice.total.compute`); until then the primitive is proven end to end
-on a fixture kernel over real HTTP.
+Four production **hooks** are declared today: two totals pipelines
+(`invoice.total.compute`, `order.total.compute` — each dispatch site
+validates what its listeners return) and two deletion vetoes
+(`thirdparty.deletion.veto`, answered by BOTH document modules;
+`invoice.deletion.veto`, answered by the order module for the invoices a
+conversion produced). Every veto edge crosses a module boundary without an
+import — the declarer never learns who answered.
 
 ## Getting started
 
@@ -181,7 +185,8 @@ tests/{Unit,Integration}
 | 7 | Hooks & triggers (`lib/hook`, two kernel registries) + the admin-mutation audit trail as the triggers' first consumer | ✅ |
 | 8 | Design system: tokens as served assets, vendored fonts and icons, the application shell, the feedback family | ✅ |
 | 9 | `module/invoice`: customer invoices — drafts, gap-free per-company-per-year numbering, per-rate VAT, the first production hook and the thirdparty deletion veto | ✅ |
-| 10 → | orders (the invoice machinery, second document), `lib/api`, builder | upcoming |
+| 10 | `module/order`: customer orders — the money layer hoisted to the lib, a three-state lifecycle, the order→invoice conversion in one transaction, the symmetric deletion veto | ✅ |
+| 11 → | `lib/api`, builder | upcoming |
 
 ## Security
 
@@ -473,3 +478,32 @@ validation: a December draft validated in January belongs to January's
 sequence), mints `INV-YYYY-NNNN`, and freezes the record. A validated
 invoice refuses every mutation with a flash, and there is deliberately no
 force flag anywhere.
+
+## The order module
+
+The second document vertical — and the phase where the invoice's machinery
+proved it generalises. Everything concurrency-bearing or rounding-bearing
+moved to the lib the moment a second consumer existed (`Cents`, the
+`TotalsCalculator` over a three-getter `DocumentLine` contract,
+`DocumentTotals`, the atomic `YearlySequence` claim); each module keeps only
+what is genuinely its own — its table names, its `CMD-`/`INV-` format, its
+hook. Orders even get gap-free numbering they never legally needed, because
+sharing the proven code costs less than writing a weaker variant.
+
+One state more than an invoice: `draft → validated → invoiced`, two one-way
+doors. The second is the **conversion** — a validated order becomes a draft
+invoice in ONE transaction: invoice born, lines copied, totals recomputed
+by the *invoice's own hook* (not copied — a discount listener may treat
+quotes and bills differently, and a listener throw cancels the whole
+conversion), the order's pointer set. The conversion is definitive by
+design: unlinking is a recorded gap, not a feature. Converting demands
+`invoice.manage` on top of `order.manage` — creating an invoice requires
+the right to create invoices.
+
+Three vetoes now run in production, and they compose: the thirdparty veto
+has TWO responders (invoice and order, each appending its reason to the
+shared list, neither knowing the other), and the new `invoice.deletion.veto`
+lets a converted order protect the invoice that realises it — the polite
+layer over the `RESTRICT` foreign key that backs it. Deleting a company
+still cascades every document; deleting one referenced record politely
+refuses.
