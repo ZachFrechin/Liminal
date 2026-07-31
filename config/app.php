@@ -32,6 +32,9 @@ return [
         Liminal\Lib\Security\SecurityContributor::class,
         Liminal\Lib\Module\ModuleContributor::class,
         Liminal\Lib\Rendering\RenderingContributor::class,
+        // After Rendering on purpose: Pdf is its one sanctioned consumer —
+        // the same Twig Environment renders screens and documents.
+        Liminal\Lib\Pdf\PdfContributor::class,
         Liminal\Lib\Api\ApiContributor::class,
         Liminal\Lib\System\SystemContributor::class,
     ],

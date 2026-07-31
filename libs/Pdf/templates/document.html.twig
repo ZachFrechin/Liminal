@@ -1,0 +1,127 @@
+{# The document skeleton: standalone on purpose — no layout, no shell, no
+   asset()/csrf helpers (dompdf resolves nothing over HTTP and a print
+   template must never need a session). Colors are the design tokens
+   CONVERTED TO HEX: dompdf's CSS parser silently drops oklch()/color-mix()
+   and the document would print in wrong colors without a sound.
+   Top-level variables carry the _pdf_ prefix — a parent template's set
+   leaks into child blocks, the layout rule. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{% block title %}Document{% endblock %}</title>
+<style>
+    @font-face {
+        font-family: "Instrument Sans";
+        font-weight: 400;
+        src: url("{{ _pdf_font_dir }}/instrument-sans-400.ttf");
+    }
+    @font-face {
+        font-family: "Instrument Sans";
+        font-weight: 500;
+        src: url("{{ _pdf_font_dir }}/instrument-sans-500.ttf");
+    }
+    @font-face {
+        font-family: "Instrument Sans";
+        font-weight: 600;
+        src: url("{{ _pdf_font_dir }}/instrument-sans-600.ttf");
+    }
+    @font-face {
+        font-family: "Instrument Sans";
+        font-weight: 700;
+        src: url("{{ _pdf_font_dir }}/instrument-sans-700.ttf");
+    }
+    @font-face {
+        font-family: "IBM Plex Mono";
+        font-weight: 400;
+        src: url("{{ _pdf_font_dir }}/ibm-plex-mono-400.ttf");
+    }
+    @font-face {
+        font-family: "IBM Plex Mono";
+        font-weight: 500;
+        src: url("{{ _pdf_font_dir }}/ibm-plex-mono-500.ttf");
+    }
+    @font-face {
+        font-family: "IBM Plex Mono";
+        font-weight: 600;
+        src: url("{{ _pdf_font_dir }}/ibm-plex-mono-600.ttf");
+    }
+
+    /* The design system in print: warm neutrals and the terracotta accent,
+       hex-converted from the oklch tokens (n-900 #1c1713, n-600 #655c56,
+       n-500 #837b74, n-300 #d2ccc5, n-200 #e3ded8, n-150 #ebe6e1,
+       n-100 #f2eee9, n-50 #f9f7f3, accent-700 #793825, accent-50 #fef1ec). */
+    @page { margin: 22mm 16mm 20mm 16mm; }
+    body {
+        margin: 0;
+        color: #1c1713;
+        font-family: "Instrument Sans", Helvetica, sans-serif;
+        font-size: 10pt;
+        line-height: 1.5;
+    }
+    h1 { font-size: 17pt; font-weight: 600; margin: 0 0 2mm 0; letter-spacing: -0.2pt; }
+    h2 { font-size: 11pt; font-weight: 600; margin: 0 0 2mm 0; }
+    .overline {
+        font-size: 7pt; font-weight: 600; letter-spacing: 0.6pt;
+        text-transform: uppercase; color: #837b74; margin: 0 0 1mm 0;
+    }
+    .meta { color: #655c56; font-size: 9pt; }
+    .numeric, code {
+        font-family: "IBM Plex Mono", monospace;
+    }
+    code.doc-number {
+        font-size: 11pt; font-weight: 600; color: #793825;
+        background: #fef1ec; padding: 1pt 5pt; border-radius: 2pt;
+    }
+    table { border-collapse: collapse; width: 100%; }
+    table.lines th {
+        text-align: left; font-size: 8pt; font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.4pt; color: #655c56;
+        background: #f2eee9; padding: 2.4mm 2.6mm;
+        border-bottom: 1pt solid #d2ccc5;
+    }
+    table.lines td {
+        padding: 2.2mm 2.6mm; border-bottom: 0.5pt solid #ebe6e1;
+        vertical-align: top; font-size: 9.5pt;
+    }
+    th.num, td.num { text-align: right; }
+    td.num { font-family: "IBM Plex Mono", monospace; font-size: 9pt; }
+    table.totals { width: 62mm; margin-left: auto; margin-top: 4mm; }
+    table.totals td { padding: 1.4mm 2.6mm; font-size: 9.5pt; }
+    table.totals td.num { font-family: "IBM Plex Mono", monospace; }
+    table.totals tr.grand td {
+        font-weight: 600; font-size: 10.5pt;
+        border-top: 1pt solid #1c1713; padding-top: 2.2mm;
+    }
+    .parties { width: 100%; margin: 8mm 0 6mm 0; }
+    .parties td { width: 50%; vertical-align: top; padding: 0; }
+    .party-block { padding-right: 8mm; }
+    .party-block p { margin: 0; }
+    .party-name { font-weight: 600; }
+    .watermark {
+        margin: 0 0 5mm 0; padding: 2.6mm 4mm;
+        border: 1.2pt solid #793825; color: #793825; background: #fef1ec;
+        font-weight: 700; font-size: 12pt; letter-spacing: 1.5pt;
+        text-transform: uppercase; text-align: center;
+    }
+    .doc-footer {
+        margin-top: 10mm; padding-top: 3mm;
+        border-top: 0.5pt solid #d2ccc5;
+        color: #655c56; font-size: 8pt; line-height: 1.45;
+    }
+</style>
+</head>
+<body>
+    {% if _pdf_watermark is defined and _pdf_watermark is not null %}
+        <div class="watermark">{{ _pdf_watermark }}</div>
+    {% endif %}
+
+    {% block header %}{% endblock %}
+
+    {% block content %}{% endblock %}
+
+    <div class="doc-footer">
+        {% block footer %}{% endblock %}
+    </div>
+</body>
+</html>
