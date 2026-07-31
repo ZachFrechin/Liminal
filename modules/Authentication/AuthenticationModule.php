@@ -15,6 +15,9 @@ use Liminal\Lib\Security\Contract\UserProvider;
 use Liminal\Module\Authentication\Administration\TokenAdministration;
 use Liminal\Module\Authentication\Administration\UserAdministration;
 use Liminal\Module\Authentication\Console\RoleGrantCommand;
+use Liminal\Module\Authentication\Console\TokenCreateCommand;
+use Liminal\Module\Authentication\Console\TokenListCommand;
+use Liminal\Module\Authentication\Console\TokenRevokeCommand;
 use Liminal\Module\Authentication\Console\UserCreateCommand;
 use Liminal\Module\Authentication\Http\AccountHandler;
 use Liminal\Module\Authentication\Http\LoginPageHandler;
@@ -149,6 +152,7 @@ final class AuthenticationModule implements Module, DefinitionProvider
             'USER_CREATED', 'USER_UPDATED', 'USER_DELETED', 'USER_PASSWORD_RESET',
             'GRANT_ADDED', 'GRANT_REVOKED',
             'ROLE_CREATED', 'ROLE_UPDATED', 'ROLE_DELETED',
+            'TOKEN_CREATED', 'TOKEN_REVOKED',
         ] as $name) {
             $triggers->declare($name);
         }
@@ -158,6 +162,9 @@ final class AuthenticationModule implements Module, DefinitionProvider
         $commands = $registries->get(CommandRegistry::class);
         $commands->add(UserCreateCommand::class);
         $commands->add(RoleGrantCommand::class);
+        $commands->add(TokenCreateCommand::class);
+        $commands->add(TokenListCommand::class);
+        $commands->add(TokenRevokeCommand::class);
 
         $menu = $registries->get(MenuRegistry::class);
         $menu->add(new MenuItem('authentication.menu.account', 'authentication.account', priority: 900, icon: 'user-round'));
