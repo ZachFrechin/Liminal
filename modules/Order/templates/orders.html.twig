@@ -1,0 +1,60 @@
+{% extends '@liminal/layout.html.twig' %}
+{% import '@liminal/components.html.twig' as ui %}
+
+{% block title %}{{ 'order.list.title'|trans }}{% endblock %}
+
+{% block content %}
+    <h1>{{ 'order.list.title'|trans }}</h1>
+
+    <form method="get" action="{{ url('order.list') }}">
+        <input type="search" name="q" value="{{ query }}" placeholder="{{ 'order.list.search'|trans }}">
+        <button type="submit">{{ 'order.list.search'|trans }}</button>
+    </form>
+
+    {% if page.total == 0 %}
+        {{ ui.empty_state('shopping-cart', 'order.list.empty'|trans) }}
+    {% else %}
+        <table>
+            <thead>
+                <tr>
+                    <th>{{ 'order.list.number'|trans }}</th>
+                    <th>{{ 'order.list.party'|trans }}</th>
+                    <th>{{ 'order.list.issued'|trans }}</th>
+                    <th>{{ 'order.list.status'|trans }}</th>
+                    <th>{{ 'order.list.total'|trans }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in page.items %}
+                    <tr>
+                        <td>
+                            <a href="{{ url('order.detail', {'id': order.id}) }}">
+                                {%- if order.number %}{{ order.number }}{% else %}{{ 'order.status.draft'|trans }}{% endif -%}
+                            </a>
+                        </td>
+                        <td>{{ thirdpartyNames[order.thirdpartyId]|default('—') }}</td>
+                        <td>{{ order.issuedOn|date('Y-m-d') }}</td>
+                        <td>
+                            {# Three states, elseif order matters: invoiced is
+                               checked before validated, which is strict. #}
+                            {% if order.draft %}
+                                <span class="badge">{{ 'order.status.draft'|trans }}</span>
+                            {% elseif order.invoiced %}
+                                <span class="badge badge-invoiced">{{ 'order.status.invoiced'|trans }}</span>
+                            {% else %}
+                                <span class="badge badge-validated">{{ 'order.status.validated'|trans }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="numeric">{{ order.totalIncl }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <p class="pagination">
+            {{ 'order.list.page_of'|trans({'page': page.page, 'pages': page.pages, 'total': page.total}) }}
+            {% if page.hasPrevious %}<a href="{{ url('order.list') }}?page={{ page.page - 1 }}{% if query %}&q={{ query|url_encode }}{% endif %}">&larr;</a>{% endif %}
+            {% if page.hasNext %}<a href="{{ url('order.list') }}?page={{ page.page + 1 }}{% if query %}&q={{ query|url_encode }}{% endif %}">&rarr;</a>{% endif %}
+        </p>
+    {% endif %}
+{% endblock %}

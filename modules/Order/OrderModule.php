@@ -5,14 +5,20 @@ declare(strict_types=1);
 namespace Liminal\Module\Order;
 
 use Liminal\Config\Configuration;
+use Liminal\Module\Order\Http\OrderDetailHandler;
+use Liminal\Module\Order\Http\OrderListHandler;
 use Liminal\Registry\Contract\DefinitionProvider;
 use Liminal\Registry\Contract\Module;
 use Liminal\Registry\EntityRegistry;
 use Liminal\Registry\HookRegistry;
+use Liminal\Registry\MenuItem;
+use Liminal\Registry\MenuRegistry;
 use Liminal\Registry\MigrationRegistry;
 use Liminal\Registry\Permission;
 use Liminal\Registry\PermissionRegistry;
 use Liminal\Registry\RegistryCollection;
+use Liminal\Registry\RouteRegistry;
+use Liminal\Registry\TemplateRegistry;
 use Liminal\Registry\TranslationRegistry;
 use Liminal\Registry\TriggerRegistry;
 
@@ -71,8 +77,26 @@ final class OrderModule implements Module, DefinitionProvider
         $registries->get(EntityRegistry::class)
             ->add(self::ENTITY_NAMESPACE, __DIR__ . '/Entity');
 
+        $registries->get(TemplateRegistry::class)
+            ->add(self::NAME, __DIR__ . '/templates');
+
         $registries->get(TranslationRegistry::class)
             ->add('en', __DIR__ . '/lang/en.php');
+
+        // Statics before dynamics, and {id:\d+} is load-bearing.
+        $routes = $registries->get(RouteRegistry::class);
+        $routes->get('/orders', OrderListHandler::class, 'order.list');
+        $routes->get('/orders/{id:\d+}', OrderDetailHandler::class, 'order.detail');
+
+        // Between thirdparty (930) and invoice (940): the menu reads the
+        // business flow — party, order, invoice.
+        $registries->get(MenuRegistry::class)->add(new MenuItem(
+            'order.menu.orders',
+            'order.list',
+            self::READ,
+            priority: 935,
+            icon: 'shopping-cart',
+        ));
 
         $permissions = $registries->get(PermissionRegistry::class);
         $permissions->add(new Permission(self::READ, 'order.permission.read', self::NAME));
