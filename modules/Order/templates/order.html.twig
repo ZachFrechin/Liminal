@@ -126,6 +126,15 @@
     </section>
 
     {% if canManage and order.draft %}
+        <section class="panel">
+            <h2>{{ 'order.detail.validate'|trans }}</h2>
+            <p class="field-hint">{{ 'order.detail.validate_hint'|trans }}</p>
+            <form method="post" action="{{ url('order.validate', {'id': order.id}) }}">
+                {{ csrf_field() }}
+                <button type="submit" class="primary">{{ 'order.detail.validate'|trans }}</button>
+            </form>
+        </section>
+
         <section class="danger-zone">
             <h2>{{ 'order.detail.danger'|trans }}</h2>
             <form method="post" action="{{ url('order.delete', {'id': order.id}) }}">

@@ -13,6 +13,7 @@ use Liminal\Module\Order\Http\OrderLineAddHandler;
 use Liminal\Module\Order\Http\OrderLineRemoveHandler;
 use Liminal\Module\Order\Http\OrderListHandler;
 use Liminal\Module\Order\Http\OrderUpdateHandler;
+use Liminal\Module\Order\Http\OrderValidateHandler;
 use Liminal\Registry\Contract\DefinitionProvider;
 use Liminal\Registry\Contract\Module;
 use Liminal\Registry\EntityRegistry;
@@ -98,6 +99,7 @@ final class OrderModule implements Module, DefinitionProvider
         $routes->post('/orders/{id:\d+}', OrderUpdateHandler::class, 'order.update');
         $routes->post('/orders/{id:\d+}/lines', OrderLineAddHandler::class, 'order.line_add');
         $routes->post('/orders/{id:\d+}/lines/{line:\d+}/remove', OrderLineRemoveHandler::class, 'order.line_remove');
+        $routes->post('/orders/{id:\d+}/validate', OrderValidateHandler::class, 'order.validate');
         $routes->post('/orders/{id:\d+}/delete', OrderDeleteHandler::class, 'order.delete');
 
         // Between thirdparty (930) and invoice (940): the menu reads the

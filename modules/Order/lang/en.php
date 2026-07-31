@@ -55,6 +55,8 @@ return [
 
     'order.detail.edit' => 'Edit',
     'order.detail.save' => 'Save',
+    'order.detail.validate' => 'Validate',
+    'order.detail.validate_hint' => 'Validation freezes the order and mints its definitive number.',
     'order.detail.danger' => 'Danger zone',
     'order.detail.delete' => 'Delete this draft',
 
@@ -68,6 +70,8 @@ return [
     'order.form.unit_price_invalid' => 'The unit price must be a positive amount below 100 000 000.',
     'order.form.vat_rate_invalid' => 'The VAT rate must sit between 0 and 100.',
     'order.form.immutable' => 'This order left the draft state — it can no longer change.',
+    'order.form.needs_lines' => 'An order needs at least one line before validation.',
+    'order.form.validated' => 'Order validated.',
     'order.form.created' => 'Draft order created.',
     'order.form.updated' => 'Order updated.',
     'order.form.line_added' => 'Line added.',
