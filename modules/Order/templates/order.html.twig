@@ -18,6 +18,9 @@
             {% if thirdpartyName %}{{ thirdpartyName }}{% endif %}
             <span>{{ 'order.detail.issued'|trans }} {{ order.issuedOn|date('Y-m-d') }}</span>
             {% if order.wantedOn %}<span>{{ 'order.detail.wanted'|trans }} {{ order.wantedOn|date('Y-m-d') }}</span>{% endif %}
+            <a href="{{ url('order.pdf', {'id': order.id}) }}">
+                {%- if order.draft %}{{ 'order.detail.pdf_proforma'|trans }}{% else %}{{ 'order.detail.pdf'|trans }}{% endif -%}
+            </a>
             {% if order.invoiced and order.invoiceId %}
                 <a href="{{ url('invoice.detail', {'id': order.invoiceId}) }}">{{ 'order.detail.see_invoice'|trans }}</a>
             {% endif %}

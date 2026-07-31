@@ -37,6 +37,14 @@ return [
     'order.detail.vat_at' => 'VAT at %rate% %',
     'order.detail.total_incl' => 'Total incl. VAT',
     'order.detail.back' => 'Back to orders',
+    'order.detail.pdf' => 'PDF',
+    'order.detail.pdf_proforma' => 'PDF (proforma)',
+
+    'order.pdf.title' => 'Order',
+    'order.pdf.proforma' => 'Proforma',
+    'order.pdf.issuer' => 'Issuer',
+    'order.pdf.ordered_by' => 'Ordered by',
+    'order.pdf.vat_number' => 'VAT',
 
     'order.line.label' => 'Description',
     'order.line.quantity' => 'Qty',

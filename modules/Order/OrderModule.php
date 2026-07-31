@@ -19,6 +19,7 @@ use Liminal\Module\Order\Http\OrderLineRemoveHandler;
 use Liminal\Module\Order\Http\OrderListHandler;
 use Liminal\Module\Order\Http\OrderUpdateHandler;
 use Liminal\Module\Order\Http\OrderValidateHandler;
+use Liminal\Module\Order\Http\Pdf\OrderPdfHandler;
 use Liminal\Registry\Contract\DefinitionProvider;
 use Liminal\Registry\Contract\Module;
 use Liminal\Registry\EntityRegistry;
@@ -101,6 +102,7 @@ final class OrderModule implements Module, DefinitionProvider
         $routes->get('/orders/create', OrderCreatePageHandler::class, 'order.create');
         $routes->post('/orders/create', OrderCreateSubmitHandler::class, 'order.create_submit');
         $routes->get('/orders/{id:\d+}', OrderDetailHandler::class, 'order.detail');
+        $routes->get('/orders/{id:\d+}/pdf', OrderPdfHandler::class, 'order.pdf');
         $routes->post('/orders/{id:\d+}', OrderUpdateHandler::class, 'order.update');
         $routes->post('/orders/{id:\d+}/lines', OrderLineAddHandler::class, 'order.line_add');
         $routes->post('/orders/{id:\d+}/lines/{line:\d+}/remove', OrderLineRemoveHandler::class, 'order.line_remove');
