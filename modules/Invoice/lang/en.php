@@ -35,6 +35,14 @@ return [
     'invoice.detail.vat_at' => 'VAT at %rate% %',
     'invoice.detail.total_incl' => 'Total incl. VAT',
     'invoice.detail.back' => 'Back to invoices',
+    'invoice.detail.pdf' => 'PDF',
+    'invoice.detail.pdf_proforma' => 'PDF (proforma)',
+
+    'invoice.pdf.title' => 'Invoice',
+    'invoice.pdf.proforma' => 'Proforma',
+    'invoice.pdf.issuer' => 'Issuer',
+    'invoice.pdf.billed_to' => 'Billed to',
+    'invoice.pdf.vat_number' => 'VAT',
 
     'invoice.line.label' => 'Description',
     'invoice.line.quantity' => 'Qty',

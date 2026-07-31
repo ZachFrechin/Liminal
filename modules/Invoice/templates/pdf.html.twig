@@ -1,0 +1,101 @@
+{% extends '@pdf/document.html.twig' %}
+
+{% block title %}{{ invoice.number ?? 'invoice.pdf.proforma'|trans }}{% endblock %}
+
+{% block header %}
+    <table class="parties">
+        <tr>
+            <td>
+                <div class="party-block">
+                    <p class="overline">{{ 'invoice.pdf.issuer'|trans }}</p>
+                    {% if seller %}
+                        <p class="party-name">{{ seller.name }}</p>
+                        {% if seller.address %}<p>{{ seller.address }}</p>{% endif %}
+                        {% if seller.zip or seller.town %}<p>{{ seller.zip }} {{ seller.town }}{% if seller.country_code %} ({{ seller.country_code }}){% endif %}</p>{% endif %}
+                        {% if seller.vat_number %}<p class="meta">{{ 'invoice.pdf.vat_number'|trans }} {{ seller.vat_number }}</p>{% endif %}
+                        {% if seller.registration %}<p class="meta">{{ seller.registration }}</p>{% endif %}
+                    {% endif %}
+                </div>
+            </td>
+            <td style="text-align: right;">
+                <h1>{{ 'invoice.pdf.title'|trans }}</h1>
+                {% if invoice.number %}
+                    <p><code class="doc-number">{{ invoice.number }}</code></p>
+                {% endif %}
+                <p class="meta">{{ 'invoice.detail.issued'|trans }} {{ invoice.issuedOn|date('Y-m-d') }}</p>
+                {% if invoice.dueOn %}
+                    <p class="meta">{{ 'invoice.detail.due'|trans }} {{ invoice.dueOn|date('Y-m-d') }}</p>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td style="padding-top: 6mm;">
+                <div class="party-block">
+                    <p class="overline">{{ 'invoice.pdf.billed_to'|trans }}</p>
+                    {% if buyer %}
+                        <p class="party-name">{{ buyer.name }}</p>
+                        {% if buyer.address %}<p>{{ buyer.address }}</p>{% endif %}
+                        {% if buyer.zip or buyer.town %}<p>{{ buyer.zip }} {{ buyer.town }}{% if buyer.countryCode %} ({{ buyer.countryCode }}){% endif %}</p>{% endif %}
+                        {% if buyer.vatNumber %}<p class="meta">{{ 'invoice.pdf.vat_number'|trans }} {{ buyer.vatNumber }}</p>{% endif %}
+                    {% endif %}
+                </div>
+            </td>
+            <td></td>
+        </tr>
+    </table>
+{% endblock %}
+
+{% block content %}
+    <table class="lines">
+        <thead>
+            <tr>
+                <th>{{ 'invoice.line.label'|trans }}</th>
+                <th class="num">{{ 'invoice.line.quantity'|trans }}</th>
+                <th class="num">{{ 'invoice.line.unit_price'|trans }}</th>
+                <th class="num">{{ 'invoice.line.vat_rate'|trans }}</th>
+                <th class="num">{{ 'invoice.line.total'|trans }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for line in lines %}
+                <tr>
+                    <td>{{ line.label }}</td>
+                    <td class="num">{{ line.quantity }}</td>
+                    <td class="num">{{ line.unitPrice }}</td>
+                    <td class="num">{{ line.vatRate }} %</td>
+                    <td class="num">{{ lineTotals[line.id]|default('—') }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <table class="totals">
+        <tr>
+            <td>{{ 'invoice.detail.total_excl'|trans }}</td>
+            <td class="num">{{ invoice.totalExcl }}</td>
+        </tr>
+        {% for slice in ventilation %}
+            <tr>
+                <td>{{ 'invoice.detail.vat_at'|trans({'rate': slice.rate}) }}</td>
+                <td class="num">{{ slice.amount }}</td>
+            </tr>
+        {% endfor %}
+        <tr class="grand">
+            <td>{{ 'invoice.detail.total_incl'|trans }}</td>
+            <td class="num">{{ invoice.totalIncl }}</td>
+        </tr>
+    </table>
+{% endblock %}
+
+{% block footer %}
+    {% if seller and seller.legal_mentions %}
+        <p>{{ seller.legal_mentions|nl2br }}</p>
+    {% endif %}
+    {% if seller %}
+        <p>
+            {{ seller.name }}
+            {%- if seller.registration %} — {{ seller.registration }}{% endif %}
+            {%- if seller.vat_number %} — {{ 'invoice.pdf.vat_number'|trans }} {{ seller.vat_number }}{% endif %}
+        </p>
+    {% endif %}
+{% endblock %}

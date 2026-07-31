@@ -16,6 +16,9 @@
             {% if thirdpartyName %}{{ thirdpartyName }}{% endif %}
             <span>{{ 'invoice.detail.issued'|trans }} {{ invoice.issuedOn|date('Y-m-d') }}</span>
             {% if invoice.dueOn %}<span>{{ 'invoice.detail.due'|trans }} {{ invoice.dueOn|date('Y-m-d') }}</span>{% endif %}
+            <a href="{{ url('invoice.pdf', {'id': invoice.id}) }}">
+                {%- if invoice.draft %}{{ 'invoice.detail.pdf_proforma'|trans }}{% else %}{{ 'invoice.detail.pdf'|trans }}{% endif -%}
+            </a>
         </p>
     </header>
 

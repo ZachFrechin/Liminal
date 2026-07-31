@@ -17,6 +17,7 @@ use Liminal\Module\Invoice\Http\InvoiceLineRemoveHandler;
 use Liminal\Module\Invoice\Http\InvoiceListHandler;
 use Liminal\Module\Invoice\Http\InvoiceUpdateHandler;
 use Liminal\Module\Invoice\Http\InvoiceValidateHandler;
+use Liminal\Module\Invoice\Http\Pdf\InvoicePdfHandler;
 use Liminal\Registry\Contract\DefinitionProvider;
 use Liminal\Registry\Contract\Module;
 use Liminal\Registry\EntityRegistry;
@@ -98,6 +99,7 @@ final class InvoiceModule implements Module, DefinitionProvider
         $routes->get('/invoices/create', InvoiceCreatePageHandler::class, 'invoice.create');
         $routes->post('/invoices/create', InvoiceCreateSubmitHandler::class, 'invoice.create_submit');
         $routes->get('/invoices/{id:\d+}', InvoiceDetailHandler::class, 'invoice.detail');
+        $routes->get('/invoices/{id:\d+}/pdf', InvoicePdfHandler::class, 'invoice.pdf');
         $routes->post('/invoices/{id:\d+}', InvoiceUpdateHandler::class, 'invoice.update');
         $routes->post('/invoices/{id:\d+}/lines', InvoiceLineAddHandler::class, 'invoice.line_add');
         $routes->post('/invoices/{id:\d+}/lines/{line:\d+}/remove', InvoiceLineRemoveHandler::class, 'invoice.line_remove');
