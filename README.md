@@ -102,7 +102,7 @@ lib subscribes `AuditTrailListener` to *everything* at an anchor priority
 process): one append-only `core_audit_event` row per fired trigger — name,
 JSON payload, actor, company, timestamp — with **zero foreign keys**, on
 purpose: an audit stores historical facts, not live references, and a
-deleted user's id stays readable verbatim. Twenty-five triggers fire today
+deleted user's id stays readable verbatim. Twenty-six triggers fire today
 (USER_*, GRANT_*, ROLE_*, TOKEN_*, COMPANY_*, THIRDPARTY_*, INVOICE_*,
 ORDER_*); a module added next year is audited with zero wiring on its part.
 
@@ -187,7 +187,8 @@ tests/{Unit,Integration}
 | 9 | `module/invoice`: customer invoices — drafts, gap-free per-company-per-year numbering, per-rate VAT, the first production hook and the thirdparty deletion veto | ✅ |
 | 10 | `module/order`: customer orders — the money layer hoisted to the lib, a three-state lifecycle, the order→invoice conversion in one transaction, the symmetric deletion veto | ✅ |
 | 11 | `lib/api` + the module builder: bearer tokens, the read-only JSON API on all three verticals, `module:create` generating a full CRUD module that passes the toolchain verbatim | ✅ |
-| 12 → | the recorded-gaps ledger: API writes (the deletion-service extraction), PDF documents, payments | upcoming |
+| 12 | `lib/pdf` + company identity: dompdf over the design system's own fonts and colors, the issuer block on `core_company`, invoice and order documents with a proforma face for drafts | ✅ |
+| 13 → | payments, then API writes (the deletion-service extraction) and the hygiene ledger | upcoming |
 
 ## Security
 
@@ -555,3 +556,24 @@ an integration test runs the tree's own PHPStan and php-cs-fixer on the
 generated output to hold that line. The builder never edits config:
 declaring the module in `config/app.php` is the operator's gesture, printed
 at the end with the migrate/enable steps.
+
+## The documents
+
+Every invoice and order downloads as a PDF — the design system in print:
+the same Instrument Sans and IBM Plex Mono (static TTF instances, OFL texts
+beside them, vendored because the pdf engine reads neither woff2 nor
+variable fonts), the same warm neutrals and terracotta accent converted to
+hex, because dompdf's parser silently drops modern color functions and
+wrong colors would never raise an alarm on their own. The engine never
+touches the network — the zero-CDN promise holds for documents too — and
+writes its font caches under `var/`, never in the repo.
+
+Numbered states download inline under their number (`INV-2026-0001.pdf`,
+`CMD-2026-0001.pdf`); a draft prints under a PROFORMA watermark and a
+numberless filename, because the number does not exist yet and the
+document says so instead of pretending. The issuer block comes from the
+company identity screen (address, VAT number, registration, and the
+free-text legal mentions printed at the bottom — payment terms, late
+penalties); the buyer block from the thirdparty's own address. Absent
+fields do not print: content degrades, completeness lives on the identity
+screen.

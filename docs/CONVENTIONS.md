@@ -131,7 +131,11 @@ what it proves.
   `app.modules` order; an unregistered namespace sorts last. A migration that
   touches another namespace's table (the sanctioned FK case) must still guard
   with `abortIf`, **never `skipIf`** — skipping records the version as
-  executed and the statement never runs.
+  executed and the statement never runs. The guard doctrine binds
+  OTHER-namespace tables only: an upgrade migration on the namespace's OWN
+  table (the company-identity precedent, phase 12) carries no guard at all
+  — a hasColumn abort would permanently brick the one recovery scenario it
+  pretends to serve, and the duplicate-column SQL error is louder and truer.
 - A module may read the config section of the lib whose contract it
   implements (the throttle reads `security.login_throttle`): the section
   belongs to the contract, not the binding. It may not read another module's
@@ -320,8 +324,20 @@ what it proves.
   variable the layout sets carries a `_liminal_` prefix. An unprefixed
   `companies` once shadowed the companies module's own context and 500'd its
   list page — the prefix is the fence.
-- Rendering's sanctioned lib edges: → Security, → Module, → Database. Nothing
-  consumes Rendering.
+- Rendering's sanctioned lib edges: → Security, → Module, → Database. Its ONE
+  consumer is the Pdf lib (phase 12): the same Twig Environment renders
+  screens and documents — a second HTML engine would be two template
+  languages that must always agree. Nothing else consumes Rendering.
+- **PDF templates are standalone and hex-only.** They never extend the
+  layout, never call asset()/csrf helpers (the engine resolves nothing over
+  HTTP and a print render must never need a session), and their inline CSS
+  carries sRGB hex conversions of the tokens — the pdf engine's parser
+  silently DROPS modern color functions, so an integration tripwire pins
+  the rendered HTML free of them. Top-level variables carry the `_pdf_`
+  prefix, the layout's set-leak rule. Every document state prints: numbered
+  states under their number, drafts under the PROFORMA watermark with a
+  numberless filename — the number does not exist yet and the document
+  says so instead of pretending.
 
 ## Design system
 
@@ -451,6 +467,16 @@ what it proves.
   an unknown glyph throws at first render instead of at generation. The
   generated migration is proven by PHPStan and the boot, not executed
   against a live database by the proof test.
+- PDF gaps, recorded: no company logo (the tree's first file upload —
+  storage and validation deserve their own design), no localized money
+  format (amounts print as the stored DECIMAL strings, consistent with the
+  screens), no mail send, no archival/hash of the emitted bytes (the pdf is
+  regenerated per request — a legally archived original is a storage
+  question), the proforma watermark is a banner (CSS transform rotate under
+  the pdf engine was not gambled on), and a dependency watch: the
+  css-parser transitive pins its minors per PHP version — PHP 8.6 will
+  refuse resolution until upstream ships the next minor, the same closed-
+  constraint failure that already forced the 9.x line on PHP 8.5.
 - The per-company uniqueness of thirdparty codes rides the server's
   case-insensitive collation (stock MariaDB utf8mb4 *_ci) — the same
   assumption `uniq_core_company_code` already makes.

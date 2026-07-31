@@ -151,7 +151,24 @@ constante du boot, hoistée), n'écrase jamais, ne touche JAMAIS config ;
 preuve = ModuleBuilderTest (boot temp root + exec phpstan/cs-fixer du repo
 sur le généré ; pièges épinglés : --autoload-file pour l'extension
 doctrine, realpath du temp dir macOS /var→/private/var sinon 48 erreurs
-fantômes). 25 triggers (TOKEN_CREATED/REVOKED).
+fantômes).
+
+PDF (12) : lib Pdf = LE consommateur sanctionné de Rendering (même
+Environment, écrans et documents). dompdf **^3.1.6 plancher** (6 advisories
+dessous + gate composer audit) ; sabberworm forcé en 9.x sur PHP 8.5
+(mineures énumérées — PHP 8.6 re-cassera, gap surveillé) ; fontes = TTF
+STATIQUES vendorés libs/Pdf/fonts (php-font-lib ne lit ni woff2 ni
+variables) ; dompdf ÉCRIT ses caches → var/cache/dompdf, chroot sur le
+fonts dir, `_pdf_font_dir` injecté par le renderer. **Templates PDF
+standalone + hex only** : le parseur JETTE oklch/color-mix EN SILENCE —
+tripwire d'intégration (pas d'oklch/var(-- dans le HTML rendu ; attention,
+il mord aussi les commentaires). Tous les états impriment : numérotés sous
+leur numéro, brouillons = filigrane PROFORMA + filename sans numéro.
+Identité société = 7 colonnes nullables sur core_company (première
+migration d'upgrade lib — table PROPRE ⇒ AUCUN abortIf, nuance vs table
+étrangère) + lecteur dédié CompanyIdentity (jamais élargir
+CompanyDirectory : son docbloc est un contrat borné). 26 triggers
+(COMPANY_UPDATED).
 
 Hooks & triggers (7): declare-then-listen (dispatcher declares the name,
 consumers subscribe by service id, freeze validates targets). Hook =
