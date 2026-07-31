@@ -84,7 +84,10 @@
     {% else %}
         <div class="anon-brand"><span class="monogram">L</span><span class="wordmark">Liminal</span></div>
     {% endif %}
-    <main>
+    {# tabindex: the content column is the only scroller now, and a scroller
+       that cannot take focus is a scroller Space and PageDown cannot reach
+       in Firefox and Safari. #}
+    <main tabindex="-1">
         {% block flash %}
             {# Handlers flash catalogue KEYS, translated here so the language is
                the reader's at render time; free text degrades through |trans
@@ -97,7 +100,12 @@
         {% endblock %}
         {% block content %}{% endblock %}
     </main>
-    <footer>{% block footer %}{% endblock %}</footer>
+    {# The region exists only when something fills it: an always-empty band
+       was harmless while the page scrolled past it, and would be permanent
+       chrome now that the shell holds still. #}
+    {% if block('footer')|trim is not empty %}
+        <footer>{% block footer %}{% endblock %}</footer>
+    {% endif %}
 </div>
 </body>
 </html>

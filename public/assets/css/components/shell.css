@@ -4,9 +4,17 @@
    semantic aliases and the accent/semantic scales; never a raw neutral. */
 
 /* ── Frame ─────────────────────────────────────────────────────────── */
-body.shell { display: flex; min-height: 100%; }
-.frame { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.frame > main { flex: 1; min-height: 0; padding: var(--page-pad); }
+/* The chrome holds still and the content column scrolls: overflow on the
+   body propagates to the viewport (the body itself is never clipped), so
+   the document stops scrolling and <main> becomes the only scroller. The
+   sidebar deliberately gets NO overflow — the switcher panel is absolutely
+   positioned inside it and would be clipped; .sidebar-nav scrolls instead,
+   which it was already written to do. */
+body.shell { display: flex; height: 100%; overflow: hidden; }
+.frame { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+/* scrollbar-gutter: the column below is centred, so a scrollbar appearing
+   between a short and a long page would shift it by half the bar's width. */
+.frame > main { flex: 1; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; padding: var(--page-pad); }
 .shell .frame > main {
   display: grid;
   grid-template-columns: minmax(0, var(--page-max));
@@ -278,3 +286,17 @@ button:hover { background: var(--surface-hover); }
 }
 .shell tbody tr:last-child td { border-bottom: 0; }
 .shell tbody tr:hover td { background: var(--surface-hover); }
+
+/* ── Print ─────────────────────────────────────────────────────────── */
+/* A fixed shell prints its first page and drops the rest: the content is
+   inside a scroller the printer cannot page through. So printing gives the
+   document back its flow and drops the chrome. Documents proper (invoices,
+   orders) go through the Pdf lib — this is for the screens that have no
+   PDF face: lists, the role editor, the user detail. */
+@media print {
+  body.shell { display: block; height: auto; overflow: visible; }
+  .sidebar,
+  .frame > header.topbar,
+  .frame > footer { display: none; }
+  .frame > main { overflow: visible; padding: 0; }
+}
