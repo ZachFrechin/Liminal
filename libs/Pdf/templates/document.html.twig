@@ -48,9 +48,11 @@
     }
 
     /* The design system in print: warm neutrals and the terracotta accent,
-       hex-converted from the oklch tokens (n-900 #1c1713, n-600 #655c56,
+       hex-converted from the color tokens (n-900 #1c1713, n-600 #655c56,
        n-500 #837b74, n-300 #d2ccc5, n-200 #e3ded8, n-150 #ebe6e1,
-       n-100 #f2eee9, n-50 #f9f7f3, accent-700 #793825, accent-50 #fef1ec). */
+       n-100 #f2eee9, n-50 #f9f7f3, accent-700 #793825, accent-50 #fef1ec).
+       Hex on purpose: the engine's parser drops modern color functions
+       without a sound — the integration tripwire keeps it that way. */
     @page { margin: 22mm 16mm 20mm 16mm; }
     body {
         margin: 0;
