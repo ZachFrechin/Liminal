@@ -5,8 +5,14 @@ declare(strict_types=1);
 namespace Liminal\Module\Order;
 
 use Liminal\Config\Configuration;
+use Liminal\Module\Order\Http\OrderCreatePageHandler;
+use Liminal\Module\Order\Http\OrderCreateSubmitHandler;
+use Liminal\Module\Order\Http\OrderDeleteHandler;
 use Liminal\Module\Order\Http\OrderDetailHandler;
+use Liminal\Module\Order\Http\OrderLineAddHandler;
+use Liminal\Module\Order\Http\OrderLineRemoveHandler;
 use Liminal\Module\Order\Http\OrderListHandler;
+use Liminal\Module\Order\Http\OrderUpdateHandler;
 use Liminal\Registry\Contract\DefinitionProvider;
 use Liminal\Registry\Contract\Module;
 use Liminal\Registry\EntityRegistry;
@@ -86,7 +92,13 @@ final class OrderModule implements Module, DefinitionProvider
         // Statics before dynamics, and {id:\d+} is load-bearing.
         $routes = $registries->get(RouteRegistry::class);
         $routes->get('/orders', OrderListHandler::class, 'order.list');
+        $routes->get('/orders/create', OrderCreatePageHandler::class, 'order.create');
+        $routes->post('/orders/create', OrderCreateSubmitHandler::class, 'order.create_submit');
         $routes->get('/orders/{id:\d+}', OrderDetailHandler::class, 'order.detail');
+        $routes->post('/orders/{id:\d+}', OrderUpdateHandler::class, 'order.update');
+        $routes->post('/orders/{id:\d+}/lines', OrderLineAddHandler::class, 'order.line_add');
+        $routes->post('/orders/{id:\d+}/lines/{line:\d+}/remove', OrderLineRemoveHandler::class, 'order.line_remove');
+        $routes->post('/orders/{id:\d+}/delete', OrderDeleteHandler::class, 'order.delete');
 
         // Between thirdparty (930) and invoice (940): the menu reads the
         // business flow — party, order, invoice.

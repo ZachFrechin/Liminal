@@ -152,6 +152,126 @@ final class OrderHttpTest extends IntegrationTestCase
         self::assertSame(404, $kernel->handle($this->get('/orders/20', $ada))->getStatusCode());
     }
 
+    public function testADraftIsBornGrowsLinesAndItsTotalsFollow(): void
+    {
+        $this->seedThirdparty(1, 1, 'Wayne Enterprises');
+
+        $kernel = $this->kernel();
+        $ada = $this->login($kernel, 'ada@liminal.test');
+
+        // Create the draft from the form.
+        $form = $kernel->handle($this->get('/orders/create', $ada));
+        $created = $kernel->handle($this->post(
+            '/orders/create',
+            [
+                'thirdparty_id' => '1',
+                'issued_on' => '2026-07-31',
+                'wanted_on' => '2026-08-30',
+                '_token' => $this->tokenFrom((string) $form->getBody()),
+            ],
+            $ada,
+        ));
+
+        self::assertSame(302, $created->getStatusCode());
+        $location = $created->getHeaderLine('Location');
+        self::assertMatchesRegularExpression('~^/orders/\d+$~', $location);
+
+        $detail = (string) $kernel->handle($this->get($location, $ada))->getBody();
+        self::assertStringContainsString('Draft order created.', $detail);
+        $token = $this->tokenFrom($detail);
+
+        // Two lines, two rates — the totals and their ventilation follow.
+        foreach ([['Consulting', '2', '100.00', '20.00'], ['Books', '1', '50,00', '5,50']] as [$label, $qty, $price, $rate]) {
+            $added = $kernel->handle($this->post(
+                $location . '/lines',
+                ['label' => $label, 'quantity' => $qty, 'unit_price' => $price, 'vat_rate' => $rate, '_token' => $token],
+                $ada,
+            ));
+            self::assertSame(302, $added->getStatusCode());
+        }
+
+        $withLines = (string) $kernel->handle($this->get($location, $ada))->getBody();
+        self::assertStringContainsString('Consulting', $withLines);
+        self::assertStringContainsString('250.00', $withLines);
+        self::assertStringContainsString('292.75', $withLines);
+
+        // The stored columns moved with the lines — recomputed == stored.
+        self::assertEquals('250.00', $this->dbal->fetchOne('SELECT total_excl FROM order_order'));
+        self::assertEquals('42.75', $this->dbal->fetchOne('SELECT total_tax FROM order_order'));
+        self::assertEquals('292.75', $this->dbal->fetchOne('SELECT total_incl FROM order_order'));
+
+        // Remove a line: the totals shrink with it.
+        $lineId = $this->dbal->fetchOne("SELECT id FROM order_order_line WHERE label = 'Books'");
+        self::assertIsNumeric($lineId);
+
+        $removed = $kernel->handle($this->post(
+            $location . '/lines/' . (int) $lineId . '/remove',
+            ['_token' => $token],
+            $ada,
+        ));
+        self::assertSame(302, $removed->getStatusCode());
+        self::assertEquals('240.00', $this->dbal->fetchOne('SELECT total_incl FROM order_order'));
+
+        // Edit the header dates.
+        $updated = $kernel->handle($this->post(
+            $location,
+            ['thirdparty_id' => '1', 'issued_on' => '2026-08-01', 'wanted_on' => '', '_token' => $token],
+            $ada,
+        ));
+        self::assertSame(302, $updated->getStatusCode());
+        self::assertEquals('2026-08-01', $this->dbal->fetchOne('SELECT issued_on FROM order_order'));
+        self::assertNull($this->dbal->fetchOne('SELECT wanted_on FROM order_order'));
+
+        // Delete the draft: lines ride the cascade.
+        $deleted = $kernel->handle($this->post($location . '/delete', ['_token' => $token], $ada));
+        self::assertSame('/orders', $deleted->getHeaderLine('Location'));
+        self::assertEquals(0, $this->dbal->fetchOne('SELECT COUNT(*) FROM order_order'));
+        self::assertEquals(0, $this->dbal->fetchOne('SELECT COUNT(*) FROM order_order_line'));
+    }
+
+    public function testRefusalsFlashInsteadOfThrowing(): void
+    {
+        $this->seedThirdparty(1, 1, 'Wayne Enterprises');
+        $this->seedSecondCompany(granting: null);
+        $this->seedThirdparty(2, 2, 'Stark Industries');
+
+        $kernel = $this->kernel();
+        $ada = $this->login($kernel, 'ada@liminal.test');
+
+        $form = $kernel->handle($this->get('/orders/create', $ada));
+        $token = $this->tokenFrom((string) $form->getBody());
+
+        // Another company's thirdparty does not exist here.
+        $foreign = $kernel->handle($this->post(
+            '/orders/create',
+            ['thirdparty_id' => '2', 'issued_on' => '2026-07-31', '_token' => $token],
+            $ada,
+        ));
+        self::assertSame('/orders/create', $foreign->getHeaderLine('Location'));
+
+        $reloaded = (string) $kernel->handle($this->get('/orders/create', $ada))->getBody();
+        self::assertStringContainsString('does not exist in this company', $reloaded);
+
+        // A wanted date before the issue date is a flash too.
+        $backwards = $kernel->handle($this->post(
+            '/orders/create',
+            ['thirdparty_id' => '1', 'issued_on' => '2026-07-31', 'wanted_on' => '2026-07-01', '_token' => $token],
+            $ada,
+        ));
+        self::assertSame('/orders/create', $backwards->getHeaderLine('Location'));
+        self::assertEquals(0, $this->dbal->fetchOne('SELECT COUNT(*) FROM order_order'));
+
+        // An overflowing quantity is a flash, not fabricated cents.
+        $this->seedOrder(10, 1, 1, null, '0.00');
+        $bad = $kernel->handle($this->post(
+            '/orders/10/lines',
+            ['label' => 'Huge', 'quantity' => '9999999999', 'unit_price' => '1.00', 'vat_rate' => '20.00', '_token' => $token],
+            $ada,
+        ));
+        self::assertSame('/orders/10', $bad->getHeaderLine('Location'));
+        self::assertEquals(0, $this->dbal->fetchOne('SELECT COUNT(*) FROM order_order_line'));
+    }
+
     private function seedThirdparty(int $id, int $companyId, string $name): void
     {
         $this->dbal->insert('thirdparty_thirdparty', [

@@ -1,0 +1,37 @@
+{% extends '@liminal/layout.html.twig' %}
+
+{% block title %}{{ 'order.create.title'|trans }}{% endblock %}
+
+{% block content %}
+    <h1>{{ 'order.create.title'|trans }}</h1>
+
+    <form method="post" action="{{ url('order.create_submit') }}" class="form-card">
+        {{ csrf_field() }}
+
+        <p class="field">
+            <label for="thirdparty_id">{{ 'order.create.thirdparty'|trans }}</label>
+            <select id="thirdparty_id" name="thirdparty_id" required>
+                {% for thirdparty in thirdparties %}
+                    <option value="{{ thirdparty.id }}">{{ thirdparty.name }} ({{ thirdparty.code }})</option>
+                {% endfor %}
+            </select>
+            {% if thirdparties is empty %}
+                <span class="field-hint">{{ 'order.create.no_thirdparties'|trans }}</span>
+            {% endif %}
+        </p>
+        <div class="field-row">
+            <p class="field">
+                <label for="issued_on">{{ 'order.create.issued_on'|trans }}</label>
+                <input type="date" id="issued_on" name="issued_on" value="{{ today }}" required>
+            </p>
+            <p class="field">
+                <label for="wanted_on">{{ 'order.create.wanted_on'|trans }}</label>
+                <input type="date" id="wanted_on" name="wanted_on">
+            </p>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="primary">{{ 'order.create.submit'|trans }}</button>
+        </div>
+    </form>
+{% endblock %}
