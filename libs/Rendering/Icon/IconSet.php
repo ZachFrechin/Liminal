@@ -36,6 +36,7 @@ final readonly class IconSet
         'building-2' => '<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/> <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/> <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/> <path d="M10 6h4"/> <path d="M10 10h4"/> <path d="M10 14h4"/> <path d="M10 18h4"/>',
         'contact-round' => '<path d="M16 2v2"/> <path d="M17.915 22a6 6 0 0 0-12 0"/> <path d="M8 2v2"/> <circle cx="12" cy="12" r="4"/> <rect x="3" y="4" width="18" height="18" rx="2"/>',
         'receipt-text' => '<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/> <path d="M14 8H8"/> <path d="M16 12H8"/> <path d="M13 16H8"/>',
+        'shopping-cart' => '<circle cx="8" cy="21" r="1"/> <circle cx="19" cy="21" r="1"/> <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>',
     ];
 
     /**

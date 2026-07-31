@@ -30,6 +30,11 @@ final class IconSetTest extends TestCase
         self::assertStringContainsString('<path d="M14 8H8"/>', new IconSet()->svg('receipt-text'));
     }
 
+    public function testTheOrderGlyphIsVendored(): void
+    {
+        self::assertStringContainsString('<circle cx="8" cy="21" r="1"/>', new IconSet()->svg('shopping-cart'));
+    }
+
     public function testAnUnknownNameIsWiringAndThrows(): void
     {
         $this->expectException(RenderingException::class);
