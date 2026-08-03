@@ -15,9 +15,17 @@ body.shell { display: flex; height: 100%; overflow: hidden; }
 /* scrollbar-gutter: the column below is centred, so a scrollbar appearing
    between a short and a long page would shift it by half the bar's width. */
 .frame > main { flex: 1; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; padding: var(--page-pad); }
+/* grid-auto-rows: the scroller above gives this grid a DEFINITE height, and
+   a definite height makes the browser resolve an auto row against the box
+   instead of against its content — a 705px table was handed a 368px track
+   and painted straight through the pagination under it. align-content:start
+   does not save you: it packs the tracks, it does not size them. Naming the
+   rows max-content sizes each one by what it actually holds, which is what
+   an auto row meant before the height became definite. */
 .shell .frame > main {
   display: grid;
   grid-template-columns: minmax(0, var(--page-max));
+  grid-auto-rows: max-content;
   justify-content: center;
   align-content: start;
   gap: var(--sp-7);
