@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Liminal\Module\Thirdparty\Http;
 
+use Liminal\Lib\Database\Query\ListRequest;
 use Liminal\Lib\Rendering\HtmlRenderer;
 use Liminal\Lib\Security\Authorization\Gate;
 use Liminal\Lib\Security\Authorization\RequestGate;
@@ -39,17 +40,18 @@ final readonly class ThirdpartyListHandler implements RequestHandlerInterface
     {
         $this->gate->authorize(self::READ);
 
-        $params = $request->getQueryParams();
-        $requestedPage = is_numeric($params['page'] ?? null) ? (int) $params['page'] : 1;
-        $query = is_string($params['q'] ?? null) ? $params['q'] : null;
-
-        $page = $this->thirdparties->page($requestedPage, $query);
+        // Everything the URL is allowed to ask for is checked against the
+        // schema here; the template renders the request back rather than
+        // re-reading the query string, so links and state cannot disagree.
+        $schema = ThirdpartyRepository::schema();
+        $list = ListRequest::fromQueryParams($request->getQueryParams(), $schema);
 
         return $this->html->respond(
             '@thirdparty/thirdparties.html.twig',
             [
-                'page' => $page,
-                'query' => trim($query ?? ''),
+                'page' => $this->thirdparties->pageOf($list),
+                'list' => $list,
+                'schema' => $schema,
                 // The template shows the write affordances only to those the
                 // POST handlers would let through anyway.
                 'canManage' => $this->allows->allows(self::MANAGE),

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Liminal\Module\Invoice\Http;
 
+use Liminal\Lib\Database\Query\ListRequest;
 use Liminal\Lib\Rendering\HtmlRenderer;
 use Liminal\Lib\Security\Authorization\Gate;
 use Liminal\Lib\Security\Authorization\RequestGate;
@@ -31,11 +32,9 @@ final readonly class InvoiceListHandler implements RequestHandlerInterface
     {
         $this->gate->authorize(InvoiceModule::READ);
 
-        $params = $request->getQueryParams();
-        $requestedPage = is_numeric($params['page'] ?? null) ? (int) $params['page'] : 1;
-        $query = is_string($params['q'] ?? null) ? $params['q'] : null;
-
-        $page = $this->invoices->page($requestedPage, $query);
+        $schema = InvoiceRepository::schema();
+        $list = ListRequest::fromQueryParams($request->getQueryParams(), $schema);
+        $page = $this->invoices->pageOf($list);
 
         $thirdpartyIds = array_values(array_unique(array_map(
             static fn($invoice): int => $invoice->getThirdpartyId(),
@@ -46,7 +45,8 @@ final readonly class InvoiceListHandler implements RequestHandlerInterface
             '@invoice/invoices.html.twig',
             [
                 'page' => $page,
-                'query' => trim($query ?? ''),
+                'list' => $list,
+                'schema' => $schema,
                 'thirdpartyNames' => $this->invoices->thirdpartyNamesFor($thirdpartyIds),
                 'canManage' => $this->allows->allows(InvoiceModule::MANAGE),
             ],

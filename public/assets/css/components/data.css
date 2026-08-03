@@ -1,0 +1,102 @@
+/* The data family: the table every list renders into, the filter bar above
+   it and the pager below. Replaces the provisional dress in badges.css,
+   which only ever kept naked <table> markup from embarrassing the shell.
+
+   Semantic aliases only — the drift test globs this directory and refuses a
+   raw palette value here. */
+
+/* ── The filter bar ─────────────────────────────────────────────────── */
+/* A plain GET form: the browser assembles the query string, which is the
+   whole reason filtering and sorting survive with JavaScript disabled. It
+   wraps rather than scrolls — a list with five filters on a narrow screen
+   should get taller, not sideways. */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--sp-4);
+}
+.filter-bar input[type='search'] { min-width: 220px; flex: 1 1 220px; }
+.filter-choice {
+  display: grid;
+  gap: var(--sp-2);
+  font: var(--text-label);
+  color: var(--text-secondary);
+}
+.filter-choice select { min-width: 140px; }
+.filter-clear {
+  align-self: center;
+  font: var(--text-meta);
+  color: var(--text-tertiary);
+}
+
+/* ── The table ──────────────────────────────────────────────────────── */
+/* overflow-x on a wrapper would need a wrapper; the table scrolls its own
+   overflow inside the page column instead, and the page itself never does
+   — the shell's scroller is vertical only. */
+.data-table {
+  width: 100%;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  border-spacing: 0;
+  overflow: hidden;
+  font: var(--text-body-sm);
+}
+.data-table thead th {
+  padding: var(--sp-4) var(--sp-5);
+  background: var(--surface-sunken);
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: left;
+  font: var(--text-label);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+.data-table tbody td {
+  padding: var(--sp-4) var(--sp-5);
+  border-top: 1px solid var(--border-subtle);
+  vertical-align: middle;
+}
+.data-table tbody tr:first-child td { border-top: 0; }
+.data-table tbody tr:hover { background: var(--surface-hover); }
+.data-table td.numeric,
+.data-table th.numeric { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* A sortable header is a link that fills its cell, so the whole heading is
+   the target rather than the four characters of its label. */
+.data-table .sort-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  border-bottom: 0;
+  color: inherit;
+}
+.data-table .sort-link:hover { color: var(--text-primary); }
+.data-table .sort-link.is-sorted { color: var(--text-primary); }
+.data-table .sort-link > svg.lucide { opacity: 0.7; }
+
+/* ── The pager ──────────────────────────────────────────────────────── */
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  font: var(--text-meta);
+  color: var(--text-tertiary);
+}
+.pagination-count { margin-right: auto; }
+.pagination a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: var(--control-h-sm);
+  padding: 0 var(--sp-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+}
+.pagination a:hover { background: var(--surface-hover); color: var(--text-primary); }
+
+@media print {
+  /* The controls are for choosing what to print, not part of it. */
+  .filter-bar,
+  .pagination a { display: none; }
+}

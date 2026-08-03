@@ -75,11 +75,13 @@ final readonly class ThirdpartyRepository
             perPage: self::PER_PAGE,
             search: self::SEARCH,
             filters: [
-                'kind' => new ListFilter('kind', 'thirdparty.filter.kind', 'thirdparty.filter.kind', [
+                // The choice labels reuse the catalogue the table cells
+                // already render from: one word, one translation.
+                'kind' => new ListFilter('kind', 'thirdparty.list.kind', 'thirdparty.kind', [
                     'customer' => 't.customer = true',
                     'supplier' => 't.supplier = true',
                 ]),
-                'status' => new ListFilter('status', 'thirdparty.filter.status', 'thirdparty.filter.status', [
+                'status' => new ListFilter('status', 'thirdparty.list.status', 'thirdparty.state', [
                     'active' => 't.active = true',
                     'archived' => 't.active = false',
                 ]),

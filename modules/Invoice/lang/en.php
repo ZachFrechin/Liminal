@@ -12,14 +12,12 @@ return [
 
     'invoice.list.title' => 'Invoices',
     'invoice.list.create' => 'Create an invoice',
-    'invoice.list.search' => 'Search',
     'invoice.list.empty' => 'No invoice here yet.',
     'invoice.list.number' => 'Number',
     'invoice.list.party' => 'Third party',
     'invoice.list.issued' => 'Issued',
     'invoice.list.status' => 'Status',
     'invoice.list.total' => 'Total incl. VAT',
-    'invoice.list.page_of' => 'Page %page% of %pages% (%total% total)',
 
     'invoice.status.draft' => 'Draft',
     'invoice.status.validated' => 'Validated',

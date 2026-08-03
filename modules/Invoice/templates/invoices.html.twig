@@ -10,22 +10,20 @@
 {% block content %}
     <h1>{{ 'invoice.list.title'|trans }}</h1>
 
-    <form method="get" action="{{ url('invoice.list') }}">
-        <input type="search" name="q" value="{{ query }}" placeholder="{{ 'invoice.list.search'|trans }}">
-        <button type="submit">{{ 'invoice.list.search'|trans }}</button>
-    </form>
+    {{ ui.toolbar('invoice.list', list, schema) }}
 
     {% if page.total == 0 %}
-        {{ ui.empty_state('receipt-text', 'invoice.list.empty'|trans) }}
+        {# A filtered list that finds nothing is not an empty list. #}
+        {{ ui.empty_state('receipt-text', list.isFiltered ? 'list.no_match'|trans : 'invoice.list.empty'|trans) }}
     {% else %}
-        <table>
+        <table class="data-table">
             <thead>
                 <tr>
-                    <th>{{ 'invoice.list.number'|trans }}</th>
-                    <th>{{ 'invoice.list.party'|trans }}</th>
-                    <th>{{ 'invoice.list.issued'|trans }}</th>
-                    <th>{{ 'invoice.list.status'|trans }}</th>
-                    <th>{{ 'invoice.list.total'|trans }}</th>
+                    {{ ui.sortable('invoice.list', list, schema, 'number', 'invoice.list.number'|trans) }}
+                    {{ ui.sortable('invoice.list', list, schema, 'party', 'invoice.list.party'|trans) }}
+                    {{ ui.sortable('invoice.list', list, schema, 'issued', 'invoice.list.issued'|trans) }}
+                    {{ ui.sortable('invoice.list', list, schema, 'status', 'invoice.list.status'|trans) }}
+                    {{ ui.sortable('invoice.list', list, schema, 'total', 'invoice.list.total'|trans) }}
                 </tr>
             </thead>
             <tbody>
@@ -51,10 +49,6 @@
             </tbody>
         </table>
 
-        <p class="pagination">
-            {{ 'invoice.list.page_of'|trans({'page': page.page, 'pages': page.pages, 'total': page.total}) }}
-            {% if page.hasPrevious %}<a href="{{ url('invoice.list') }}?page={{ page.page - 1 }}{% if query %}&q={{ query|url_encode }}{% endif %}">&larr;</a>{% endif %}
-            {% if page.hasNext %}<a href="{{ url('invoice.list') }}?page={{ page.page + 1 }}{% if query %}&q={{ query|url_encode }}{% endif %}">&rarr;</a>{% endif %}
-        </p>
+        {{ ui.pagination('invoice.list', page, list, schema) }}
     {% endif %}
 {% endblock %}

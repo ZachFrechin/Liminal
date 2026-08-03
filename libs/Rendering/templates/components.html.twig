@@ -19,3 +19,58 @@
 {% macro empty_state(glyph, title, description = null) %}
     <div class="empty-state"><span class="empty-state-icon">{{ icon(glyph, 18) }}</span><strong class="empty-state-title">{{ title }}</strong>{% if description %}<p class="empty-state-description">{{ description }}</p>{% endif %}</div>
 {% endmacro %}
+
+{# ── The list furniture ────────────────────────────────────────────────
+   Three macros, one contract: `route` names the list's own route, `list`
+   is the ListRequest and `schema` its ListSchema. Every URL is built by
+   url(route, list.…(…).toQueryParams(schema)) — the generator turns the
+   leftover parameters into a query string, so there is exactly ONE way to
+   write a list link and the defaults never leak into it.
+
+   The toolbar is a plain GET form: the browser assembles the query string,
+   which is why filtering and sorting work with JavaScript disabled. Sort
+   and direction ride along as hidden fields so a search does not silently
+   reset the column; `page` deliberately does NOT, because page 7 of the
+   old criteria names different rows under the new ones. #}
+
+{% macro toolbar(route, list, schema, placeholder = null) %}
+    <form class="filter-bar" method="get" action="{{ url(route) }}">
+        <input type="search" name="q" value="{{ list.search }}" placeholder="{{ placeholder ?? 'list.search'|trans }}" aria-label="{{ 'list.search'|trans }}">
+        {% for key, filter in schema.filters %}
+            <label class="filter-choice">
+                <span>{{ filter.labelKey|trans }}</span>
+                <select name="{{ key }}">
+                    <option value="">{{ 'list.filter_any'|trans }}</option>
+                    {% for value in filter.values %}
+                        <option value="{{ value }}"{% if list.filterValue(key) == value %} selected{% endif %}>{{ filter.labelFor(value)|trans }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+        {% endfor %}
+        {% if list.sort != schema.defaultSort %}<input type="hidden" name="sort" value="{{ list.sort }}">{% endif %}
+        {% if list.direction != schema.defaultDirection %}<input type="hidden" name="dir" value="{{ list.direction.value }}">{% endif %}
+        <button type="submit" class="primary">{{ 'list.search_submit'|trans }}</button>
+        {% if list.isFiltered %}<a class="filter-clear" href="{{ url(route) }}">{{ 'list.clear'|trans }}</a>{% endif %}
+    </form>
+{% endmacro %}
+
+{% macro sortable(route, list, schema, key, label) %}
+    {# aria-sort goes on the CELL and names the state, never the action —
+       the link's text is the column, and a screen reader reads the two
+       together. #}
+    <th{% if list.sort == key %} aria-sort="{{ list.direction.value == 'asc' ? 'ascending' : 'descending' }}"{% endif %}>
+        <a class="sort-link{% if list.sort == key %} is-sorted{% endif %}" href="{{ url(route, list.sortedBy(key, schema).toQueryParams(schema)) }}" title="{{ 'list.sort_by'|trans({'column': label}) }}">
+            {{- label }}{% if list.sort == key %} {{ icon(list.direction.value == 'asc' ? 'arrow-up' : 'arrow-down', 14) }}{% endif -%}
+        </a>
+    </th>
+{% endmacro %}
+
+{% macro pagination(route, page, list, schema) %}
+    {# Rendered even on a single page: the count is the answer to "how many
+       are there", which a filtered list is exactly the place to ask. #}
+    <nav class="pagination" aria-label="{{ 'list.page_of'|trans({'page': page.page, 'pages': page.pages, 'total': page.total}) }}">
+        <span class="pagination-count">{{ 'list.page_of'|trans({'page': page.page, 'pages': page.pages, 'total': page.total}) }}</span>
+        {% if page.hasPrevious %}<a rel="prev" href="{{ url(route, list.withPage(page.page - 1).toQueryParams(schema)) }}">{{ icon('chevron-left', 14) }}{{ 'list.previous'|trans }}</a>{% endif %}
+        {% if page.hasNext %}<a rel="next" href="{{ url(route, list.withPage(page.page + 1).toQueryParams(schema)) }}">{{ 'list.next'|trans }}{{ icon('chevron-right', 14) }}</a>{% endif %}
+    </nav>
+{% endmacro %}

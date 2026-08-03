@@ -10,22 +10,20 @@
 {% block content %}
     <h1>{{ 'order.list.title'|trans }}</h1>
 
-    <form method="get" action="{{ url('order.list') }}">
-        <input type="search" name="q" value="{{ query }}" placeholder="{{ 'order.list.search'|trans }}">
-        <button type="submit">{{ 'order.list.search'|trans }}</button>
-    </form>
+    {{ ui.toolbar('order.list', list, schema) }}
 
     {% if page.total == 0 %}
-        {{ ui.empty_state('shopping-cart', 'order.list.empty'|trans) }}
+        {# A filtered list that finds nothing is not an empty list. #}
+        {{ ui.empty_state('shopping-cart', list.isFiltered ? 'list.no_match'|trans : 'order.list.empty'|trans) }}
     {% else %}
-        <table>
+        <table class="data-table">
             <thead>
                 <tr>
-                    <th>{{ 'order.list.number'|trans }}</th>
-                    <th>{{ 'order.list.party'|trans }}</th>
-                    <th>{{ 'order.list.issued'|trans }}</th>
-                    <th>{{ 'order.list.status'|trans }}</th>
-                    <th>{{ 'order.list.total'|trans }}</th>
+                    {{ ui.sortable('order.list', list, schema, 'number', 'order.list.number'|trans) }}
+                    {{ ui.sortable('order.list', list, schema, 'party', 'order.list.party'|trans) }}
+                    {{ ui.sortable('order.list', list, schema, 'issued', 'order.list.issued'|trans) }}
+                    {{ ui.sortable('order.list', list, schema, 'status', 'order.list.status'|trans) }}
+                    {{ ui.sortable('order.list', list, schema, 'total', 'order.list.total'|trans) }}
                 </tr>
             </thead>
             <tbody>
@@ -55,10 +53,6 @@
             </tbody>
         </table>
 
-        <p class="pagination">
-            {{ 'order.list.page_of'|trans({'page': page.page, 'pages': page.pages, 'total': page.total}) }}
-            {% if page.hasPrevious %}<a href="{{ url('order.list') }}?page={{ page.page - 1 }}{% if query %}&q={{ query|url_encode }}{% endif %}">&larr;</a>{% endif %}
-            {% if page.hasNext %}<a href="{{ url('order.list') }}?page={{ page.page + 1 }}{% if query %}&q={{ query|url_encode }}{% endif %}">&rarr;</a>{% endif %}
-        </p>
+        {{ ui.pagination('order.list', page, list, schema) }}
     {% endif %}
 {% endblock %}

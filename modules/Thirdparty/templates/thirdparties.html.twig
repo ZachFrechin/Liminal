@@ -10,20 +10,20 @@
 {% block content %}
     <h1>{{ 'thirdparty.list.title'|trans }}</h1>
 
-    <form method="get" action="{{ url('thirdparty.list') }}">
-        <input type="search" name="q" value="{{ query }}" placeholder="{{ 'thirdparty.list.search'|trans }}">
-        <button type="submit">{{ 'thirdparty.list.search'|trans }}</button>
-    </form>
+    {{ ui.toolbar('thirdparty.list', list, schema) }}
 
     {% if page.total == 0 %}
-        {{ ui.empty_state('contact-round', 'thirdparty.list.empty'|trans) }}
+        {# A filtered list that finds nothing is not an empty list: the first
+           invites you to create, the second to widen. #}
+        {{ ui.empty_state('contact-round', list.isFiltered ? 'list.no_match'|trans : 'thirdparty.list.empty'|trans) }}
     {% else %}
-        <table>
+        <table class="data-table">
             <thead>
                 <tr>
-                    <th>{{ 'thirdparty.list.code'|trans }}</th>
-                    <th>{{ 'thirdparty.list.name'|trans }}</th>
+                    {{ ui.sortable('thirdparty.list', list, schema, 'code', 'thirdparty.list.code'|trans) }}
+                    {{ ui.sortable('thirdparty.list', list, schema, 'name', 'thirdparty.list.name'|trans) }}
                     <th>{{ 'thirdparty.list.kind'|trans }}</th>
+                    {{ ui.sortable('thirdparty.list', list, schema, 'town', 'thirdparty.field.town'|trans) }}
                     <th>{{ 'thirdparty.list.status'|trans }}</th>
                 </tr>
             </thead>
@@ -40,6 +40,7 @@
                             {% if thirdparty.supplier %}<span class="badge">{{ 'thirdparty.kind.supplier'|trans }}</span>{% endif %}
                             {% if not thirdparty.customer and not thirdparty.supplier %}{{ 'thirdparty.kind.prospect'|trans }}{% endif %}
                         </td>
+                        <td>{{ thirdparty.town|default('—') }}</td>
                         <td>
                             {% if not thirdparty.active %}<span class="badge badge-inactive">{{ 'thirdparty.list.inactive'|trans }}</span>{% endif %}
                         </td>
@@ -48,14 +49,6 @@
             </tbody>
         </table>
 
-        <p class="pagination">
-            {% if page.hasPrevious %}
-                <a href="{{ url('thirdparty.list', {'page': page.page - 1, 'q': query}) }}">{{ 'thirdparty.list.previous'|trans }}</a>
-            {% endif %}
-            {{ 'thirdparty.list.page_of'|trans({'page': page.page, 'pages': page.pages, 'total': page.total}) }}
-            {% if page.hasNext %}
-                <a href="{{ url('thirdparty.list', {'page': page.page + 1, 'q': query}) }}">{{ 'thirdparty.list.next'|trans }}</a>
-            {% endif %}
-        </p>
+        {{ ui.pagination('thirdparty.list', page, list, schema) }}
     {% endif %}
 {% endblock %}

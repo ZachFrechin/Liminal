@@ -78,7 +78,10 @@ final class InvoiceHttpTest extends IntegrationTestCase
         self::assertStringContainsString('INV-2026-0001', $wayne);
 
         $none = (string) $kernel->handle($this->get('/invoices?q=Stark', $ada))->getBody();
-        self::assertStringContainsString('No invoice here yet.', $none);
+        // A search that finds nothing is not an empty list: the first
+        // screen invites you to create, this one to widen.
+        self::assertStringContainsString('Nothing matches those criteria.', $none);
+        self::assertStringNotContainsString('No invoice here yet.', $none);
     }
 
     public function testTheDetailShowsLinesAndVentilatedTotals(): void

@@ -12,14 +12,12 @@ return [
 
     'order.list.title' => 'Orders',
     'order.list.create' => 'New order',
-    'order.list.search' => 'Search',
     'order.list.empty' => 'No order here yet.',
     'order.list.number' => 'Number',
     'order.list.party' => 'Third party',
     'order.list.issued' => 'Issued',
     'order.list.status' => 'Status',
     'order.list.total' => 'Total incl. VAT',
-    'order.list.page_of' => 'Page %page% of %pages% (%total% total)',
 
     'order.status.draft' => 'Draft',
     'order.status.validated' => 'Validated',

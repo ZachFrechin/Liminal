@@ -86,7 +86,10 @@ final class OrderHttpTest extends IntegrationTestCase
         self::assertStringContainsString('CMD-2026-0001', $wayne);
 
         $none = (string) $kernel->handle($this->get('/orders?q=Stark', $ada))->getBody();
-        self::assertStringContainsString('No order here yet.', $none);
+        // A search that finds nothing is not an empty list: the first
+        // screen invites you to create, this one to widen.
+        self::assertStringContainsString('Nothing matches those criteria.', $none);
+        self::assertStringNotContainsString('No order here yet.', $none);
     }
 
     public function testTheDetailShowsLinesAndVentilatedTotals(): void

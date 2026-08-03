@@ -60,7 +60,7 @@ final readonly class OrderRepository
             perPage: self::PER_PAGE,
             search: self::SEARCH,
             filters: [
-                'status' => new ListFilter('status', 'order.filter.status', 'order.status', [
+                'status' => new ListFilter('status', 'order.list.status', 'order.status', [
                     Order::DRAFT => "o.status = 'draft'",
                     Order::VALIDATED => "o.status = 'validated'",
                     Order::INVOICED => "o.status = 'invoiced'",

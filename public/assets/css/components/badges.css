@@ -1,7 +1,5 @@
-/* Minimal token dress for the badges and pagination the admin lists already
-   render. Provisional on purpose: the data family (StatusPill, DataTable,
-   Pagination proper) is a later step — this only keeps today's markup from
-   standing naked inside the shell. */
+/* The status pills. The rest of what this file provisionally held — the
+   table and the pager — moved to data.css the day the lists got a spine. */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -19,5 +17,3 @@
 .badge-no-access { background: var(--danger-50); border-color: var(--danger-200); color: var(--danger-700); }
 .badge-validated { background: var(--success-50); border-color: var(--success-200); color: var(--success-700); }
 .badge-invoiced { background: var(--accent-50); border-color: var(--accent-200); color: var(--accent-700); }
-
-.pagination { display: flex; align-items: center; gap: var(--sp-4); font: var(--text-meta); color: var(--text-tertiary); }

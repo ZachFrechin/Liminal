@@ -71,7 +71,7 @@ final readonly class InvoiceRepository
             perPage: self::PER_PAGE,
             search: self::SEARCH,
             filters: [
-                'status' => new ListFilter('status', 'invoice.filter.status', 'invoice.status', [
+                'status' => new ListFilter('status', 'invoice.list.status', 'invoice.status', [
                     Invoice::DRAFT => "i.status = 'draft'",
                     Invoice::VALIDATED => "i.status = 'validated'",
                 ]),

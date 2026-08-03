@@ -6,16 +6,17 @@ declare(strict_types=1);
 return [
     'thirdparty.list.title' => 'Third parties',
     'thirdparty.list.create' => 'Create a third party',
-    'thirdparty.list.search' => 'Search',
     'thirdparty.list.empty' => 'No third party here yet.',
     'thirdparty.list.code' => 'Code',
     'thirdparty.list.name' => 'Name',
     'thirdparty.list.kind' => 'Kind',
     'thirdparty.list.status' => 'Status',
     'thirdparty.list.inactive' => 'inactive',
-    'thirdparty.list.previous' => 'Previous',
-    'thirdparty.list.next' => 'Next',
-    'thirdparty.list.page_of' => 'Page %page% of %pages% (%total% total)',
+
+    // The archived/active pair the status filter offers; 'inactive' stays
+    // the badge's word, which is what a ROW says rather than a choice.
+    'thirdparty.state.active' => 'active',
+    'thirdparty.state.archived' => 'archived',
 
     'thirdparty.kind.customer' => 'customer',
     'thirdparty.kind.supplier' => 'supplier',

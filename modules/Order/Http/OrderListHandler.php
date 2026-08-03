@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Liminal\Module\Order\Http;
 
+use Liminal\Lib\Database\Query\ListRequest;
 use Liminal\Lib\Rendering\HtmlRenderer;
 use Liminal\Lib\Security\Authorization\Gate;
 use Liminal\Lib\Security\Authorization\RequestGate;
@@ -30,11 +31,9 @@ final readonly class OrderListHandler implements RequestHandlerInterface
     {
         $this->gate->authorize(OrderModule::READ);
 
-        $params = $request->getQueryParams();
-        $requestedPage = is_numeric($params['page'] ?? null) ? (int) $params['page'] : 1;
-        $query = is_string($params['q'] ?? null) ? $params['q'] : null;
-
-        $page = $this->orders->page($requestedPage, $query);
+        $schema = OrderRepository::schema();
+        $list = ListRequest::fromQueryParams($request->getQueryParams(), $schema);
+        $page = $this->orders->pageOf($list);
 
         $thirdpartyIds = array_values(array_unique(array_map(
             static fn($order): int => $order->getThirdpartyId(),
@@ -45,7 +44,8 @@ final readonly class OrderListHandler implements RequestHandlerInterface
             '@order/orders.html.twig',
             [
                 'page' => $page,
-                'query' => trim($query ?? ''),
+                'list' => $list,
+                'schema' => $schema,
                 'thirdpartyNames' => $this->orders->thirdpartyNamesFor($thirdpartyIds),
                 'canManage' => $this->allows->allows(OrderModule::MANAGE),
             ],
