@@ -6,6 +6,11 @@ namespace Liminal\Module\Invoice\Repository;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Liminal\Lib\Database\Pagination\Page;
+use Liminal\Lib\Database\Query\DqlListBuilder;
+use Liminal\Lib\Database\Query\ListFilter;
+use Liminal\Lib\Database\Query\ListRequest;
+use Liminal\Lib\Database\Query\ListSchema;
+use Liminal\Lib\Database\Query\SortDirection;
 use Liminal\Lib\Database\Scope\CompanyContext;
 use Liminal\Module\Invoice\Entity\Invoice;
 use Liminal\Module\Invoice\Entity\InvoiceLine;
@@ -26,9 +31,6 @@ final readonly class InvoiceRepository
 {
     public const int PER_PAGE = 25;
 
-    /** Longer than any legitimate search, short enough to bound the LIKE. */
-    private const int MAX_QUERY_LENGTH = 100;
-
     /**
      * Number and party name — the two things a human remembers an invoice by.
      */
@@ -37,49 +39,78 @@ final readonly class InvoiceRepository
     public function __construct(
         private EntityManagerInterface $entityManager,
         private CompanyContext $context,
+        private DqlListBuilder $lists,
     ) {}
 
     /**
-     * One page of the current company's invoices, newest first — id already
-     * orders by creation and breaks its own ties.
+     * What the list admits. The default sort IS the tiebreaker — "newest
+     * first" has always meant by id here, because id orders by creation and
+     * breaks its own ties; naming it as a sort key keeps that contract
+     * instead of quietly re-reading it as a date.
+     *
+     * Party sorts on the JOINED alias, which is exactly why the tiebreaker is
+     * declared rather than inferred: two invoices to the same customer would
+     * otherwise be free to swap between pages.
+     */
+    public static function schema(): ListSchema
+    {
+        return new ListSchema(
+            alias: 'i',
+            sorts: [
+                'recent' => 'i.id',
+                'number' => 'i.number',
+                'party' => 't.name',
+                'issued' => 'i.issuedOn',
+                'due' => 'i.dueOn',
+                'status' => 'i.status',
+                'total' => 'i.totalIncl',
+            ],
+            tiebreaker: 'i.id',
+            defaultSort: 'recent',
+            defaultDirection: SortDirection::Descending,
+            perPage: self::PER_PAGE,
+            search: self::SEARCH,
+            filters: [
+                'status' => new ListFilter('status', 'invoice.filter.status', 'invoice.status', [
+                    Invoice::DRAFT => "i.status = 'draft'",
+                    Invoice::VALIDATED => "i.status = 'validated'",
+                ]),
+            ],
+        );
+    }
+
+    /**
+     * One page of the current company's invoices.
+     *
+     * The join is an arbitrary DQL join narrowed to the same company on BOTH
+     * sides — an invoice whose party drifted out of the working company
+     * disappears from the list rather than appearing partyless.
+     *
+     * @return Page<Invoice>
+     */
+    public function pageOf(ListRequest $request): Page
+    {
+        $builder = $this->entityManager->createQueryBuilder()
+            ->select('i')
+            ->from(Invoice::class, 'i')
+            ->join(Thirdparty::class, 't', 'WITH', 't.id = i.thirdpartyId AND t.companyId = :company')
+            ->where('i.companyId = :company')
+            ->setParameter('company', $this->context->currentId());
+
+        return $this->lists->paginate($builder, Invoice::class, $request, self::schema());
+    }
+
+    /**
+     * The two-parameter form, kept while the callers migrate.
      *
      * @return Page<Invoice>
      */
     public function page(int $page, ?string $query): Page
     {
-        $needle = $this->needle($query);
-        $join = ' JOIN ' . Thirdparty::class . ' t WITH t.id = i.thirdpartyId AND t.companyId = :company';
-        $where = ' WHERE i.companyId = :company' . ($needle === null ? '' : ' AND (' . self::SEARCH . ')');
-
-        $count = $this->entityManager->createQuery(
-            'SELECT COUNT(i.id) FROM ' . Invoice::class . ' i' . $join . $where,
-        );
-        $count->setParameter('company', $this->context->currentId());
-
-        if ($needle !== null) {
-            $count->setParameter('q', $needle);
-        }
-
-        $total = (int) $count->getSingleScalarResult();
-        $pages = max(1, (int) ceil($total / self::PER_PAGE));
-        $page = max(1, min($page, $pages));
-
-        $select = $this->entityManager->createQuery(
-            'SELECT i FROM ' . Invoice::class . ' i' . $join . $where . ' ORDER BY i.id DESC',
-        );
-        $select->setParameter('company', $this->context->currentId());
-
-        if ($needle !== null) {
-            $select->setParameter('q', $needle);
-        }
-
-        $select->setFirstResult(($page - 1) * self::PER_PAGE);
-        $select->setMaxResults(self::PER_PAGE);
-
-        /** @var list<Invoice> $items */
-        $items = $select->getResult();
-
-        return new Page($items, $total, $page, $pages, self::PER_PAGE);
+        return $this->pageOf(ListRequest::fromQueryParams(
+            ['page' => (string) $page, 'q' => $query ?? ''],
+            self::schema(),
+        ));
     }
 
     /**
@@ -219,23 +250,5 @@ final readonly class InvoiceRepository
     public function flush(): void
     {
         $this->entityManager->flush();
-    }
-
-    /**
-     * A bound parameter escapes nothing: % and _ inside the VALUE still act
-     * as wildcards, so the user's text is escaped before the wrapping ones
-     * are added.
-     */
-    private function needle(?string $query): ?string
-    {
-        $query = trim($query ?? '');
-
-        if ($query === '') {
-            return null;
-        }
-
-        $escaped = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_substr($query, 0, self::MAX_QUERY_LENGTH));
-
-        return '%' . $escaped . '%';
     }
 }

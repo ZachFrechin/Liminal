@@ -6,6 +6,11 @@ namespace Liminal\Module\Order\Repository;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Liminal\Lib\Database\Pagination\Page;
+use Liminal\Lib\Database\Query\DqlListBuilder;
+use Liminal\Lib\Database\Query\ListFilter;
+use Liminal\Lib\Database\Query\ListRequest;
+use Liminal\Lib\Database\Query\ListSchema;
+use Liminal\Lib\Database\Query\SortDirection;
 use Liminal\Lib\Database\Scope\CompanyContext;
 use Liminal\Module\Order\Entity\Order;
 use Liminal\Module\Order\Entity\OrderLine;
@@ -21,9 +26,6 @@ final readonly class OrderRepository
 {
     public const int PER_PAGE = 25;
 
-    /** Longer than any legitimate search, short enough to bound the LIKE. */
-    private const int MAX_QUERY_LENGTH = 100;
-
     /**
      * Number and party name — the two things a human remembers an order by.
      */
@@ -32,48 +34,69 @@ final readonly class OrderRepository
     public function __construct(
         private EntityManagerInterface $entityManager,
         private CompanyContext $context,
+        private DqlListBuilder $lists,
     ) {}
 
     /**
-     * One page of the current company's orders, newest first.
+     * The invoice list's schema with three states instead of two — invoiced
+     * is a state of its own here, and it is the one people come looking for.
+     */
+    public static function schema(): ListSchema
+    {
+        return new ListSchema(
+            alias: 'o',
+            sorts: [
+                'recent' => 'o.id',
+                'number' => 'o.number',
+                'party' => 't.name',
+                'issued' => 'o.issuedOn',
+                'wanted' => 'o.wantedOn',
+                'status' => 'o.status',
+                'total' => 'o.totalIncl',
+            ],
+            tiebreaker: 'o.id',
+            defaultSort: 'recent',
+            defaultDirection: SortDirection::Descending,
+            perPage: self::PER_PAGE,
+            search: self::SEARCH,
+            filters: [
+                'status' => new ListFilter('status', 'order.filter.status', 'order.status', [
+                    Order::DRAFT => "o.status = 'draft'",
+                    Order::VALIDATED => "o.status = 'validated'",
+                    Order::INVOICED => "o.status = 'invoiced'",
+                ]),
+            ],
+        );
+    }
+
+    /**
+     * One page of the current company's orders.
+     *
+     * @return Page<Order>
+     */
+    public function pageOf(ListRequest $request): Page
+    {
+        $builder = $this->entityManager->createQueryBuilder()
+            ->select('o')
+            ->from(Order::class, 'o')
+            ->join(Thirdparty::class, 't', 'WITH', 't.id = o.thirdpartyId AND t.companyId = :company')
+            ->where('o.companyId = :company')
+            ->setParameter('company', $this->context->currentId());
+
+        return $this->lists->paginate($builder, Order::class, $request, self::schema());
+    }
+
+    /**
+     * The two-parameter form, kept while the callers migrate.
      *
      * @return Page<Order>
      */
     public function page(int $page, ?string $query): Page
     {
-        $needle = $this->needle($query);
-        $join = ' JOIN ' . Thirdparty::class . ' t WITH t.id = o.thirdpartyId AND t.companyId = :company';
-        $where = ' WHERE o.companyId = :company' . ($needle === null ? '' : ' AND (' . self::SEARCH . ')');
-
-        $count = $this->entityManager->createQuery(
-            'SELECT COUNT(o.id) FROM ' . Order::class . ' o' . $join . $where,
-        );
-        $count->setParameter('company', $this->context->currentId());
-
-        if ($needle !== null) {
-            $count->setParameter('q', $needle);
-        }
-
-        $total = (int) $count->getSingleScalarResult();
-        $pages = max(1, (int) ceil($total / self::PER_PAGE));
-        $page = max(1, min($page, $pages));
-
-        $select = $this->entityManager->createQuery(
-            'SELECT o FROM ' . Order::class . ' o' . $join . $where . ' ORDER BY o.id DESC',
-        );
-        $select->setParameter('company', $this->context->currentId());
-
-        if ($needle !== null) {
-            $select->setParameter('q', $needle);
-        }
-
-        $select->setFirstResult(($page - 1) * self::PER_PAGE);
-        $select->setMaxResults(self::PER_PAGE);
-
-        /** @var list<Order> $items */
-        $items = $select->getResult();
-
-        return new Page($items, $total, $page, $pages, self::PER_PAGE);
+        return $this->pageOf(ListRequest::fromQueryParams(
+            ['page' => (string) $page, 'q' => $query ?? ''],
+            self::schema(),
+        ));
     }
 
     /**
@@ -227,23 +250,5 @@ final readonly class OrderRepository
     public function flush(): void
     {
         $this->entityManager->flush();
-    }
-
-    /**
-     * A bound parameter escapes nothing: % and _ inside the VALUE still act
-     * as wildcards, so the user's text is escaped before the wrapping ones
-     * are added.
-     */
-    private function needle(?string $query): ?string
-    {
-        $query = trim($query ?? '');
-
-        if ($query === '') {
-            return null;
-        }
-
-        $escaped = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_substr($query, 0, self::MAX_QUERY_LENGTH));
-
-        return '%' . $escaped . '%';
     }
 }

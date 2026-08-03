@@ -8,6 +8,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Liminal\Kernel;
 use Liminal\Lib\Database\Migration\MigrationRunner;
+use Liminal\Lib\Database\Query\DqlListBuilder;
 use Liminal\Lib\Database\Scope\CompanyContext;
 use Liminal\Module\Order\Repository\OrderRepository;
 use Liminal\Support\Env;
@@ -84,7 +85,7 @@ final class OrderRepositoryTest extends IntegrationTestCase
         $this->context = $context;
         $this->context->switchTo(1, 1, 2);
 
-        $this->repository = new OrderRepository($em, $this->context);
+        $this->repository = new OrderRepository($em, $this->context, new DqlListBuilder());
     }
 
     protected function tearDown(): void

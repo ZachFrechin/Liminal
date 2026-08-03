@@ -6,6 +6,11 @@ namespace Liminal\Module\Thirdparty\Repository;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Liminal\Lib\Database\Pagination\Page;
+use Liminal\Lib\Database\Query\DqlListBuilder;
+use Liminal\Lib\Database\Query\ListFilter;
+use Liminal\Lib\Database\Query\ListRequest;
+use Liminal\Lib\Database\Query\ListSchema;
+use Liminal\Lib\Database\Query\SortDirection;
 use Liminal\Lib\Database\Scope\CompanyContext;
 use Liminal\Module\Thirdparty\Entity\Thirdparty;
 
@@ -40,58 +45,80 @@ final readonly class ThirdpartyRepository
 {
     public const int PER_PAGE = 25;
 
-    /** Longer than any legitimate search, short enough to bound the LIKE. */
-    private const int MAX_QUERY_LENGTH = 100;
-
     public function __construct(
         private EntityManagerInterface $entityManager,
         private CompanyContext $context,
+        private DqlListBuilder $lists,
     ) {}
 
     /**
-     * One page of the current company's thirdparties, optionally filtered.
+     * What the list admits: five sortable columns, two filters, one search.
      *
-     * The page number is clamped AFTER counting: total=0 must land on page 1
-     * of 1 (never page 0 and a negative offset), and a stale link to page 12
-     * of what is now 3 pages lands on page 3. ORDER BY name alone would let
-     * equal names swap between pages on MariaDB — id breaks the tie.
+     * Rebuilt per call rather than held as a constant — a ListSchema carries
+     * objects, and PHP constants cannot. The cost is a handful of allocations
+     * on a request that is about to run two queries.
+     */
+    public static function schema(): ListSchema
+    {
+        return new ListSchema(
+            alias: 't',
+            sorts: [
+                'code' => 't.code',
+                'name' => 't.name',
+                'town' => 't.town',
+                'country' => 't.countryCode',
+                'created' => 't.createdAt',
+            ],
+            tiebreaker: 't.id',
+            defaultSort: 'name',
+            defaultDirection: SortDirection::Ascending,
+            perPage: self::PER_PAGE,
+            search: self::SEARCH,
+            filters: [
+                'kind' => new ListFilter('kind', 'thirdparty.filter.kind', 'thirdparty.filter.kind', [
+                    'customer' => 't.customer = true',
+                    'supplier' => 't.supplier = true',
+                ]),
+                'status' => new ListFilter('status', 'thirdparty.filter.status', 'thirdparty.filter.status', [
+                    'active' => 't.active = true',
+                    'archived' => 't.active = false',
+                ]),
+            ],
+        );
+    }
+
+    /**
+     * One page of the current company's thirdparties.
+     *
+     * The company narrowing stays HERE: the list builder adds search, filters
+     * and ordering, and is deliberately incapable of fencing a query. Two
+     * boundaries would eventually disagree.
+     *
+     * @return Page<Thirdparty>
+     */
+    public function pageOf(ListRequest $request): Page
+    {
+        $builder = $this->entityManager->createQueryBuilder()
+            ->select('t')
+            ->from(Thirdparty::class, 't')
+            ->where('t.companyId = :company')
+            ->setParameter('company', $this->context->currentId());
+
+        return $this->lists->paginate($builder, Thirdparty::class, $request, self::schema());
+    }
+
+    /**
+     * The two-parameter form, kept while the callers migrate — and kept
+     * honest: it goes through the same parsing the URL does.
      *
      * @return Page<Thirdparty>
      */
     public function page(int $page, ?string $query): Page
     {
-        $needle = $this->needle($query);
-        $where = 't.companyId = :company' . ($needle === null ? '' : ' AND (' . self::SEARCH . ')');
-
-        $count = $this->entityManager->createQuery(
-            'SELECT COUNT(t.id) FROM ' . Thirdparty::class . ' t WHERE ' . $where,
-        );
-        $count->setParameter('company', $this->context->currentId());
-
-        if ($needle !== null) {
-            $count->setParameter('q', $needle);
-        }
-
-        $total = (int) $count->getSingleScalarResult();
-        $pages = max(1, (int) ceil($total / self::PER_PAGE));
-        $page = max(1, min($page, $pages));
-
-        $select = $this->entityManager->createQuery(
-            'SELECT t FROM ' . Thirdparty::class . ' t WHERE ' . $where . ' ORDER BY t.name, t.id',
-        );
-        $select->setParameter('company', $this->context->currentId());
-
-        if ($needle !== null) {
-            $select->setParameter('q', $needle);
-        }
-
-        $select->setFirstResult(($page - 1) * self::PER_PAGE);
-        $select->setMaxResults(self::PER_PAGE);
-
-        /** @var list<Thirdparty> $items */
-        $items = $select->getResult();
-
-        return new Page($items, $total, $page, $pages, self::PER_PAGE);
+        return $this->pageOf(ListRequest::fromQueryParams(
+            ['page' => (string) $page, 'q' => $query ?? ''],
+            self::schema(),
+        ));
     }
 
     /**
@@ -169,28 +196,8 @@ final readonly class ThirdpartyRepository
     }
 
     /**
-     * The three searched fields. ESCAPE is explicit, and the escape character
-     * is '!' — a backslash would have to survive PHP, DQL and SQL quoting in
-     * agreement, and MariaDB refuses what comes out the other end.
+     * The three searched fields. ESCAPE is explicit and names LikeNeedle's
+     * character — the needle escapes for it, so the two are one contract.
      */
     private const string SEARCH = "t.name LIKE :q ESCAPE '!' OR t.code LIKE :q ESCAPE '!' OR t.alias LIKE :q ESCAPE '!'";
-
-    /**
-     * A bound parameter escapes nothing: % and _ inside the VALUE still act
-     * as wildcards, so the user's text is escaped before the wrapping ones
-     * are added. With an explicit ESCAPE char, a backslash in the value is
-     * ordinary text.
-     */
-    private function needle(?string $query): ?string
-    {
-        $query = trim($query ?? '');
-
-        if ($query === '') {
-            return null;
-        }
-
-        $escaped = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_substr($query, 0, self::MAX_QUERY_LENGTH));
-
-        return '%' . $escaped . '%';
-    }
 }

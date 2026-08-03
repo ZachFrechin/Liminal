@@ -8,6 +8,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Liminal\Kernel;
 use Liminal\Lib\Database\Migration\MigrationRunner;
+use Liminal\Lib\Database\Query\DqlListBuilder;
 use Liminal\Lib\Database\Scope\CompanyContext;
 use Liminal\Module\Thirdparty\Entity\Thirdparty;
 use Liminal\Module\Thirdparty\Repository\ThirdpartyRepository;
@@ -70,7 +71,7 @@ final class ThirdpartyRepositoryTest extends IntegrationTestCase
         self::assertInstanceOf(CompanyContext::class, $context);
         $this->context = $context;
 
-        $this->repository = new ThirdpartyRepository($em, $context);
+        $this->repository = new ThirdpartyRepository($em, $context, new DqlListBuilder());
     }
 
     protected function tearDown(): void

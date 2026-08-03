@@ -30,4 +30,40 @@ final class DatabaseException extends RuntimeException implements LiminalExcepti
             $table,
         ));
     }
+
+    public static function unknownDefaultSort(string $key): self
+    {
+        return new self(sprintf(
+            'List schema defaults to sort key "%s", which it does not declare as sortable.',
+            $key,
+        ));
+    }
+
+    public static function nonPositivePageSize(int $perPage): self
+    {
+        return new self(sprintf('List schema declares a page size of %d; a page holds at least one row.', $perPage));
+    }
+
+    public static function misfiledFilter(string $index, string $key): self
+    {
+        return new self(sprintf(
+            'List filter "%s" is indexed under "%s" — the request reads filters by their own key, so the two must agree.',
+            $key,
+            $index,
+        ));
+    }
+
+    public static function emptyFilterPredicate(string $filter, string $value): self
+    {
+        return new self(sprintf(
+            'Filter "%s" maps value "%s" to an empty predicate; a choice that narrows nothing is a silent no-op.',
+            $filter,
+            $value,
+        ));
+    }
+
+    public static function unexpectedListResult(string $entity): self
+    {
+        return new self(sprintf('Paginated query returned a row that is not a %s.', $entity));
+    }
 }
